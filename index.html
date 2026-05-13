@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.3 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.4 · 버전 기록</button>
   </div>
 </div>
 
@@ -437,7 +437,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="ver-list">
       <div class="ver-item">
         <div class="ver-header">
-          <span class="ver-badge latest">v1.9</span>
+          <span class="ver-badge latest">v2.4</span>
+          <span class="ver-title">카페24 직접전환 연동 수정</span>
+          <span class="ver-date">2026.05</span>
+        </div>
+        <ul class="ver-features">
+          <li>카페24 한글 컬럼 형식 자동 인식 (세부항목/채널/매출액/구매건수)</li>
+          <li>구글 광고명 앞 번호(예: "08 / 광고명")와 카페24 키워드 자동 매핑</li>
+          <li>직접전환 CSV 인코딩 자동 감지 (UTF-16/UTF-8)</li>
+        </ul>
+      </div>
+      <div class="ver-item">
+        <div class="ver-header">
+          <span class="ver-badge">v1.9</span>
           <span class="ver-title">이미지 전체 캡처 완전 해결</span>
           <span class="ver-date">2026.05</span>
         </div>
@@ -656,7 +668,13 @@ function getDirectData(adName, channel){
     return parsed.direct['__fb__'+key]||null;
   }
   if(channel==='gg'){
-    return parsed.direct['__gg__'+key]||null;
+    let r=parsed.direct['__gg__'+key]||null;
+    // 카페24 형식: 광고명 앞 숫자(예: "08 / 광고명") → 키 "08" 로 조회
+    if(!r){
+      const m=adName.match(/^(\d+)\s*\//);
+      if(m) r=parsed.direct['__gg__'+normKey(m[1])]||null;
+    }
+    return r;
   }
   return parsed.direct[key]||null;
 }
@@ -664,41 +682,75 @@ function getDirectData(adName, channel){
 // ── Parser: Direct ────────────────────────────────────────────────────────────
 function parseDirectCSV(file){
   return new Promise((res,rej)=>{
-    Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>{
-      const map={};
-      r.data.forEach(row=>{
-        const term=(row.term||'').trim(); if(!term||term==='nan') return;
-        const key=termSuffix(term);
-        if(!key) return;
-        const ch=(row.channel||'').toLowerCase();
-        const medium=(row.medium||'').toLowerCase();
-        const amt=parseNum(row.order_amount);
-        const cnt=parseNum(row.order_count);
-
-        if(!map[key]) map[key]={order_amount:0,order_count:0};
-        map[key].order_amount+=amt;
-        map[key].order_count+=cnt;
-
-        const chKey = (ch==='tk'||ch==='tiktok') ? '__tk__'+key
-                    : (ch==='fb'||ch==='ig') ? '__fb__'+key
-                    : (ch==='gg'||ch==='google') ? '__gg__'+key
-                    : null;
-        if(chKey){
-          if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
-          map[chKey].order_amount+=amt;
-          map[chKey].order_count+=cnt;
-        }
-
-        if(ch==='gg'&&medium==='pmax'){
-          const pmaxNum=(row.campaign||'').match(/pmax[_\s]*(\d+)/i);
-          const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix((row.campaign||'').trim()));
-          if(!map[pmaxKey]) map[pmaxKey]={order_amount:0,order_count:0};
-          map[pmaxKey].order_amount+=amt;
-          map[pmaxKey].order_count+=cnt;
-        }
-      });
-      res(map);
-    },error:rej});
+    // 인코딩 감지 후 텍스트로 읽기
+    const bufReader=new FileReader();
+    bufReader.readAsArrayBuffer(file.slice(0,4));
+    bufReader.onload=e=>{
+      const buf=new Uint8Array(e.target.result);
+      const encoding=(buf[0]===0xFF&&buf[1]===0xFE)||(buf[0]===0xFE&&buf[1]===0xFF)?'UTF-16':'UTF-8';
+      const textReader=new FileReader();
+      textReader.readAsText(file,encoding);
+      textReader.onload=ev=>{
+        try{
+          Papa.parse(ev.target.result,{header:true,skipEmptyLines:true,complete:r=>{
+            try{
+              const map={};
+              // 카페24 형식 감지: '세부항목' 또는 '매출액' 컬럼 존재 여부
+              const isCafe24=r.data.length>0&&('세부항목' in r.data[0]||'매출액' in r.data[0]);
+              r.data.forEach(row=>{
+                if(isCafe24){
+                  // ── 카페24 형식 (한글 컬럼) ──────────────────────────────
+                  const ch=(row['채널']||'').trim().toLowerCase();
+                  const kw=(row['키워드']||'').trim();       // "08", "06" 등 숫자 식별자
+                  const detail=(row['세부항목']||'').trim(); // "vid08" 등 (폴백)
+                  const amt=parseNum(row['매출액']);
+                  const cnt=parseNum(row['구매건수']);
+                  // 키: 키워드 우선, 없으면 세부항목에서 앞 문자(유형) 제거
+                  const rawKey=kw||(detail.replace(/^[a-z]+/i,''));
+                  if(!rawKey) return;
+                  const key=normKey(rawKey); // e.g. "08"
+                  if(!map[key]) map[key]={order_amount:0,order_count:0};
+                  map[key].order_amount+=amt; map[key].order_count+=cnt;
+                  const chKey=(ch==='tk'||ch==='tiktok')?'__tk__'+key
+                             :(ch==='fb'||ch==='ig'||ch==='meta')?'__fb__'+key
+                             :(ch==='gg'||ch==='google')?'__gg__'+key:null;
+                  if(chKey){
+                    if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
+                    map[chKey].order_amount+=amt; map[chKey].order_count+=cnt;
+                  }
+                } else {
+                  // ── 기존 형식 (영문 컬럼: term/channel/medium) ────────────
+                  const term=(row.term||'').trim(); if(!term||term==='nan') return;
+                  const key=termSuffix(term); if(!key) return;
+                  const ch=(row.channel||'').toLowerCase();
+                  const medium=(row.medium||'').toLowerCase();
+                  const amt=parseNum(row.order_amount);
+                  const cnt=parseNum(row.order_count);
+                  if(!map[key]) map[key]={order_amount:0,order_count:0};
+                  map[key].order_amount+=amt; map[key].order_count+=cnt;
+                  const chKey=(ch==='tk'||ch==='tiktok')?'__tk__'+key
+                             :(ch==='fb'||ch==='ig')?'__fb__'+key
+                             :(ch==='gg'||ch==='google')?'__gg__'+key:null;
+                  if(chKey){
+                    if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
+                    map[chKey].order_amount+=amt; map[chKey].order_count+=cnt;
+                  }
+                  if(ch==='gg'&&medium==='pmax'){
+                    const pmaxNum=(row.campaign||'').match(/pmax[_\s]*(\d+)/i);
+                    const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix((row.campaign||'').trim()));
+                    if(!map[pmaxKey]) map[pmaxKey]={order_amount:0,order_count:0};
+                    map[pmaxKey].order_amount+=amt; map[pmaxKey].order_count+=cnt;
+                  }
+                }
+              });
+              res(map);
+            }catch(err){rej(err);}
+          },error:rej});
+        }catch(err){rej(err);}
+      };
+      textReader.onerror=rej;
+    };
+    bufReader.onerror=rej;
   });
 }
 
