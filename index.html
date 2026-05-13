@@ -707,13 +707,27 @@
             const items = e.clipboardData.items;
             for (let item of items) {
                 if (item.type.indexOf('image') !== -1) {
-                    const blob = item.getAsFile();
-                    const activeTab = document.querySelector('.tab-content.active').id;
-                    const platformId = activeTab + '-cafe24';
-                    processImage(blob, platformId);
                     e.preventDefault();
+                    const blob = item.getAsFile();
+
+                    const activeTab = document.querySelector('.tab-content.active').id;
+                    let platformId = 'cafe24';
+
+                    if (activeTab === 'grannysolad') platformId = 'cafe24';
+                    else if (activeTab === 'hatke') platformId = 'hatke-cafe24';
+                    else if (activeTab === 'basetune') platformId = 'basetune-cafe24';
+
+                    processImage(blob, platformId);
                 }
             }
+        });
+
+        // 모든 업로드 존에 포커스 가능하게
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadZones = document.querySelectorAll('.upload-zone');
+            uploadZones.forEach(zone => {
+                zone.style.cursor = 'pointer';
+            });
         });
 
         function updateDashboard() {
