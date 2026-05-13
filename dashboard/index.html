@@ -91,6 +91,11 @@
     .dot-tiktok { background: var(--tiktok); } .dot-google { background: var(--google); } .dot-gfa { background: var(--gfa); }
     .card-title { font-size: 13px; font-weight: 700; color: var(--gray-700); }
 
+    /* Account sections inside a card */
+    .account-section { padding: 10px 0; border-bottom: 1px dashed var(--gray-200); }
+    .account-section:last-child { border-bottom: none; padding-bottom: 0; }
+    .account-label { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 8px; letter-spacing: 0.3px; }
+
     /* Fields */
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
     .field:last-child { margin-bottom: 0; }
@@ -193,18 +198,52 @@
         <!-- 쿠팡 -->
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
-          <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          <div class="account-section">
+            <div class="account-label">계정 1</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section">
+            <div class="account-label">계정 2</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section">
+            <div class="account-label">계정 3</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
         </div>
         <!-- 스마트스토어 -->
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
-          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          <div class="account-section">
+            <div class="account-label">계정 1</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section">
+            <div class="account-label">계정 2</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section">
+            <div class="account-label">계정 3</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -259,17 +298,45 @@
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
-          <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          <div class="account-section"><div class="account-label">계정 1</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 2</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 3</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
-          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          <div class="account-section"><div class="account-label">계정 1</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 2</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 3</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -307,17 +374,45 @@
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
-          <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          <div class="account-section"><div class="account-label">계정 1</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 2</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 3</div>
+            <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
-          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
-          <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          <div class="account-section"><div class="account-label">계정 1</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 2</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="account-section"><div class="account-label">계정 3</div>
+            <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
+            <div class="field"><label class="field-label refund-label">환불 건수</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund_count" placeholder="0" oninput="calc()"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -390,8 +485,9 @@ document.querySelectorAll('.brand-tab').forEach(tab => {
 });
 
 function getVal(brand, platform, key) {
-  const el = document.querySelector(`input[data-brand="${brand}"][data-platform="${platform}"][data-key="${key}"]`);
-  return el ? (parseFloat(el.value) || 0) : 0;
+  // 같은 brand+platform+key 인풋이 여러 개면 전부 합산 (다중 계정 대응)
+  const els = document.querySelectorAll(`input[data-brand="${brand}"][data-platform="${platform}"][data-key="${key}"]`);
+  return Array.from(els).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
 }
 
 function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
