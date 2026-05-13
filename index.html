@@ -1343,8 +1343,7 @@ function campObjectiveBadge(name){
 
 // ── Screenshot Download ──────────────────────────────────────────────────────
 function downloadScreenshot() {
-  const element = document.getElementById('result');
-  if (!element) {
+  if (!parsed.meta && !parsed.google && !parsed.tiktok) {
     alert('분석 결과가 없습니다.');
     return;
   }
@@ -1359,27 +1358,56 @@ function downloadScreenshot() {
   btn.disabled = true;
   btn.textContent = '이미지 생성 중…';
 
-  html2canvas(element, {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 모든 매체 테이블을 담는 임시 컨테이너 생성
+  const container = document.createElement('div');
+  container.style.cssText = [
+    'position:fixed', 'left:-99999px', 'top:0',
+    'background:#0f1117', 'padding:28px 32px',
+    'width:1400px', 'color:#e2e8f0',
+    'font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif',
+    'font-size:13px'
+  ].join(';');
+
+  const summaryHTML = document.getElementById('summary-bar')?.innerHTML || '';
+
+  const sections = [];
+  if (parsed.meta)   sections.push(`<div style="margin-bottom:32px"><div style="font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">META</div>${buildMetaTable()}</div>`);
+  if (parsed.google) sections.push(`<div style="margin-bottom:32px"><div style="font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">GOOGLE</div>${buildGoogleTable()}</div>`);
+  if (parsed.tiktok) sections.push(`<div style="margin-bottom:32px"><div style="font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">TIKTOK</div>${buildTikTokTable()}</div>`);
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2e3348">
+      <span style="font-size:15px;font-weight:700">마케팅 액션 리포트</span>
+      <span style="font-size:12px;color:#8892a4">${today}</span>
+    </div>
+    <div style="margin-bottom:24px">${summaryHTML}</div>
+    ${sections.join('')}
+  `;
+
+  document.body.appendChild(container);
+
+  html2canvas(container, {
     scale: 2,
     backgroundColor: '#0f1117',
     logging: false,
     useCORS: true,
     allowTaint: true,
-    windowHeight: element.scrollHeight,
-    windowWidth: element.scrollWidth
+    width: container.scrollWidth,
+    height: container.scrollHeight
   }).then(canvas => {
+    document.body.removeChild(container);
     const link = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
     link.href = canvas.toDataURL('image/png');
     link.download = `액션리포트_${today}.png`;
     document.body.appendChild(link);
     link.click();
     setTimeout(() => document.body.removeChild(link), 100);
-
     btn.disabled = false;
     btn.textContent = originalText;
-    alert('이미지가 다운로드되었습니다!');
   }).catch(err => {
+    if (document.body.contains(container)) document.body.removeChild(container);
     console.error('스크린샷 오류:', err);
     alert('이미지 생성 실패\n콘솔에서 오류 확인: F12 > Console');
     btn.disabled = false;
