@@ -635,7 +635,12 @@
 
                 try {
                     const { data } = await Tesseract.recognize(imgSrc, 'kor+eng');
-                    const numbers = extractNumbers(data.text);
+
+                    // 해당 날짜 가져오기
+                    let dateInput = document.getElementById('date-granny');
+                    let selectedDate = dateInput ? dateInput.value : null;
+
+                    const numbers = extractNumbers(data.text, selectedDate);
                     displayExtractedData(previewDiv, numbers);
                     updateSummaryFromImage(platformId, numbers);
                 } catch (err) {
@@ -645,32 +650,40 @@
             reader.readAsDataURL(file);
         }
 
-        function extractNumbers(text) {
+        function extractNumbers(text, selectedDate) {
             const numbers = [];
 
-            // "오늘" 또는 현재 날짜 찾기
-            const todayPattern = /오늘|today|\d+월\s*\d+일/i;
-            const todayMatch = text.match(todayPattern);
-
-            if (todayMatch) {
-                // 오늘 관련 텍스트 주변의 금액 추출
-                const todayIndex = text.indexOf(todayMatch[0]);
-                const nearbyText = text.substring(todayIndex, todayIndex + 200);
-
-                const amountRegex = /[\d,]+(?:\.\d+)?/g;
-                const amountMatches = nearbyText.match(amountRegex) || [];
-
-                amountMatches.forEach(match => {
-                    const num = match.replace(/,/g, '');
-                    const numValue = parseFloat(num);
-                    // 100,000 이상의 금액만 추출 (카페24, 쿠팡 매출)
-                    if (numValue >= 100000) {
-                        numbers.push(num);
-                    }
-                });
+            // selectedDate가 있으면 해당 날짜로 변환 (YYYY-MM-DD → MM월 DD일)
+            let targetDate = null;
+            if (selectedDate) {
+                const [year, month, day] = selectedDate.split('-');
+                targetDate = `${parseInt(month)}월 ${parseInt(day).toString().padStart(1, '0')}일`;
             }
 
-            // 날짜 근처에서 금액을 찾지 못한 경우, 모든 큰 금액 추출
+            // 선택한 날짜 찾기
+            if (targetDate) {
+                const datePattern = new RegExp(targetDate.replace(/\s/g, '\\s*'), 'i');
+                const dateMatch = text.match(datePattern);
+
+                if (dateMatch) {
+                    // 날짜 근처 텍스트에서 금액 추출
+                    const dateIndex = text.indexOf(dateMatch[0]);
+                    const nearbyText = text.substring(dateIndex, dateIndex + 300);
+
+                    const amountRegex = /[\d,]+(?:\.\d+)?/g;
+                    const amountMatches = nearbyText.match(amountRegex) || [];
+
+                    amountMatches.forEach(match => {
+                        const num = match.replace(/,/g, '');
+                        const numValue = parseFloat(num);
+                        if (numValue >= 100000) {
+                            numbers.push(num);
+                        }
+                    });
+                }
+            }
+
+            // 날짜로 찾지 못한 경우, 모든 큰 금액 추출
             if (numbers.length === 0) {
                 const regex = /[\d,]+(?:\.\d+)?/g;
                 const matches = text.match(regex) || [];
