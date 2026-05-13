@@ -1349,16 +1349,41 @@ function downloadScreenshot() {
     return;
   }
 
+  if (typeof html2canvas === 'undefined') {
+    alert('라이브러리 로드 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '이미지 생성 중…';
+
   html2canvas(element, {
     scale: 2,
     backgroundColor: '#0f1117',
-    logging: false
+    logging: false,
+    useCORS: true,
+    allowTaint: true,
+    windowHeight: element.scrollHeight,
+    windowWidth: element.scrollWidth
   }).then(canvas => {
     const link = document.createElement('a');
     const today = new Date().toISOString().slice(0, 10);
     link.href = canvas.toDataURL('image/png');
     link.download = `액션리포트_${today}.png`;
+    document.body.appendChild(link);
     link.click();
+    setTimeout(() => document.body.removeChild(link), 100);
+
+    btn.disabled = false;
+    btn.textContent = originalText;
+    alert('이미지가 다운로드되었습니다!');
+  }).catch(err => {
+    console.error('스크린샷 오류:', err);
+    alert('이미지 생성 실패\n콘솔에서 오류 확인: F12 > Console');
+    btn.disabled = false;
+    btn.textContent = originalText;
   });
 }
 
