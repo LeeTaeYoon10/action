@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>광고 데이터 대시보드</title>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #EEF2FF;
+      --success: #10B981;
+      --danger: #EF4444;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-400: #9CA3AF;
+      --gray-500: #6B7280;
+      --gray-600: #4B5563;
+      --gray-700: #374151;
+      --gray-800: #1F2937;
+      --cafe24: #FF5722; --coupang: #EE2E24; --smartstore: #03C75A;
+      --meta: #1877F2; --tiktok: #2D2D2D; --google: #4285F4; --gfa: #00C73C;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      background: #EDEEF2; color: var(--gray-800); font-size: 14px;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
+      color: white; padding: 16px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 12px rgba(79,70,229,0.3);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon { width: 38px; height: 38px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .header h1 { font-size: 17px; font-weight: 700; }
+    .header-sub { font-size: 11px; opacity: 0.7; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .date-label { font-size: 13px; opacity: 0.8; }
+    .date-input {
+      padding: 7px 12px; border: 1.5px solid rgba(255,255,255,0.3);
+      border-radius: 8px; font-size: 13px; color: white;
+      background: rgba(255,255,255,0.15); cursor: pointer;
+    }
+    .date-input:focus { outline: none; border-color: rgba(255,255,255,0.7); }
+    .date-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
+
+    /* Container */
+    .container { max-width: 1300px; margin: 0 auto; padding: 22px 22px; }
+
+    /* Brand Tabs */
+    .brand-tabs { display: flex; gap: 6px; background: white; padding: 6px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 18px; }
+    .brand-tab { flex: 1; padding: 11px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; background: transparent; color: var(--gray-500); }
+    .brand-tab.active { background: var(--primary); color: white; box-shadow: var(--shadow); }
+    .brand-tab:hover:not(.active) { background: var(--gray-100); color: var(--gray-700); }
+
+    /* Panel */
+    .brand-panel { display: none; }
+    .brand-panel.active { display: block; }
+
+    /* Section */
+    .section { background: white; border-radius: var(--radius); padding: 20px 22px; margin-bottom: 14px; box-shadow: var(--shadow); }
+    .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .section-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .sales-icon { background: #DBEAFE; } .ad-icon { background: #FEF3C7; } .search-icon { background: #D1FAE5; } .summary-icon { background: #EDE9FE; }
+    .section-title { font-size: 15px; font-weight: 700; }
+
+    /* Input Grid */
+    .input-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .input-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .input-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .search-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+    /* Platform Card */
+    .platform-card {
+      border: 1.5px solid var(--gray-200); border-radius: 10px; padding: 14px;
+      transition: border-color 0.2s;
+    }
+    .platform-card:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+    .card-header { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot-cafe24 { background: var(--cafe24); } .dot-coupang { background: var(--coupang); }
+    .dot-smartstore { background: var(--smartstore); } .dot-meta { background: var(--meta); }
+    .dot-tiktok { background: var(--tiktok); } .dot-google { background: var(--google); } .dot-gfa { background: var(--gfa); }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--gray-700); }
+
+    /* Fields */
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.3px; }
+    .field-input {
+      padding: 8px 11px; border: 1.5px solid var(--gray-200); border-radius: 7px;
+      font-size: 13px; color: var(--gray-800); background: var(--gray-50);
+      transition: all 0.15s; width: 100%;
+    }
+    .field-input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 2px rgba(79,70,229,0.08); }
+    .field-input::placeholder { color: var(--gray-400); }
+
+    /* Calculated badge */
+    .calc-badge { font-size: 11px; color: var(--gray-400); text-align: right; margin-top: 2px; font-style: italic; }
+
+    /* Search */
+    .search-group { display: flex; flex-direction: column; gap: 5px; }
+    .search-label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+    .search-input { padding: 9px 11px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 13px; color: var(--gray-800); transition: border-color 0.15s; }
+    .search-input:focus { outline: none; border-color: var(--primary); }
+
+    /* Summary Table */
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-100); }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+    .summary-table th { background: var(--gray-50); padding: 10px 13px; text-align: right; font-weight: 600; color: var(--gray-500); font-size: 11px; border-bottom: 1.5px solid var(--gray-200); }
+    .summary-table th.left { text-align: left; }
+    .summary-table td { padding: 12px 13px; text-align: right; border-bottom: 1px solid var(--gray-100); }
+    .summary-table td.left { text-align: left; font-weight: 700; color: var(--gray-700); }
+    .summary-table tr:last-child td { border-bottom: none; }
+    .summary-table tr.total-row td { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+    .roas-good { color: var(--success); font-weight: 700; }
+    .roas-bad { color: var(--danger); font-weight: 700; }
+    .empty-row { text-align: center !important; color: var(--gray-400); padding: 28px !important; }
+
+    /* Action Row */
+    .action-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #4338CA; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+    .btn-ghost { background: var(--gray-100); color: var(--gray-600); }
+    .btn-ghost:hover { background: var(--gray-200); }
+    .btn-success { background: #ECFDF5; color: var(--success); }
+    .btn-success:hover { background: #D1FAE5; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 22px; right: 22px; background: var(--gray-900); color: white; padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; z-index: 9999; }
+    @keyframes slideUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    @media (max-width: 1100px) { .input-grid-4 { grid-template-columns: repeat(2, 1fr); } .input-grid-5 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px) { .input-grid-3, .search-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .input-grid-3, .input-grid-4, .input-grid-5, .search-grid { grid-template-columns: 1fr; } .container { padding: 14px; } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">📊</div>
+    <div>
+      <h1>광고 데이터 대시보드</h1>
+      <div class="header-sub">매출 · 광고비 입력 → 자동 계산</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="date-label">날짜</span>
+    <input type="date" id="date-input" class="date-input">
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="brand-tabs">
+    <button class="brand-tab active" data-brand="granysalad">🥗 그래니 샐러드</button>
+    <button class="brand-tab" data-brand="hatkei">🎩 해트케</button>
+    <button class="brand-tab" data-brand="basetune">🎵 베이스튠</button>
+  </div>
+
+  <!-- ═══════════════ 그래니 샐러드 ═══════════════ -->
+  <div class="brand-panel active" data-brand="granysalad">
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon sales-icon">💰</div>
+        <span class="section-title">매출 데이터</span>
+      </div>
+      <div class="input-grid-3">
+        <!-- 카페24 -->
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-cafe24"></div><span class="card-title">카페24</span></div>
+          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="cafe24" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="cafe24" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+        <!-- 쿠팡 -->
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
+          <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+        <!-- 스마트스토어 -->
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
+          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon ad-icon">📢</div>
+        <span class="section-title">광고비 데이터</span>
+      </div>
+      <div class="input-grid-4">
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-meta"></div><span class="card-title">메타</span></div>
+          <div class="field"><label class="field-label">총 지출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="meta" data-key="cost" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-tiktok"></div><span class="card-title">틱톡</span></div>
+          <div class="field"><label class="field-label">총 비용 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="tiktok" data-key="cost" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-google"></div><span class="card-title">구글</span></div>
+          <div class="field"><label class="field-label">비용 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="google" data-key="cost" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-gfa"></div><span class="card-title">GFA</span></div>
+          <div class="field"><label class="field-label">총비용 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="gfa" data-key="cost" placeholder="0" oninput="calc()"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon search-icon">🔍</div><span class="section-title">검색량</span></div>
+      <div class="search-grid">
+        <div class="search-group"><label class="search-label">그래니 샐러드</label><input type="text" class="search-input" id="sv-granysalad-0" placeholder="검색량" oninput="calc()"></div>
+        <div class="search-group"><label class="search-label">키워드 2</label><input type="text" class="search-input" id="sv-granysalad-1" placeholder="검색량" oninput="calc()"></div>
+        <div class="search-group"><label class="search-label">키워드 3</label><input type="text" class="search-input" id="sv-granysalad-2" placeholder="검색량" oninput="calc()"></div>
+        <div class="search-group"><label class="search-label">메모</label><input type="text" class="search-input" id="memo-granysalad" placeholder="메모"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 해트케 ═══════════════ -->
+  <div class="brand-panel" data-brand="hatkei">
+    <div class="section">
+      <div class="section-header"><div class="section-icon sales-icon">💰</div><span class="section-title">매출 데이터</span></div>
+      <div class="input-grid-3">
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-cafe24"></div><span class="card-title">카페24</span></div>
+          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="cafe24" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="cafe24" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
+          <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
+          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon ad-icon">📢</div><span class="section-title">광고비 데이터</span></div>
+      <div class="input-grid-4">
+        <div class="platform-card"><div class="card-header"><div class="dot dot-meta"></div><span class="card-title">메타</span></div><div class="field"><label class="field-label">총 지출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="meta" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+        <div class="platform-card"><div class="card-header"><div class="dot dot-tiktok"></div><span class="card-title">틱톡</span></div><div class="field"><label class="field-label">총 비용 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="tiktok" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+        <div class="platform-card"><div class="card-header"><div class="dot dot-google"></div><span class="card-title">구글</span></div><div class="field"><label class="field-label">비용 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="google" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+        <div class="platform-card"><div class="card-header"><div class="dot dot-gfa"></div><span class="card-title">GFA</span></div><div class="field"><label class="field-label">총비용 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="gfa" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon search-icon">🔍</div><span class="section-title">검색량</span></div>
+      <div class="search-grid">
+        <div class="search-group"><label class="search-label">해트케</label><input type="text" class="search-input" id="sv-hatkei-0" placeholder="검색량"></div>
+        <div class="search-group"><label class="search-label">키워드 2</label><input type="text" class="search-input" id="sv-hatkei-1" placeholder="검색량"></div>
+        <div class="search-group"><label class="search-label">키워드 3</label><input type="text" class="search-input" id="sv-hatkei-2" placeholder="검색량"></div>
+        <div class="search-group"><label class="search-label">메모</label><input type="text" class="search-input" id="memo-hatkei" placeholder="메모"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 베이스튠 ═══════════════ -->
+  <div class="brand-panel" data-brand="basetune">
+    <div class="section">
+      <div class="section-header"><div class="section-icon sales-icon">💰</div><span class="section-title">매출 데이터</span></div>
+      <div class="input-grid-3">
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-cafe24"></div><span class="card-title">카페24</span></div>
+          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="cafe24" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="cafe24" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
+          <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+        <div class="platform-card">
+          <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
+          <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon ad-icon">📢</div><span class="section-title">광고비 데이터</span></div>
+      <div class="input-grid-4">
+        <div class="platform-card"><div class="card-header"><div class="dot dot-meta"></div><span class="card-title">메타</span></div><div class="field"><label class="field-label">총 지출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="meta" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+        <div class="platform-card"><div class="card-header"><div class="dot dot-tiktok"></div><span class="card-title">틱톡</span></div><div class="field"><label class="field-label">총 비용 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="tiktok" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+        <div class="platform-card"><div class="card-header"><div class="dot dot-google"></div><span class="card-title">구글</span></div><div class="field"><label class="field-label">비용 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="google" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+        <div class="platform-card"><div class="card-header"><div class="dot dot-gfa"></div><span class="card-title">GFA</span></div><div class="field"><label class="field-label">총비용 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="gfa" data-key="cost" placeholder="0" oninput="calc()"></div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon search-icon">🔍</div><span class="section-title">검색량</span></div>
+      <div class="search-grid">
+        <div class="search-group"><label class="search-label">베이스튠</label><input type="text" class="search-input" id="sv-basetune-0" placeholder="검색량"></div>
+        <div class="search-group"><label class="search-label">키워드 2</label><input type="text" class="search-input" id="sv-basetune-1" placeholder="검색량"></div>
+        <div class="search-group"><label class="search-label">키워드 3</label><input type="text" class="search-input" id="sv-basetune-2" placeholder="검색량"></div>
+        <div class="search-group"><label class="search-label">메모</label><input type="text" class="search-input" id="memo-basetune" placeholder="메모"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 결과 요약 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon summary-icon">📈</div>
+      <span class="section-title">결과 요약</span>
+    </div>
+    <div class="table-wrap">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th class="left">브랜드</th>
+            <th>카페24</th><th>쿠팡</th><th>스마트스토어</th>
+            <th>총합 매출</th><th>총합 건수</th>
+            <th>메타비용</th><th>틱톡비용</th><th>구글비용</th><th>GFA비용</th><th>총비용</th>
+            <th>ROAS</th><th>CPA</th><th>객단가</th><th>자사율</th>
+          </tr>
+        </thead>
+        <tbody id="summary-tbody">
+          <tr><td colspan="15" class="empty-row">숫자를 입력하면 자동으로 계산됩니다</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-ghost" onclick="clearAll()">🗑️ 전체 초기화</button>
+      <button class="btn btn-success" onclick="copyToClipboard()">📋 스프레드시트 복사</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BRANDS = ['granysalad', 'hatkei', 'basetune'];
+const BRAND_NAMES = { granysalad: '그래니 샐러드', hatkei: '해트케', basetune: '베이스튠' };
+
+// 날짜 기본값: 어제
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+document.getElementById('date-input').value = yesterday.toISOString().split('T')[0];
+
+// 브랜드 탭
+document.querySelectorAll('.brand-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.brand-tab').forEach(t => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('.brand-panel').forEach(p => p.classList.toggle('active', p.dataset.brand === tab.dataset.brand));
+  });
+});
+
+function getVal(brand, platform, key) {
+  const el = document.querySelector(`input[data-brand="${brand}"][data-platform="${platform}"][data-key="${key}"]`);
+  return el ? (parseFloat(el.value) || 0) : 0;
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
+function fmtCell(n) { return n ? fmt(n) + '원' : '-'; }
+
+function calc() {
+  const tbody = document.getElementById('summary-tbody');
+  let rows = '';
+
+  for (const brand of BRANDS) {
+    const c24s = getVal(brand,'cafe24','sales'), c24n = getVal(brand,'cafe24','count');
+    const cpgs = getVal(brand,'coupang','sales'), cpgn = getVal(brand,'coupang','count');
+    const sss  = getVal(brand,'smartstore','sales'), ssn = getVal(brand,'smartstore','count');
+    const meta   = getVal(brand,'meta','cost');
+    const tiktok = getVal(brand,'tiktok','cost');
+    const google = getVal(brand,'google','cost');
+    const gfa    = getVal(brand,'gfa','cost');
+
+    const totalSales = c24s + cpgs + sss;
+    const totalCount = c24n + cpgn + ssn;
+    const totalCost  = meta + tiktok + google + gfa;
+
+    if (totalSales === 0 && totalCost === 0) continue;
+
+    const roas = totalCost > 0 ? Math.round(totalSales / totalCost * 100) : null;
+    const cpa  = totalCount > 0 ? Math.round(totalCost / totalCount) : null;
+    const avg  = totalCount > 0 ? Math.round(totalSales / totalCount) : null;
+    const selfRate = totalSales > 0 ? Math.round(sss / totalSales * 100) : null;
+    const roasClass = roas ? (roas >= 200 ? 'roas-good' : roas < 100 ? 'roas-bad' : '') : '';
+
+    rows += `<tr>
+      <td class="left">${BRAND_NAMES[brand]}</td>
+      <td>${fmtCell(c24s)}</td><td>${fmtCell(cpgs)}</td><td>${fmtCell(sss)}</td>
+      <td><strong>${fmtCell(totalSales)}</strong></td>
+      <td>${totalCount ? fmt(totalCount)+'건' : '-'}</td>
+      <td>${fmtCell(meta)}</td><td>${fmtCell(tiktok)}</td><td>${fmtCell(google)}</td><td>${fmtCell(gfa)}</td>
+      <td><strong>${fmtCell(totalCost)}</strong></td>
+      <td class="${roasClass}">${roas !== null ? roas+'%' : '-'}</td>
+      <td>${cpa !== null ? fmt(cpa)+'원' : '-'}</td>
+      <td>${avg !== null ? fmt(avg)+'원' : '-'}</td>
+      <td>${selfRate !== null ? selfRate+'%' : '-'}</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = rows || '<tr><td colspan="15" class="empty-row">숫자를 입력하면 자동으로 계산됩니다</td></tr>';
+}
+
+function copyToClipboard() {
+  const date = document.getElementById('date-input').value || '';
+  const lines = [];
+
+  for (const brand of BRANDS) {
+    const c24s = getVal(brand,'cafe24','sales'), c24n = getVal(brand,'cafe24','count');
+    const cpgs = getVal(brand,'coupang','sales'), cpgn = getVal(brand,'coupang','count');
+    const sss  = getVal(brand,'smartstore','sales'), ssn = getVal(brand,'smartstore','count');
+    const meta   = getVal(brand,'meta','cost');
+    const tiktok = getVal(brand,'tiktok','cost');
+    const google = getVal(brand,'google','cost');
+    const gfa    = getVal(brand,'gfa','cost');
+    const totalSales = c24s+cpgs+sss, totalCount = c24n+cpgn+ssn, totalCost = meta+tiktok+google+gfa;
+    const roas = totalCost>0 ? Math.round(totalSales/totalCost*100) : '';
+    const cpa  = totalCount>0 ? Math.round(totalCost/totalCount) : '';
+    const avg  = totalCount>0 ? Math.round(totalSales/totalCount) : '';
+    const selfRate = totalSales>0 ? Math.round(sss/totalSales*100) : '';
+    const sv0 = document.getElementById(`sv-${brand}-0`)?.value||'';
+    const sv1 = document.getElementById(`sv-${brand}-1`)?.value||'';
+    const sv2 = document.getElementById(`sv-${brand}-2`)?.value||'';
+    const memo = document.getElementById(`memo-${brand}`)?.value||'';
+
+    lines.push([
+      date, '최종',
+      c24s||'', cpgs||'', sss||'', totalSales||'',
+      c24n||'', cpgn||'', ssn||'', totalCount||'',
+      meta||'', tiktok||'', google||'', gfa||'', totalCost||'',
+      cpa ? cpa+'원' : '', roas ? roas+'%' : '',
+      avg ? avg+'원' : '', selfRate ? selfRate+'%' : '',
+      sv0, sv1, sv2, memo
+    ].join('\t'));
+  }
+
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => showToast('✅ 복사 완료! 스프레드시트에 바로 붙여넣기 하세요'))
+    .catch(() => showToast('❌ 복사 실패'));
+}
+
+function clearAll() {
+  if (!confirm('모든 입력값을 초기화할까요?')) return;
+  document.querySelectorAll('.field-input, .search-input').forEach(el => el.value = '');
+  calc();
+  showToast('🗑️ 초기화되었습니다');
+}
+
+function showToast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>
