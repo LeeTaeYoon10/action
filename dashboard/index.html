@@ -134,6 +134,11 @@
     .btn-ghost:hover { background: var(--gray-200); }
     .btn-success { background: #ECFDF5; color: var(--success); }
     .btn-success:hover { background: #D1FAE5; }
+    .btn-capture { background: #F0F9FF; color: #0284C7; }
+    .btn-capture:hover { background: #E0F2FE; }
+    .refund-input { border-color: #FCA5A5 !important; background: #FFF5F5 !important; }
+    .refund-input:focus { border-color: var(--danger) !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.08) !important; }
+    .refund-label { color: var(--danger) !important; }
 
     /* Toast */
     .toast { position: fixed; bottom: 22px; right: 22px; background: var(--gray-900); color: white; padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; z-index: 9999; }
@@ -182,18 +187,21 @@
           <div class="card-header"><div class="dot dot-cafe24"></div><span class="card-title">카페24</span></div>
           <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="cafe24" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="cafe24" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="cafe24" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
         <!-- 쿠팡 -->
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
           <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
         <!-- 스마트스토어 -->
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
           <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="granysalad" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="granysalad" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
       </div>
     </div>
@@ -243,16 +251,19 @@
           <div class="card-header"><div class="dot dot-cafe24"></div><span class="card-title">카페24</span></div>
           <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="cafe24" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="cafe24" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="cafe24" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
           <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
           <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="hatkei" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="hatkei" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
       </div>
     </div>
@@ -285,16 +296,19 @@
           <div class="card-header"><div class="dot dot-cafe24"></div><span class="card-title">카페24</span></div>
           <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="cafe24" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="cafe24" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="cafe24" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-coupang"></div><span class="card-title">쿠팡</span></div>
           <div class="field"><label class="field-label">매출 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">주문 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="coupang" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="coupang" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
         <div class="platform-card">
           <div class="card-header"><div class="dot dot-smartstore"></div><span class="card-title">스마트스토어</span></div>
           <div class="field"><label class="field-label">결제금액 (원)</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="sales" placeholder="0" oninput="calc()"></div>
           <div class="field"><label class="field-label">결제 건수</label><input type="number" class="field-input" data-brand="basetune" data-platform="smartstore" data-key="count" placeholder="0" oninput="calc()"></div>
+          <div class="field"><label class="field-label refund-label">환불금액 (원)</label><input type="number" class="field-input refund-input" data-brand="basetune" data-platform="smartstore" data-key="refund" placeholder="0" oninput="calc()"></div>
         </div>
       </div>
     </div>
@@ -342,6 +356,7 @@
     </div>
     <div class="action-row">
       <button class="btn btn-ghost" onclick="clearAll()">🗑️ 전체 초기화</button>
+      <button class="btn btn-capture" onclick="captureResult()">📸 결과 캡처</button>
       <button class="btn btn-success" onclick="copyToClipboard()">📋 스프레드시트 복사</button>
     </div>
   </div>
@@ -378,9 +393,12 @@ function calc() {
   let rows = '';
 
   for (const brand of BRANDS) {
-    const c24s = getVal(brand,'cafe24','sales'), c24n = getVal(brand,'cafe24','count');
-    const cpgs = getVal(brand,'coupang','sales'), cpgn = getVal(brand,'coupang','count');
-    const sss  = getVal(brand,'smartstore','sales'), ssn = getVal(brand,'smartstore','count');
+    const c24s = getVal(brand,'cafe24','sales') - getVal(brand,'cafe24','refund');
+    const c24n = getVal(brand,'cafe24','count');
+    const cpgs = getVal(brand,'coupang','sales') - getVal(brand,'coupang','refund');
+    const cpgn = getVal(brand,'coupang','count');
+    const sss  = getVal(brand,'smartstore','sales') - getVal(brand,'smartstore','refund');
+    const ssn  = getVal(brand,'smartstore','count');
     const meta   = getVal(brand,'meta','cost');
     const tiktok = getVal(brand,'tiktok','cost');
     const google = getVal(brand,'google','cost');
@@ -420,9 +438,12 @@ function copyToClipboard() {
   const lines = [];
 
   for (const brand of BRANDS) {
-    const c24s = getVal(brand,'cafe24','sales'), c24n = getVal(brand,'cafe24','count');
-    const cpgs = getVal(brand,'coupang','sales'), cpgn = getVal(brand,'coupang','count');
-    const sss  = getVal(brand,'smartstore','sales'), ssn = getVal(brand,'smartstore','count');
+    const c24s = getVal(brand,'cafe24','sales') - getVal(brand,'cafe24','refund');
+    const c24n = getVal(brand,'cafe24','count');
+    const cpgs = getVal(brand,'coupang','sales') - getVal(brand,'coupang','refund');
+    const cpgn = getVal(brand,'coupang','count');
+    const sss  = getVal(brand,'smartstore','sales') - getVal(brand,'smartstore','refund');
+    const ssn  = getVal(brand,'smartstore','count');
     const meta   = getVal(brand,'meta','cost');
     const tiktok = getVal(brand,'tiktok','cost');
     const google = getVal(brand,'google','cost');
@@ -451,6 +472,39 @@ function copyToClipboard() {
   navigator.clipboard.writeText(lines.join('\n'))
     .then(() => showToast('✅ 복사 완료! 스프레드시트에 바로 붙여넣기 하세요'))
     .catch(() => showToast('❌ 복사 실패'));
+}
+
+async function captureResult() {
+  const section = document.querySelector('.section:last-of-type');
+  const date = document.getElementById('date-input').value || '날짜미정';
+
+  try {
+    // html2canvas 동적 로드
+    if (!window.html2canvas) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    showToast('📸 캡처 중...');
+    const canvas = await html2canvas(section, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    const link = document.createElement('a');
+    link.download = `광고데이터_${date}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ 이미지 저장 완료!');
+  } catch (e) {
+    showToast('❌ 캡처 실패: ' + e.message);
+  }
 }
 
 function clearAll() {
