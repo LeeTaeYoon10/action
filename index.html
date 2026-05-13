@@ -378,6 +378,70 @@
                     <input type="file" id="googleads" accept="image/*" onchange="handleFileSelect(event, 'googleads')">
                     <div id="preview-googleads"></div>
                 </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">👍</span>
+                        메타 Ads
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('metaads').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="metaads" accept="image/*" onchange="handleFileSelect(event, 'metaads')">
+                    <div id="preview-metaads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">🎵</span>
+                        틱톡 Ads
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('tiktokads').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="tiktokads" accept="image/*" onchange="handleFileSelect(event, 'tiktokads')">
+                    <div id="preview-tiktokads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">🔍</span>
+                        네이버 GFA
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('navergfa').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="navergfa" accept="image/*" onchange="handleFileSelect(event, 'navergfa')">
+                    <div id="preview-navergfa"></div>
+                </div>
+            </div>
+
+            <div class="platform-card" style="margin-bottom: 20px;">
+                <div class="platform-title">💰 GFA 비용 직접 입력</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">메타</label>
+                        <input type="number" id="meta-cost-granny" placeholder="비용" oninput="updateSummary('meta-cost-granny', 'meta-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">틱톡</label>
+                        <input type="number" id="tiktok-cost-granny" placeholder="비용" oninput="updateSummary('tiktok-cost-granny', 'tiktok-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">구글</label>
+                        <input type="number" id="google-cost-granny" placeholder="비용" oninput="updateSummary('google-cost-granny', 'google-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">네이버 GFA</label>
+                        <input type="number" id="naver-cost-granny" placeholder="비용" oninput="updateSummary('naver-cost-granny', 'naver-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                </div>
             </div>
 
             <div class="summary-section">
@@ -396,8 +460,20 @@
                         <div class="summary-value" id="smartstore-total">-</div>
                     </div>
                     <div class="summary-item">
-                        <div class="summary-label">Google Ads</div>
-                        <div class="summary-value" id="googleads-total">-</div>
+                        <div class="summary-label">메타</div>
+                        <div class="summary-value" id="meta-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">틱톡</div>
+                        <div class="summary-value" id="tiktok-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">구글</div>
+                        <div class="summary-value" id="google-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">네이버 GFA</div>
+                        <div class="summary-value" id="naver-total">-</div>
                     </div>
                 </div>
             </div>
@@ -461,6 +537,70 @@
                     <input type="file" id="hatke-googleads" accept="image/*" onchange="handleFileSelect(event, 'hatke-googleads')">
                     <div id="preview-hatke-googleads"></div>
                 </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">👍</span>
+                        메타 Ads
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-metaads').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="hatke-metaads" accept="image/*" onchange="handleFileSelect(event, 'hatke-metaads')">
+                    <div id="preview-hatke-metaads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">🎵</span>
+                        틱톡 Ads
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-tiktokads').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="hatke-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'hatke-tiktokads')">
+                    <div id="preview-hatke-tiktokads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">🔍</span>
+                        네이버 GFA
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-navergfa').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="hatke-navergfa" accept="image/*" onchange="handleFileSelect(event, 'hatke-navergfa')">
+                    <div id="preview-hatke-navergfa"></div>
+                </div>
+            </div>
+
+            <div class="platform-card" style="margin-bottom: 20px;">
+                <div class="platform-title">💰 GFA 비용 직접 입력</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">메타</label>
+                        <input type="number" id="meta-cost-hatke" placeholder="비용" oninput="updateSummary('meta-cost-hatke', 'hatke-meta-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">틱톡</label>
+                        <input type="number" id="tiktok-cost-hatke" placeholder="비용" oninput="updateSummary('tiktok-cost-hatke', 'hatke-tiktok-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">구글</label>
+                        <input type="number" id="google-cost-hatke" placeholder="비용" oninput="updateSummary('google-cost-hatke', 'hatke-google-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">네이버 GFA</label>
+                        <input type="number" id="naver-cost-hatke" placeholder="비용" oninput="updateSummary('naver-cost-hatke', 'hatke-naver-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                </div>
             </div>
 
             <div class="summary-section">
@@ -479,8 +619,20 @@
                         <div class="summary-value" id="hatke-smartstore-total">-</div>
                     </div>
                     <div class="summary-item">
-                        <div class="summary-label">Google Ads</div>
-                        <div class="summary-value" id="hatke-googleads-total">-</div>
+                        <div class="summary-label">메타</div>
+                        <div class="summary-value" id="hatke-meta-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">틱톡</div>
+                        <div class="summary-value" id="hatke-tiktok-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">구글</div>
+                        <div class="summary-value" id="hatke-google-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">네이버 GFA</div>
+                        <div class="summary-value" id="hatke-naver-total">-</div>
                     </div>
                 </div>
             </div>
@@ -544,6 +696,70 @@
                     <input type="file" id="basetune-googleads" accept="image/*" onchange="handleFileSelect(event, 'basetune-googleads')">
                     <div id="preview-basetune-googleads"></div>
                 </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">👍</span>
+                        메타 Ads
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-metaads').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="basetune-metaads" accept="image/*" onchange="handleFileSelect(event, 'basetune-metaads')">
+                    <div id="preview-basetune-metaads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">🎵</span>
+                        틱톡 Ads
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-tiktokads').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="basetune-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'basetune-tiktokads')">
+                    <div id="preview-basetune-tiktokads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title">
+                        <span class="platform-icon">🔍</span>
+                        네이버 GFA
+                    </div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-navergfa').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">클릭 또는 드래그</div>
+                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                    </div>
+                    <input type="file" id="basetune-navergfa" accept="image/*" onchange="handleFileSelect(event, 'basetune-navergfa')">
+                    <div id="preview-basetune-navergfa"></div>
+                </div>
+            </div>
+
+            <div class="platform-card" style="margin-bottom: 20px;">
+                <div class="platform-title">💰 GFA 비용 직접 입력</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">메타</label>
+                        <input type="number" id="meta-cost-basetune" placeholder="비용" oninput="updateSummary('meta-cost-basetune', 'basetune-meta-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">틱톡</label>
+                        <input type="number" id="tiktok-cost-basetune" placeholder="비용" oninput="updateSummary('tiktok-cost-basetune', 'basetune-tiktok-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">구글</label>
+                        <input type="number" id="google-cost-basetune" placeholder="비용" oninput="updateSummary('google-cost-basetune', 'basetune-google-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">네이버 GFA</label>
+                        <input type="number" id="naver-cost-basetune" placeholder="비용" oninput="updateSummary('naver-cost-basetune', 'basetune-naver-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    </div>
+                </div>
             </div>
 
             <div class="summary-section">
@@ -562,8 +778,20 @@
                         <div class="summary-value" id="basetune-smartstore-total">-</div>
                     </div>
                     <div class="summary-item">
-                        <div class="summary-label">Google Ads</div>
-                        <div class="summary-value" id="basetune-googleads-total">-</div>
+                        <div class="summary-label">메타</div>
+                        <div class="summary-value" id="basetune-meta-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">틱톡</div>
+                        <div class="summary-value" id="basetune-tiktok-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">구글</div>
+                        <div class="summary-value" id="basetune-google-total">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">네이버 GFA</div>
+                        <div class="summary-value" id="basetune-naver-total">-</div>
                     </div>
                 </div>
             </div>
@@ -677,11 +905,21 @@
             `;
         }
 
-        function updateSummary(platformId, numbers) {
-            const firstNumber = numbers.length > 0 ? numbers[0] : '-';
-            const summaryElement = document.getElementById(`${platformId}-total`);
-            if (summaryElement) {
-                summaryElement.textContent = firstNumber;
+        function updateSummary(inputIdOrPlatformId, summaryIdOrNumbers) {
+            // 이미지에서 호출된 경우 (두 번째 인자가 배열)
+            if (Array.isArray(summaryIdOrNumbers)) {
+                const firstNumber = summaryIdOrNumbers.length > 0 ? summaryIdOrNumbers[0] : '-';
+                const summaryElement = document.getElementById(`${inputIdOrPlatformId}-total`);
+                if (summaryElement) {
+                    summaryElement.textContent = firstNumber;
+                }
+            } else {
+                // 입력 필드에서 호출된 경우 (문자열)
+                const inputValue = document.getElementById(inputIdOrPlatformId).value;
+                const summaryElement = document.getElementById(summaryIdOrNumbers);
+                if (summaryElement) {
+                    summaryElement.textContent = inputValue || '-';
+                }
             }
         }
 
