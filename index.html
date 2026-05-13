@@ -649,10 +649,18 @@
             const regex = /[\d,]+(?:\.\d+)?/g;
             const matches = text.match(regex) || [];
             const numbers = [];
+
             matches.forEach(match => {
                 const num = match.replace(/,/g, '');
-                if (!isNaN(num) && num.trim()) numbers.push(num);
+                if (!isNaN(num) && num.trim()) {
+                    const numValue = parseFloat(num);
+                    // 1,000 이상의 큰 숫자만 추출 (매출/비용)
+                    if (numValue >= 1000) {
+                        numbers.push(num);
+                    }
+                }
             });
+
             return numbers.slice(0, 10);
         }
 
