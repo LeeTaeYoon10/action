@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.2 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.3 · 버전 기록</button>
   </div>
 </div>
 
@@ -1319,6 +1319,7 @@ function buildTikTokTable(){
         <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
       grp.ads.forEach(ad=>{
+        if(!ad.cost) return; // 비용 0 소재 숨김
         const adHide=(isC||isG)?'style="display:none"':'';
         const aKey='tk__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
 
