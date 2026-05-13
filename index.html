@@ -1424,19 +1424,27 @@ function downloadScreenshot() {
       ${m.html}`;
     document.body.appendChild(container);
 
-    // 두 프레임 대기 후 실제 scrollHeight 측정
+    // 렌더링 후 scrollHeight 측정 → 높이 명시 고정 → 캡처
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const w = 1400;
       const h = container.scrollHeight;
+      // 높이를 명시적으로 고정해야 html2canvas가 전체를 캡처함
+      container.style.height = h + 'px';
+      container.style.overflow = 'hidden';
+
+      // body 높이도 확보해서 잘림 방지
+      const prevMinH = document.body.style.minHeight;
+      document.body.style.minHeight = (h + 100) + 'px';
 
       html2canvas(container, {
         scale: 2, backgroundColor: '#0f1117',
         logging: false, useCORS: true, allowTaint: true,
         width: w, height: h,
-        windowWidth: w, windowHeight: h,
+        windowWidth: w, windowHeight: h + 100,
         scrollX: 0, scrollY: 0,
         x: 0, y: 0
       }).then(canvas => {
+        document.body.style.minHeight = prevMinH;
         document.body.removeChild(container);
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
@@ -1445,6 +1453,7 @@ function downloadScreenshot() {
         link.click();
         setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 300);
       }).catch(err => {
+        document.body.style.minHeight = prevMinH;
         if (document.body.contains(container)) document.body.removeChild(container);
         console.error('스크린샷 오류:', err);
         btn.disabled = false;
