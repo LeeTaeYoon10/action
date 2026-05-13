@@ -646,20 +646,42 @@
         }
 
         function extractNumbers(text) {
-            const regex = /[\d,]+(?:\.\d+)?/g;
-            const matches = text.match(regex) || [];
             const numbers = [];
 
-            matches.forEach(match => {
-                const num = match.replace(/,/g, '');
-                if (!isNaN(num) && num.trim()) {
+            // "오늘" 또는 현재 날짜 찾기
+            const todayPattern = /오늘|today|\d+월\s*\d+일/i;
+            const todayMatch = text.match(todayPattern);
+
+            if (todayMatch) {
+                // 오늘 관련 텍스트 주변의 금액 추출
+                const todayIndex = text.indexOf(todayMatch[0]);
+                const nearbyText = text.substring(todayIndex, todayIndex + 200);
+
+                const amountRegex = /[\d,]+(?:\.\d+)?/g;
+                const amountMatches = nearbyText.match(amountRegex) || [];
+
+                amountMatches.forEach(match => {
+                    const num = match.replace(/,/g, '');
                     const numValue = parseFloat(num);
-                    // 1,000 이상의 큰 숫자만 추출 (매출/비용)
-                    if (numValue >= 1000) {
+                    // 100,000 이상의 금액만 추출 (카페24, 쿠팡 매출)
+                    if (numValue >= 100000) {
                         numbers.push(num);
                     }
-                }
-            });
+                });
+            }
+
+            // 날짜 근처에서 금액을 찾지 못한 경우, 모든 큰 금액 추출
+            if (numbers.length === 0) {
+                const regex = /[\d,]+(?:\.\d+)?/g;
+                const matches = text.match(regex) || [];
+                matches.forEach(match => {
+                    const num = match.replace(/,/g, '');
+                    const numValue = parseFloat(num);
+                    if (numValue >= 100000) {
+                        numbers.push(num);
+                    }
+                });
+            }
 
             return numbers.slice(0, 10);
         }
