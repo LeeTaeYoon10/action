@@ -1,1001 +1,1493 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>판매 데이터 관리</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마케팅 액션 툴</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-        }
+/* ── Brand Themes ─────────────────── */
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3348;
+  --text: #e2e8f0; --muted: #8892a4; --accent: #4f7fff;
+  --red: #ef4444; --yellow: #f59e0b; --green: #22c55e;
+  --red-bg: rgba(239,68,68,0.12); --yellow-bg: rgba(245,158,11,0.12); --green-bg: rgba(34,197,94,0.12);
+  --brand-primary: #4f7fff; --brand-secondary: #3d6ef0; --brand-name: '브랜드';
+}
+body.brand-granny {
+  --accent: #4CAF73; --brand-primary: #4CAF73; --brand-secondary: #3a9960;
+}
+body.brand-basetune {
+  --accent: #7C6AE8; --brand-primary: #7C6AE8; --brand-secondary: #6857d4;
+}
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  min-height: 100vh; font-size: 13px;
+}
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
+/* ── Brand Selector ───────────────── */
+.brand-selector-wrap {
+  position: fixed; inset: 0; background: #0a0c12;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 999; gap: 48px;
+}
+.brand-selector-title {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--muted);
+}
+.brand-cards {
+  display: flex; gap: 20px;
+}
+.brand-card {
+  width: 220px; border-radius: 16px; padding: 36px 28px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  cursor: pointer; transition: all 0.2s; text-align: center;
+  position: relative; overflow: hidden;
+}
+.brand-card::before {
+  content: ''; position: absolute; inset: 0;
+  opacity: 0; transition: opacity 0.2s;
+}
+.brand-card.granny::before { background: radial-gradient(circle at 50% 0%, rgba(76,175,115,0.15), transparent 70%); }
+.brand-card.basetune::before { background: radial-gradient(circle at 50% 0%, rgba(124,106,232,0.15), transparent 70%); }
+.brand-card:hover { transform: translateY(-4px); }
+.brand-card.granny:hover { border-color: #4CAF73; }
+.brand-card.basetune:hover { border-color: #7C6AE8; }
+.brand-card-emoji { font-size: 40px; margin-bottom: 14px; position: relative; }
+.brand-card-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; position: relative; }
+.brand-card.granny .brand-card-name { color: #4CAF73; }
+.brand-card.basetune .brand-card-name { color: #7C6AE8; }
+.brand-card-sub { font-size: 11px; color: var(--muted); position: relative; }
 
-        .header h1 {
-            font-size: 2.2em;
-            margin-bottom: 5px;
-        }
+/* ── Header ───────────────────────── */
+.header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 28px; border-bottom: 1px solid var(--border);
+  background: var(--surface); position: sticky; top: 0; z-index: 50;
+}
+.brand-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  box-shadow: 0 0 8px var(--accent);
+}
+.brand-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: 20px; border: 1px solid var(--accent);
+  color: var(--accent); cursor: pointer; transition: all 0.15s;
+  background: transparent;
+}
+.brand-badge:hover { background: var(--accent); color: #fff; }
+.header-title { font-size: 14px; font-weight: 700; }
+.header-title span { color: var(--accent); }
+.header-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.header-badge {
+  background: rgba(255,255,255,0.06); color: var(--muted);
+  font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  cursor: pointer; border: 1px solid var(--border); transition: all 0.15s;
+}
+.header-badge:hover { color: var(--text); border-color: var(--text); }
 
-        .header p {
-            opacity: 0.9;
-            font-size: 0.95em;
-        }
+/* ── Settings Panel ───────────────── */
+.settings-panel {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 16px 28px; display: none;
+}
+.settings-panel.open { display: block; }
+.settings-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+.settings-grid { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-end; }
+.settings-group { display: flex; flex-direction: column; gap: 6px; }
+.settings-label { font-size: 10px; color: var(--muted); }
+.settings-row { display: flex; gap: 8px; align-items: center; }
+.settings-input {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; padding: 6px 10px;
+  border-radius: 8px; outline: none; width: 100px;
+}
+.settings-input:focus { border-color: var(--accent); }
+.settings-unit { font-size: 11px; color: var(--muted); }
 
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: white;
-            padding: 12px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            overflow-x: auto;
-        }
+/* ── Main ─────────────────────────── */
+.main { max-width: 1600px; margin: 0 auto; padding: 24px 28px; }
+.section-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
 
-        .tab-btn {
-            padding: 10px 20px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 0.95em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: #333;
-            white-space: nowrap;
-        }
+/* ── Upload ───────────────────────── */
+.upload-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 14px; }
+.upload-card {
+  background: var(--surface); border: 1.5px dashed var(--border);
+  border-radius: 10px; padding: 18px 14px; text-align: center;
+  cursor: pointer; transition: all 0.18s; position: relative;
+}
+.upload-card:hover { border-color: var(--accent); background: var(--surface2); }
+.upload-card.dragover { border-color: var(--accent); background: rgba(79,127,255,0.08); }
+.upload-card.loaded { border-color: var(--green); border-style: solid; }
+.upload-card.loaded .u-icon { color: var(--green); }
+.u-icon { font-size: 22px; margin-bottom: 6px; color: var(--muted); }
+.u-label { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.u-sub { font-size: 10px; color: var(--muted); }
+.u-fn { font-size: 10px; color: var(--green); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upload-card input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
-        .tab-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-        }
+/* ── Date row ─────────────────────── */
+.date-row {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.date-group { display: flex; align-items: center; gap: 8px; }
+.date-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.date-input {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; padding: 5px 10px; border-radius: 6px; outline: none;
+}
+.date-input:focus { border-color: var(--accent); }
+.date-sep { color: var(--muted); font-size: 11px; }
 
-        .tab-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
+/* ── Buttons ──────────────────────── */
+.action-row { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 24px; }
+.btn { padding: 8px 18px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.18s; font-family: inherit; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--border); }
 
-        .tab-content {
-            display: none;
-        }
+/* ── History chips ────────────────── */
+.hist-section { margin-bottom: 14px; }
+.hist-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hist-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px 4px 10px;
+  font-size: 11px; cursor: pointer; transition: all 0.15s; color: var(--text);
+}
+.hist-chip:hover { border-color: var(--accent); color: var(--accent); }
+.hist-chip .hist-del { color: var(--muted); font-size: 12px; line-height: 1; padding: 0 2px; background: none; border: none; cursor: pointer; }
+.hist-chip .hist-del:hover { color: var(--red); }
+.hist-empty { font-size: 11px; color: var(--border); }
 
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
+/* ── Summary ──────────────────────── */
+.summary-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.s-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; min-width: 110px; }
+.s-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.s-val { font-size: 17px; font-weight: 700; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+/* ── Search Bar ───────────────────── */
+.search-bar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+.search-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 12px; padding: 8px 12px; border-radius: 8px; outline: none; flex: 0 1 200px; }
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--muted); }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 25px;
-        }
+/* ── Tabs ─────────────────────────── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tab { padding: 9px 16px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.18s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-n { background: var(--surface2); font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-left: 4px; }
 
-        .date-input-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            margin-bottom: 20px;
-        }
+/* ── Table ────────────────────────── */
+.table-wrap { overflow: auto; max-height: calc(100vh - 280px); border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: var(--surface2); color: var(--muted); font-weight: 600; padding: 9px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; cursor: pointer; user-select: none; }
+th:hover { background: var(--border); }
+td { padding: 7px 10px; border-bottom: 1px solid rgba(46,51,72,0.4); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.row-camp td { background: rgba(79,127,255,0.06); }
+.row-camp .name-cell { font-weight: 700; font-size: 12px; }
+.row-grp td { background: rgba(255,255,255,0.01); }
+.row-grp .name-cell { padding-left: 18px; color: var(--muted); font-weight: 500; font-size: 11px; }
+.row-ad .name-cell { padding-left: 34px; font-size: 11px; }
+.toggle-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 9px; padding: 2px 4px; margin-right: 4px; transition: all 0.15s; line-height: 1; }
+.toggle-btn:hover { color: var(--text); }
+.m-danger { color: var(--red); font-weight: 600; }
+.m-warn { color: var(--yellow); }
+.m-good { color: var(--green); font-weight: 600; }
+.m-na { color: var(--border); }
 
-        .date-input-section label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-        }
+/* ── Action & Budget ──────────────── */
+.act-sel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 3px 6px; border-radius: 6px; cursor: pointer; outline: none; min-width: 76px; font-family: inherit; }
+.act-sel.a-off   { border-color: var(--red);   color: var(--red);   background: var(--red-bg); }
+.act-sel.a-up    { border-color: var(--green);  color: var(--green); background: var(--green-bg); }
+.act-sel.a-down  { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-bg); }
+.act-sel.a-watch { border-color: var(--accent); color: var(--accent); background: rgba(79,127,255,0.1); }
+.budget-wrap { display: flex; align-items: center; gap: 3px; }
+.budget-in { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 3px 6px; border-radius: 6px; width: 46px; outline: none; text-align: center; font-family: inherit; }
+.budget-in:focus { border-color: var(--accent); }
+.budget-arrow { color: var(--border); font-size: 10px; }
+.memo-in { background: transparent; border: none; color: var(--muted); font-size: 11px; width: 110px; outline: none; font-family: inherit; }
+.memo-in::placeholder { color: var(--border); }
+.memo-in:focus { color: var(--text); }
 
-        .date-input-section input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
-        }
+/* ── Badges ───────────────────────── */
+.badge-pmax { display: inline-block; background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
+.badge-obj { display: inline-block; border: 1px solid; border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
+/* ── Session banner ───────────────── */
+.session-banner { display: none; align-items: center; gap: 12px; background: rgba(79,127,255,0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px; }
+.session-banner.show { display: flex; }
+.session-banner-text { flex: 1; color: var(--accent); font-weight: 600; }
 
-        .data-table thead {
-            background: #667eea;
-            color: white;
-        }
+/* ── Sort Indicator ───────────────── */
+.sort-indicator { font-size: 9px; color: var(--accent); margin-left: 4px; }
 
-        .data-table th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
+/* ── Empty ────────────────────────── */
+.empty { text-align: center; padding: 60px 0; color: var(--muted); font-size: 13px; }
+.empty-icon { font-size: 38px; margin-bottom: 10px; }
 
-        .data-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-        }
+/* ── Modals ───────────────────────── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 660px; max-height: 82vh; overflow-y: auto; padding: 26px; }
+.modal h2 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.modal-close { float: right; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 17px; }
+.modal-datepicker { width: 480px; }
+.date-list-item { display: flex; align-items: center; padding: 12px 14px; border-radius: 8px; cursor: pointer; transition: background 0.15s; gap: 10px; }
+.date-list-item:hover { background: var(--surface2); }
+.date-list-info { flex: 1; }
+.date-list-name { font-size: 13px; font-weight: 600; }
+.date-list-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.date-list-del { color: var(--muted); background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px; border-radius: 4px; }
+.date-list-del:hover { color: var(--red); background: var(--red-bg); }
+.ver-list { display: flex; flex-direction: column; gap: 0; }
+.ver-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.ver-item:last-child { border-bottom: none; }
+.ver-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ver-badge { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 10px; background: var(--surface2); color: var(--accent); border: 1px solid var(--accent); white-space: nowrap; }
+.ver-badge.latest { background: var(--accent); color: #fff; }
+.ver-title { font-size: 13px; font-weight: 600; }
+.ver-date { font-size: 11px; color: var(--muted); margin-left: auto; }
+.ver-features { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.ver-features li { font-size: 12px; color: var(--muted); padding-left: 14px; position: relative; }
+.ver-features li::before { content: '·'; position: absolute; left: 4px; color: var(--border); }
 
-        .data-table tbody tr:hover {
-            background: #f8f9ff;
-        }
-
-        .platforms-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .platform-card {
-            background: white;
-            border-radius: 10px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-
-        .platform-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
-        }
-
-        .platform-title {
-            font-size: 1.1em;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .platform-icon {
-            font-size: 1.4em;
-        }
-
-        .upload-zone {
-            border: 3px dashed #667eea;
-            border-radius: 8px;
-            padding: 25px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9ff;
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-        }
-
-        .upload-zone:hover {
-            background: #eff1ff;
-            border-color: #764ba2;
-            transform: scale(1.01);
-        }
-
-        .upload-zone.dragover {
-            background: #e8ebff;
-            border-color: #764ba2;
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 2.2em;
-        }
-
-        .upload-main-text {
-            color: #667eea;
-            font-weight: 700;
-            font-size: 1em;
-        }
-
-        .upload-sub-text {
-            color: #666;
-            font-size: 0.85em;
-        }
-
-        .upload-hint {
-            background: #fff3cd;
-            color: #856404;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            margin-top: 8px;
-            font-weight: 600;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .image-preview {
-            margin-top: 12px;
-            border-radius: 8px;
-            overflow: hidden;
-            max-width: 100%;
-        }
-
-        .image-preview img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .extracted-data {
-            margin-top: 12px;
-            padding: 12px;
-            background: #f5f5f5;
-            border-radius: 6px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .extracted-data h4 {
-            margin-bottom: 8px;
-            color: #333;
-            font-size: 0.85em;
-        }
-
-        .number-item {
-            background: white;
-            padding: 6px 10px;
-            margin: 4px 0;
-            border-left: 3px solid #667eea;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.85em;
-            color: #333;
-        }
-
-        .processing {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: #fff3cd;
-            color: #856404;
-            border-radius: 6px;
-            margin-top: 8px;
-            font-size: 0.85em;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid #856404;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .cost-input-section {
-            background: white;
-            border-radius: 10px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            margin-bottom: 20px;
-        }
-
-        .cost-input-section h3 {
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 1.05em;
-        }
-
-        .cost-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 10px;
-        }
-
-        .cost-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .cost-item label {
-            font-size: 0.8em;
-            color: #666;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .cost-item input {
-            padding: 8px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .cost-item input:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
-        .summary-section {
-            background: white;
-            border-radius: 10px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            margin-top: 20px;
-        }
-
-        .summary-title {
-            font-size: 1.15em;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-        }
-
-        .summary-item {
-            background: #f8f9ff;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            border-left: 4px solid #667eea;
-        }
-
-        .summary-label {
-            color: #666;
-            font-size: 0.75em;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .summary-value {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #667eea;
-            font-family: monospace;
-        }
-
-        .footer {
-            text-align: center;
-            color: #999;
-            margin-top: 30px;
-            font-size: 0.9em;
-        }
-
-        .export-btn {
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .export-btn:hover {
-            background: #764ba2;
-        }
-    </style>
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 판매 데이터 관리</h1>
-            <p>💡 팁: 이미지 업로드 영역을 <strong>클릭</strong>하거나 <strong>Ctrl+V</strong>로 바로 붙여넣기 가능</p>
-        </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard')">📈 대시보드</button>
-            <button class="tab-btn" onclick="switchTab('grannysolad')">그래니 샐러드</button>
-            <button class="tab-btn" onclick="switchTab('hatke')">해트케</button>
-            <button class="tab-btn" onclick="switchTab('basetune')">베이스튠</button>
-        </div>
-
-        <!-- 대시보드 탭 -->
-        <div id="dashboard" class="tab-content active">
-            <div class="date-input-section">
-                <label for="dashboard-date">📅 조회 날짜</label>
-                <input type="date" id="dashboard-date" onchange="updateDashboard()">
-            </div>
-
-            <div class="summary-section">
-                <div class="summary-title">📊 일일 요약</div>
-                <div class="summary-grid" id="dashboard-summary">
-                    <div class="summary-item"><div class="summary-label">그래니</div><div class="summary-value">-</div></div>
-                    <div class="summary-item"><div class="summary-label">해트케</div><div class="summary-value">-</div></div>
-                    <div class="summary-item"><div class="summary-label">베이스튠</div><div class="summary-value">-</div></div>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; text-align: center;">
-                <p style="color: #999; font-size: 0.9em;">📌 날짜를 선택하면 그 날짜의 모든 판매 데이터가 표시됩니다</p>
-            </div>
-        </div>
-
-        <!-- 그래니 샐러드 -->
-        <div id="grannysolad" class="tab-content">
-            <div class="date-input-section">
-                <label for="date-granny">📅 날짜</label>
-                <input type="date" id="date-granny">
-            </div>
-
-            <div class="platforms-grid">
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🛍️</span> 카페24</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="cafe24" accept="image/*" onchange="handleFileSelect(event, 'cafe24')" style="display:none;">
-                    <div id="preview-cafe24"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">📦</span> 쿠팡</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="coupang" accept="image/*" onchange="handleFileSelect(event, 'coupang')" style="display:none;">
-                    <div id="preview-coupang"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🏪</span> 스마트스토어</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="smartstore" accept="image/*" onchange="handleFileSelect(event, 'smartstore')" style="display:none;">
-                    <div id="preview-smartstore"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">👍</span> 메타</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="metaads" accept="image/*" onchange="handleFileSelect(event, 'metaads')" style="display:none;">
-                    <div id="preview-metaads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🎵</span> 틱톡</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="tiktokads" accept="image/*" onchange="handleFileSelect(event, 'tiktokads')" style="display:none;">
-                    <div id="preview-tiktokads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🔍</span> 네이버 GFA</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="navergfa" accept="image/*" onchange="handleFileSelect(event, 'navergfa')" style="display:none;">
-                    <div id="preview-navergfa"></div>
-                </div>
-            </div>
-
-            <div class="cost-input-section">
-                <h3>💰 GFA 비용 직접 입력</h3>
-                <div class="cost-grid">
-                    <div class="cost-item">
-                        <label>메타</label>
-                        <input type="number" id="meta-cost-granny" placeholder="0">
-                    </div>
-                    <div class="cost-item">
-                        <label>틱톡</label>
-                        <input type="number" id="tiktok-cost-granny" placeholder="0">
-                    </div>
-                    <div class="cost-item">
-                        <label>구글</label>
-                        <input type="number" id="google-cost-granny" placeholder="0">
-                    </div>
-                    <div class="cost-item">
-                        <label>네이버</label>
-                        <input type="number" id="naver-cost-granny" placeholder="0">
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <div class="summary-title">📈 그래니 샐러드 - 오늘의 요약</div>
-                <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">카페24</div><div class="summary-value" id="cafe24-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">쿠팡</div><div class="summary-value" id="coupang-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">스마트스토어</div><div class="summary-value" id="smartstore-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">메타</div><div class="summary-value" id="meta-cost-granny-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">틱톡</div><div class="summary-value" id="tiktok-cost-granny-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">구글</div><div class="summary-value" id="google-cost-granny-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">네이버</div><div class="summary-value" id="naver-cost-granny-display">-</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 해트케 -->
-        <div id="hatke" class="tab-content" style="display:none;">
-            <div class="date-input-section">
-                <label for="date-hatke">📅 날짜</label>
-                <input type="date" id="date-hatke">
-            </div>
-
-            <div class="platforms-grid">
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🛍️</span> 카페24</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="hatke-cafe24" accept="image/*" onchange="handleFileSelect(event, 'hatke-cafe24')" style="display:none;">
-                    <div id="preview-hatke-cafe24"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">📦</span> 쿠팡</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="hatke-coupang" accept="image/*" onchange="handleFileSelect(event, 'hatke-coupang')" style="display:none;">
-                    <div id="preview-hatke-coupang"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🏪</span> 스마트스토어</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="hatke-smartstore" accept="image/*" onchange="handleFileSelect(event, 'hatke-smartstore')" style="display:none;">
-                    <div id="preview-hatke-smartstore"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">👍</span> 메타</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="hatke-metaads" accept="image/*" onchange="handleFileSelect(event, 'hatke-metaads')" style="display:none;">
-                    <div id="preview-hatke-metaads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🎵</span> 틱톡</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="hatke-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'hatke-tiktokads')" style="display:none;">
-                    <div id="preview-hatke-tiktokads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🔍</span> 네이버 GFA</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="hatke-navergfa" accept="image/*" onchange="handleFileSelect(event, 'hatke-navergfa')" style="display:none;">
-                    <div id="preview-hatke-navergfa"></div>
-                </div>
-            </div>
-
-            <div class="cost-input-section">
-                <h3>💰 광고 비용 직접 입력</h3>
-                <div class="cost-grid">
-                    <div class="cost-item"><label>메타</label><input type="number" id="meta-cost-hatke" placeholder="0"></div>
-                    <div class="cost-item"><label>틱톡</label><input type="number" id="tiktok-cost-hatke" placeholder="0"></div>
-                    <div class="cost-item"><label>구글</label><input type="number" id="google-cost-hatke" placeholder="0"></div>
-                    <div class="cost-item"><label>네이버</label><input type="number" id="naver-cost-hatke" placeholder="0"></div>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <div class="summary-title">📈 해트케 - 오늘의 요약</div>
-                <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">카페24</div><div class="summary-value" id="hatke-cafe24-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">쿠팡</div><div class="summary-value" id="hatke-coupang-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">스마트스토어</div><div class="summary-value" id="hatke-smartstore-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">메타</div><div class="summary-value" id="meta-cost-hatke-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">틱톡</div><div class="summary-value" id="tiktok-cost-hatke-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">구글</div><div class="summary-value" id="google-cost-hatke-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">네이버</div><div class="summary-value" id="naver-cost-hatke-display">-</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 베이스튠 -->
-        <div id="basetune" class="tab-content" style="display:none;">
-            <div class="date-input-section">
-                <label for="date-basetune">📅 날짜</label>
-                <input type="date" id="date-basetune">
-            </div>
-
-            <div class="platforms-grid">
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🛍️</span> 카페24</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="basetune-cafe24" accept="image/*" onchange="handleFileSelect(event, 'basetune-cafe24')" style="display:none;">
-                    <div id="preview-basetune-cafe24"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">📦</span> 쿠팡</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="basetune-coupang" accept="image/*" onchange="handleFileSelect(event, 'basetune-coupang')" style="display:none;">
-                    <div id="preview-basetune-coupang"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🏪</span> 스마트스토어</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="basetune-smartstore" accept="image/*" onchange="handleFileSelect(event, 'basetune-smartstore')" style="display:none;">
-                    <div id="preview-basetune-smartstore"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">👍</span> 메타</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="basetune-metaads" accept="image/*" onchange="handleFileSelect(event, 'basetune-metaads')" style="display:none;">
-                    <div id="preview-basetune-metaads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🎵</span> 틱톡</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="basetune-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'basetune-tiktokads')" style="display:none;">
-                    <div id="preview-basetune-tiktokads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title"><span class="platform-icon">🔍</span> 네이버 GFA</div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <div class="upload-icon">📱</div>
-                        <div class="upload-main-text">스크린샷 붙여넣기</div>
-                        <div class="upload-sub-text">드래그하거나</div>
-                        <div class="upload-hint">⌨️ Ctrl+V</div>
-                    </div>
-                    <input type="file" id="basetune-navergfa" accept="image/*" onchange="handleFileSelect(event, 'basetune-navergfa')" style="display:none;">
-                    <div id="preview-basetune-navergfa"></div>
-                </div>
-            </div>
-
-            <div class="cost-input-section">
-                <h3>💰 광고 비용 직접 입력</h3>
-                <div class="cost-grid">
-                    <div class="cost-item"><label>메타</label><input type="number" id="meta-cost-basetune" placeholder="0"></div>
-                    <div class="cost-item"><label>틱톡</label><input type="number" id="tiktok-cost-basetune" placeholder="0"></div>
-                    <div class="cost-item"><label>구글</label><input type="number" id="google-cost-basetune" placeholder="0"></div>
-                    <div class="cost-item"><label>네이버</label><input type="number" id="naver-cost-basetune" placeholder="0"></div>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <div class="summary-title">📈 베이스튠 - 오늘의 요약</div>
-                <div class="summary-grid">
-                    <div class="summary-item"><div class="summary-label">카페24</div><div class="summary-value" id="basetune-cafe24-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">쿠팡</div><div class="summary-value" id="basetune-coupang-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">스마트스토어</div><div class="summary-value" id="basetune-smartstore-total">-</div></div>
-                    <div class="summary-item"><div class="summary-label">메타</div><div class="summary-value" id="meta-cost-basetune-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">틱톡</div><div class="summary-value" id="tiktok-cost-basetune-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">구글</div><div class="summary-value" id="google-cost-basetune-display">-</div></div>
-                    <div class="summary-item"><div class="summary-label">네이버</div><div class="summary-value" id="naver-cost-basetune-display">-</div></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>💾 모든 데이터는 로컬에 자동 저장됩니다</p>
-        </div>
+<!-- ── Brand Selector ─────────────────────────────── -->
+<div class="brand-selector-wrap" id="brand-selector">
+  <div class="brand-selector-title">브랜드를 선택하세요</div>
+  <div class="brand-cards">
+    <div class="brand-card granny" onclick="selectBrand('granny')">
+      <div class="brand-card-emoji">🥗</div>
+      <div class="brand-card-name">그래니 샐러드</div>
+      <div class="brand-card-sub">Granny Salad</div>
     </div>
+    <div class="brand-card basetune" onclick="selectBrand('basetune')">
+      <div class="brand-card-emoji">🎵</div>
+      <div class="brand-card-name">베이스튠</div>
+      <div class="brand-card-sub">Basetune</div>
+    </div>
+  </div>
+</div>
 
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+<!-- ── Header ─────────────────────────────────────── -->
+<div class="header">
+  <div class="brand-dot"></div>
+  <div class="header-title" id="header-title">마케팅 <span>액션 툴</span></div>
+  <div class="header-actions">
+    <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
+    <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
+    <button class="header-badge" onclick="showVersionHistory()">v1.6 · 버전 기록</button>
+  </div>
+</div>
+
+<!-- ── Settings Panel ─────────────────────────────── -->
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-title">성과 기준값 설정 <span style="font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px">이 기준으로 빨강/노랑/초록이 결정됩니다</span></div>
+  <div class="settings-grid">
+    <div class="settings-group">
+      <div class="settings-label">ROAS 위험 기준 (이하 → 빨강)</div>
+      <div class="settings-row">
+        <input class="settings-input" type="number" id="roas-danger" value="100" min="0">
+        <span class="settings-unit">%</span>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">ROAS 주의 기준 (이하 → 노랑)</div>
+      <div class="settings-row">
+        <input class="settings-input" type="number" id="roas-warn" value="150" min="0">
+        <span class="settings-unit">%</span>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">CPA 위험 기준 (이상 → 빨강)</div>
+      <div class="settings-row">
+        <input class="settings-input" type="number" id="cpa-danger" value="50000" min="0">
+        <span class="settings-unit">원</span>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">CPA 양호 기준 (이하 → 초록)</div>
+      <div class="settings-row">
+        <input class="settings-input" type="number" id="cpa-good" value="35000" min="0">
+        <span class="settings-unit">원</span>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-primary" onclick="applySettings()">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────── -->
+<div class="main">
+  <div class="section-label" style="margin-bottom:10px">Raw 데이터 업로드</div>
+  <div class="upload-grid">
+    <div class="upload-card" id="card-meta" ondragover="onDrag(event,'meta')" ondragleave="offDrag('meta')" ondrop="onDrop(event,'meta')">
+      <input type="file" accept=".xlsx,.xls" onchange="onFileSelect(event,'meta')">
+      <div class="u-icon">📊</div>
+      <div class="u-label">메타 (Meta)</div>
+      <div class="u-sub">.xlsx</div>
+      <div class="u-fn" id="fn-meta">드래그 또는 클릭</div>
+    </div>
+    <div class="upload-card" id="card-google" ondragover="onDrag(event,'google')" ondragleave="offDrag('google')" ondrop="onDrop(event,'google')">
+      <input type="file" accept=".csv" onchange="onFileSelect(event,'google')">
+      <div class="u-icon">🔍</div>
+      <div class="u-label">구글 (Google)</div>
+      <div class="u-sub">.csv (탭 구분)</div>
+      <div class="u-fn" id="fn-google">드래그 또는 클릭</div>
+    </div>
+    <div class="upload-card" id="card-pmax" ondragover="onDrag(event,'pmax')" ondragleave="offDrag('pmax')" ondrop="onDrop(event,'pmax')">
+      <input type="file" accept=".csv" onchange="onFileSelect(event,'pmax')">
+      <div class="u-icon">🎯</div>
+      <div class="u-label">구글 PMAX</div>
+      <div class="u-sub">.csv (탭 구분)</div>
+      <div class="u-fn" id="fn-pmax">드래그 또는 클릭</div>
+    </div>
+    <div class="upload-card" id="card-tiktok" ondragover="onDrag(event,'tiktok')" ondragleave="offDrag('tiktok')" ondrop="onDrop(event,'tiktok')">
+      <input type="file" accept=".xlsx,.xls" onchange="onFileSelect(event,'tiktok')">
+      <div class="u-icon">🎵</div>
+      <div class="u-label">틱톡 (TikTok)</div>
+      <div class="u-sub">.xlsx</div>
+      <div class="u-fn" id="fn-tiktok">드래그 또는 클릭</div>
+    </div>
+    <div class="upload-card" id="card-direct" ondragover="onDrag(event,'direct')" ondragleave="offDrag('direct')" ondrop="onDrop(event,'direct')">
+      <input type="file" accept=".csv" onchange="onFileSelect(event,'direct')">
+      <div class="u-icon">📈</div>
+      <div class="u-label">직접전환</div>
+      <div class="u-sub">.csv</div>
+      <div class="u-fn" id="fn-direct">드래그 또는 클릭</div>
+    </div>
+  </div>
+
+  <div class="date-row">
+    <div class="date-group">
+      <span class="date-label">액션 날짜</span>
+      <input class="date-input" type="date" id="action-date">
+    </div>
+    <div class="date-group">
+      <span class="date-label">보고 기간</span>
+      <input class="date-input" type="date" id="period-start">
+      <span class="date-sep">~</span>
+      <input class="date-input" type="date" id="period-end">
+    </div>
+  </div>
+
+  <div class="hist-section">
+    <div class="section-label" style="margin-bottom:8px">액션 기록</div>
+    <div class="hist-chips" id="hist-chips"><span class="hist-empty">저장된 기록이 없습니다.</span></div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-ghost" onclick="resetAll()">초기화</button>
+    <button class="btn btn-primary" id="btn-analyze" onclick="analyze()" disabled>분석 시작</button>
+  </div>
+
+  <div id="result" style="display:none">
+    <div class="session-banner" id="session-banner">
+      <span class="session-banner-text" id="session-banner-text"></span>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px" onclick="returnToCurrentSession()">현재 세션으로 돌아가기</button>
+    </div>
+    <div class="summary-bar" id="summary-bar"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="tabs" id="tabs" style="margin-bottom:0;border-bottom:none"></div>
+      <div style="display:flex;gap:8px">
+        <input class="search-input" id="search-input" type="text" placeholder="캠페인/광고명 검색…" onkeyup="filterAndRender()">
+        <button class="btn btn-ghost" onclick="showReport()">액션 리포트 보기</button>
+        <button class="btn btn-ghost" onclick="downloadScreenshot()">📷 이미지 다운로드</button>
+      </div>
+    </div>
+    <div style="border-bottom:1px solid var(--border);margin-bottom:16px"></div>
+    <div id="tab-content"></div>
+  </div>
+
+  <div id="empty-state" class="empty" style="display:none">
+    <div class="empty-icon">📭</div>
+    <div>분석할 데이터가 없습니다.</div>
+  </div>
+</div>
+
+<!-- ── Version History Modal ──────────────────────── -->
+<div class="modal-bg" id="version-modal">
+  <div class="modal" style="width:540px">
+    <button class="modal-close" onclick="document.getElementById('version-modal').classList.remove('show')">✕</button>
+    <h2 style="margin-bottom:4px">버전 기록</h2>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:20px">마케팅 액션 툴 업데이트 내역</div>
+    <div class="ver-list">
+      <div class="ver-item">
+        <div class="ver-header">
+          <span class="ver-badge latest">v1.7</span>
+          <span class="ver-title">기능 확장 (정렬/필터/증감액)</span>
+          <span class="ver-date">2026.05</span>
+        </div>
+        <ul class="ver-features">
+          <li>테이블 헤더 클릭으로 정렬 (오름/내림/초기순)</li>
+          <li>캠페인/광고명 실시간 검색 필터</li>
+          <li>예산 증감액 자동 계산 (매체별/전체)</li>
+          <li>한 클릭으로 분석 결과를 이미지로 저장</li>
+        </ul>
+      </div>
+      <div class="ver-item">
+        <div class="ver-header">
+          <span class="ver-badge">v1.6</span>
+          <span class="ver-title">멀티 브랜드 + 기준값 설정</span>
+          <span class="ver-date">2026.05</span>
+        </div>
+        <ul class="ver-features">
+          <li>그래니 샐러드 / 베이스튠 브랜드 선택 화면 추가</li>
+          <li>브랜드별 테마 색상 (초록 / 보라) 자동 적용</li>
+          <li>ROAS·CPA 기준값 화면에서 직접 설정 가능</li>
+          <li>설정값에 따라 색상 코딩 실시간 반영</li>
+          <li>브랜드별 설정값 localStorage 분리 저장</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Date Picker Modal ──────────────────────────── -->
+<div class="modal-bg" id="modal">
+  <div class="modal modal-datepicker">
+    <button class="modal-close" onclick="closeReport()">✕</button>
+    <h2 style="margin-bottom:6px">액션 기록</h2>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:20px">날짜를 선택하면 해당 날짜의 분석 화면이 복원됩니다.</div>
+    <div id="date-list-content"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">
+      분석을 완료하면 해당 날짜에 자동 저장됩니다.
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Brand & Settings ──────────────────────────────────────────────────────────
+let currentBrand = null;
+
+const BRAND_CONFIG = {
+  granny: {
+    name: '그래니 샐러드', emoji: '🥗', cls: 'brand-granny',
+    defaults: { roas_danger: 100, roas_warn: 150, cpa_danger: 50000, cpa_good: 35000 }
+  },
+  basetune: {
+    name: '베이스튠', emoji: '🎵', cls: 'brand-basetune',
+    defaults: { roas_danger: 100, roas_warn: 150, cpa_danger: 50000, cpa_good: 35000 }
+  }
+};
+
+function selectBrand(brand) {
+  currentBrand = brand;
+  const cfg = BRAND_CONFIG[brand];
+  document.body.className = cfg.cls;
+  document.getElementById('brand-selector').style.display = 'none';
+  document.getElementById('brand-label').textContent = cfg.emoji + ' ' + cfg.name;
+  document.getElementById('header-title').innerHTML = `${cfg.name} <span>마케팅 액션 툴</span>`;
+
+  const saved = loadSettings();
+  document.getElementById('roas-danger').value = saved.roas_danger;
+  document.getElementById('roas-warn').value   = saved.roas_warn;
+  document.getElementById('cpa-danger').value  = saved.cpa_danger;
+  document.getElementById('cpa-good').value    = saved.cpa_good;
+
+  renderHistoryChips();
+}
+
+function loadSettings() {
+  if (!currentBrand) return BRAND_CONFIG.granny.defaults;
+  try {
+    const s = JSON.parse(localStorage.getItem('settings_'+currentBrand) || 'null');
+    return s || BRAND_CONFIG[currentBrand].defaults;
+  } catch { return BRAND_CONFIG[currentBrand].defaults; }
+}
+
+function applySettings() {
+  if (!currentBrand) return;
+  const s = {
+    roas_danger: +document.getElementById('roas-danger').value || 100,
+    roas_warn:   +document.getElementById('roas-warn').value   || 150,
+    cpa_danger:  +document.getElementById('cpa-danger').value  || 50000,
+    cpa_good:    +document.getElementById('cpa-good').value    || 35000,
+  };
+  localStorage.setItem('settings_'+currentBrand, JSON.stringify(s));
+  if (parsed.meta || parsed.google || parsed.tiktok) renderAll();
+}
+
+function toggleSettings() {
+  document.getElementById('settings-panel').classList.toggle('open');
+}
+
+function getThresh() {
+  return {
+    roas_danger: +document.getElementById('roas-danger').value || 100,
+    roas_warn:   +document.getElementById('roas-warn').value   || 150,
+    cpa_danger:  +document.getElementById('cpa-danger').value  || 50000,
+    cpa_good:    +document.getElementById('cpa-good').value    || 35000,
+  };
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const files   = { meta:null, google:null, pmax:null, tiktok:null, direct:null };
+const parsed  = { meta:null, google:null, tiktok:null, direct:null };
+const actions = {};
+const collapsed = { camps: new Set(), grps: new Set() };
+let activeTab = 'meta';
+let currentSession = null;
+let autoSaveTimer = null;
+let sortState = { column: null, direction: 'asc' };
+let searchQuery = '';
+
+(function initDates() {
+  const fmt = d => d.toISOString().slice(0,10);
+  const today = new Date();
+  const end = new Date(today); end.setDate(end.getDate()-1);
+  const start = new Date(today); start.setDate(start.getDate()-3);
+  document.getElementById('action-date').value  = fmt(today);
+  document.getElementById('period-start').value = fmt(start);
+  document.getElementById('period-end').value   = fmt(end);
+})();
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+function onDrag(e,t){ e.preventDefault(); document.getElementById('card-'+t).classList.add('dragover'); }
+function offDrag(t) { document.getElementById('card-'+t).classList.remove('dragover'); }
+function onDrop(e,t){ e.preventDefault(); offDrag(t); if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0],t); }
+function onFileSelect(e,t){ if(e.target.files[0]) loadFile(e.target.files[0],t); }
+function loadFile(file,t){
+  files[t]=file;
+  document.getElementById('fn-'+t).textContent=file.name;
+  document.getElementById('card-'+t).classList.add('loaded');
+  document.getElementById('btn-analyze').disabled=false;
+}
+function resetAll(){
+  ['meta','google','pmax','tiktok','direct'].forEach(t=>{
+    files[t]=null; if(t!=='pmax') parsed[t]=null;
+    document.getElementById('fn-'+t).textContent='드래그 또는 클릭';
+    document.getElementById('card-'+t).classList.remove('loaded','dragover');
+  });
+  Object.keys(actions).forEach(k=>delete actions[k]);
+  collapsed.camps.clear(); collapsed.grps.clear();
+  sortState = { column: null, direction: 'asc' };
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('btn-analyze').disabled=true;
+  document.getElementById('result').style.display='none';
+  document.getElementById('empty-state').style.display='none';
+}
+
+// ── Analyze ───────────────────────────────────────────────────────────────────
+async function analyze(){
+  const btn=document.getElementById('btn-analyze');
+  btn.disabled=true; btn.textContent='분석 중…';
+  try{
+    if(files.direct) parsed.direct=await parseDirectCSV(files.direct);
+    if(files.meta)   parsed.meta=await parseMetaXLSX(files.meta);
+    if(files.google||files.pmax){
+      parsed.google=files.google?await parseGoogleCSV(files.google):{};
+      if(files.pmax){ const p=await parsePmaxCSV(files.pmax); Object.assign(parsed.google,p); }
+      if(!Object.keys(parsed.google).length) parsed.google=null;
+    }
+    if(files.tiktok) parsed.tiktok=await parseTikTokXLSX(files.tiktok);
+    renderAll(); autoSave();
+  }catch(err){ alert('파싱 오류: '+err.message); console.error(err); }
+  btn.disabled=false; btn.textContent='분석 시작';
+}
+
+// ── Key normalization ─────────────────────────────────────────────────────────
+function normKey(k){
+  return k
+    .replace(/\s*\(j[sh]\)\s*/gi,'')
+    .replace(/\s*\([a-z]{2,3}\)\s*$/i,'')
+    .replace(/_AN\s*$/i,'')
+    .replace(/\s+/g,'')
+    .toLowerCase();
+}
+function termSuffix(term){ const m=term.match(/\)_(.+)$/); if(m) return normKey(m[1].trim()); const i=term.indexOf('_'); return i>=0?normKey(term.slice(i+1).trim()):normKey(term.trim()); }
+function adSuffix(name){ const i=name.indexOf('_'); return i>=0?normKey(name.slice(i+1).trim()):normKey(name.trim()); }
+function getDirectData(adName, channel){
+  if(!parsed.direct) return null;
+  const key=adSuffix(adName);
+  if(channel==='tk'){
+    return parsed.direct['__tk__'+key]||null;
+  }
+  if(channel==='fb'||channel==='meta'){
+    return parsed.direct['__fb__'+key]||null;
+  }
+  if(channel==='gg'){
+    return parsed.direct['__gg__'+key]||null;
+  }
+  return parsed.direct[key]||null;
+}
+
+// ── Parser: Direct ────────────────────────────────────────────────────────────
+function parseDirectCSV(file){
+  return new Promise((res,rej)=>{
+    Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>{
+      const map={};
+      r.data.forEach(row=>{
+        const term=(row.term||'').trim(); if(!term||term==='nan') return;
+        const key=termSuffix(term);
+        if(!key) return;
+        const ch=(row.channel||'').toLowerCase();
+        const medium=(row.medium||'').toLowerCase();
+        const amt=parseNum(row.order_amount);
+        const cnt=parseNum(row.order_count);
+
+        if(!map[key]) map[key]={order_amount:0,order_count:0};
+        map[key].order_amount+=amt;
+        map[key].order_count+=cnt;
+
+        const chKey = (ch==='tk'||ch==='tiktok') ? '__tk__'+key
+                    : (ch==='fb'||ch==='ig') ? '__fb__'+key
+                    : (ch==='gg'||ch==='google') ? '__gg__'+key
+                    : null;
+        if(chKey){
+          if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
+          map[chKey].order_amount+=amt;
+          map[chKey].order_count+=cnt;
         }
 
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.currentTarget.classList.add('dragover');
+        if(ch==='gg'&&medium==='pmax'){
+          const pmaxNum=(row.campaign||'').match(/pmax[_\s]*(\d+)/i);
+          const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix((row.campaign||'').trim()));
+          if(!map[pmaxKey]) map[pmaxKey]={order_amount:0,order_count:0};
+          map[pmaxKey].order_amount+=amt;
+          map[pmaxKey].order_count+=cnt;
+        }
+      });
+      res(map);
+    },error:rej});
+  });
+}
+
+// ── Parser: Meta XLSX ─────────────────────────────────────────────────────────
+function parseMetaXLSX(file){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+        const getStr=(r,...keys)=>{ for(const k of keys){const v=r[k];if(v!==undefined&&v!=='') return String(v).trim();} return ''; };
+
+        const isActive=s=>{
+          const v=s.toLowerCase().trim();
+          return v==='active'||v==='활성'||v==='사용중'||v==='게재중';
+        };
+
+        const hasLevel = rows.length > 0 && ('게재 수준' in rows[0]);
+
+        const statusKey = rows.length > 0
+          ? (['게재 상태','광고 게재','상태','Status','Delivery'].find(k => k in rows[0]) || '광고 게재')
+          : '광고 게재';
+
+        const activeCamps=new Set(); const activeAdsets=new Set();
+        const campBudgets={}; const grpBudgets={};
+
+        if(hasLevel){
+          rows.forEach(r=>{
+            const lvl=getStr(r,'게재 수준').toLowerCase();
+            const status=getStr(r,statusKey);
+            const camp=getStr(r,'캠페인 이름');
+            const grp=getStr(r,'광고 세트 이름');
+            if(lvl==='campaign'&&isActive(status)){activeCamps.add(camp);campBudgets[camp]=parseNum(r['캠페인 예산']);}
+            if(lvl==='adset'&&isActive(status)){activeAdsets.add(camp+'|||'+grp);grpBudgets[camp+'|||'+grp]=parseNum(r['광고 세트 예산']);}
+          });
         }
 
-        function handleDragLeave(e) {
-            e.currentTarget.classList.remove('dragover');
-        }
+        const hasCampRows=activeCamps.size>0;
+        const hasAdsetRows=activeAdsets.size>0;
 
-        function handleDrop(e, platformId) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length) processImage(files[0], platformId);
-        }
+        const campaigns={};
+        rows.forEach(r=>{
+          const lvl=hasLevel?getStr(r,'게재 수준').toLowerCase():'ad';
+          if(lvl!=='ad') return;
 
-        function handleFileSelect(e, platformId) {
-            const files = e.target.files;
-            if (files.length) processImage(files[0], platformId);
-        }
+          const status=getStr(r,statusKey);
+          if(status&&!isActive(status)) return;
 
-        async function processImage(file, platformId) {
-            const previewDiv = document.getElementById(`preview-${platformId}`);
-            const reader = new FileReader();
+          const camp=getStr(r,'캠페인 이름');
+          const grp=getStr(r,'광고 세트 이름');
+          const ad=getStr(r,'광고 이름');
+          if(!camp) return;
+          if(hasCampRows&&!activeCamps.has(camp)) return;
+          if(hasAdsetRows&&grp&&!activeAdsets.has(camp+'|||'+grp)) return;
 
-            reader.onload = async (e) => {
-                const imgSrc = e.target.result;
-                previewDiv.innerHTML = `
-                    <div class="processing">
-                        <div class="spinner"></div> OCR 처리 중...
-                    </div>
-                    <div class="image-preview">
-                        <img src="${imgSrc}" alt="preview">
-                    </div>
-                `;
+          const cost=parseNum(r['지출 금액 (KRW)']||r['Amount spent (KRW)']||r['지출금액(KRW)']);
+          const roasRaw=parseNum(r['구매 ROAS(광고 지출 대비 수익률)']||r['Purchase ROAS']||r['결과 ROAS']||r['ROAS']);
+          const roas=roasRaw>0?(roasRaw<50?roasRaw*100:roasRaw):0;
+          const cpa=parseNum(r['결과당 비용']||r['Cost per result']||r['전환당 비용']);
+          const conv=parseNum(r['결과']||r['Results']||r['전환수']||r['구매 수']);
+          const rev=parseNum(r['구매 전환값']||r['Purchase conversion value']||r['결과 값']||r['전환 값']);
+          const ctr=parseNum(r['CTR(링크 클릭률)']||r['CTR (link click-through rate)']||r['CTR(전체)']||r['CTR']);
+          const cpc=parseNum(r['CPC(링크 클릭당 비용)']||r['CPC (cost per link click)']||r['CPC']);
 
-                try {
-                    const { data } = await Tesseract.recognize(imgSrc, 'kor+eng');
+          const campBudgetFromAd=parseNum(r['캠페인 예산']||r['Campaign budget']||0);
+          const grpBudgetFromAd=parseNum(r['광고 세트 예산']||r['Ad set budget']||0);
 
-                    // 브랜드 파악
-                    let brand = 'granny';
-                    if (platformId.includes('hatke')) brand = 'hatke';
-                    else if (platformId.includes('basetune')) brand = 'basetune';
+          if(!campaigns[camp]) campaigns[camp]={name:camp,budget:campBudgets[camp]||campBudgetFromAd||0,groups:{}};
+          else if(!campaigns[camp].budget&&campBudgetFromAd) campaigns[camp].budget=campBudgetFromAd;
 
-                    // 해당 날짜 가져오기
-                    let dateInput = document.getElementById(`date-${brand}`);
-                    let selectedDate = dateInput ? dateInput.value : null;
+          const key=camp+'|||'+grp;
+          const grpBudget=grpBudgets[key]||grpBudgetFromAd||0;
+          if(!campaigns[camp].groups[grp]) campaigns[camp].groups[grp]={name:grp,budget:grpBudget,ads:[]};
+          else if(!campaigns[camp].groups[grp].budget&&grpBudget) campaigns[camp].groups[grp].budget=grpBudget;
 
-                    const numbers = extractNumbers(data.text, selectedDate, platformId);
-                    displayExtractedData(previewDiv, numbers);
-                    updateSummaryFromImage(platformId, numbers, brand);
-                } catch (err) {
-                    previewDiv.innerHTML += `<div class="processing" style="background: #f8d7da; color: #721c24;">⚠️ 처리 실패</div>`;
-                }
-            };
-            reader.readAsDataURL(file);
-        }
+          const direct=getDirectData(ad,'fb');
+          campaigns[camp].groups[grp].ads.push({
+            name:ad,cost,roas,cpa,conv,rev,ctr,cpc,
+            directAmount:direct?direct.order_amount:null,
+            directCount:direct?direct.order_count:null,
+            directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,
+            directCpa:(direct&&direct.order_count>0)?cost/direct.order_count:null,
+          });
+        });
 
-        function extractNumbers(text, selectedDate, platformId) {
-            const numbers = [];
-            const isAdsPlatform = ['metaads', 'tiktokads', 'googleads', 'navergfa'].some(p => platformId.includes(p));
-            const minValue = isAdsPlatform ? 1000 : 100000;
+        const sorted={};
+        Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
+        res(sorted);
+      }catch(err){rej(err);}
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
 
-            // selectedDate가 있으면 해당 날짜로 변환 (YYYY-MM-DD → MM월 DD일)
-            let targetDate = null;
-            if (selectedDate) {
-                const [year, month, day] = selectedDate.split('-');
-                targetDate = `${parseInt(month)}월 ${parseInt(day).toString().padStart(1, '0')}일`;
-            }
+// ── Parser: Google CSV ────────────────────────────────────────────────────────
+function parseGoogleCSV(file){
+  return new Promise((res,rej)=>{
+    const bufReader=new FileReader();
+    bufReader.readAsArrayBuffer(file.slice(0,4));
+    bufReader.onload=e=>{
+      const buf=new Uint8Array(e.target.result);
+      const encoding=(buf[0]===0xFF&&buf[1]===0xFE)||(buf[0]===0xFE&&buf[1]===0xFF)?'UTF-16':'UTF-8';
+      const textReader=new FileReader();
+      textReader.readAsText(file,encoding);
+      textReader.onload=ev=>{
+        try{
+          Papa.parse(ev.target.result,{header:false,skipEmptyLines:true,delimiter:'\t',complete:r=>{
+            try{
+              let headerIdx=-1;
+              r.data.forEach((row,i)=>{
+                if(row.some(c=>String(c).trim()==='캠페인')&&row.some(c=>String(c).trim()==='비용')) headerIdx=i;
+              });
+              if(headerIdx<0){rej(new Error('구글 CSV 헤더를 찾을 수 없습니다'));return;}
+              const headers=r.data[headerIdx].map(h=>String(h).trim());
+              const col=n=>headers.indexOf(n);
 
-            // 선택한 날짜 찾기
-            if (targetDate) {
-                const datePattern = new RegExp(targetDate.replace(/\s/g, '\\s*'), 'i');
-                const dateMatch = text.match(datePattern);
+              const iCamp    = col('캠페인');
+              const iBudget  = col('예산');
+              const iGroup   = col('광고그룹');
+              const iAdSt    = col('광고 상태');
+              const iCampSt  = col('캠페인 상태');
+              const iAd      = col('광고 이름');
+              const iCost    = col('비용');
+              const iConvVal = col('전환 가치');
+              const iCpa     = col('전환당비용');
+              const iCtr     = col('클릭률(CTR)');
+              const iCpc     = col('평균 CPC');
 
-                if (dateMatch) {
-                    // 날짜 근처 텍스트에서 금액 추출
-                    const dateIndex = text.indexOf(dateMatch[0]);
-                    const nearbyText = text.substring(dateIndex, dateIndex + 300);
+              const isActiveGG=s=>{const v=String(s||'').trim();return v==='사용중'||v==='';};
 
-                    const amountRegex = /[\d,]+(?:\.\d+)?/g;
-                    const amountMatches = nearbyText.match(amountRegex) || [];
+              const activeCamps=new Set(); const activeGrps=new Set();
+              for(let i=headerIdx+1;i<r.data.length;i++){
+                const row=r.data[i];
+                const campSt=iCampSt>=0?String(row[iCampSt]||'').trim():'';
+                const camp=String(row[iCamp]||'').trim();
+                const grp=String(row[iGroup]||'').trim();
+                if(campSt===''||campSt==='사용중') activeCamps.add(camp);
+                activeGrps.add(camp+'|||'+grp);
+              }
 
-                    amountMatches.forEach(match => {
-                        const num = match.replace(/,/g, '');
-                        const numValue = parseFloat(num);
-                        if (numValue >= minValue) {
-                            numbers.push(num);
-                        }
-                    });
-                }
-            }
+              const campaigns={};
+              for(let i=headerIdx+1;i<r.data.length;i++){
+                const row=r.data[i];
+                const adSt=String(row[iAdSt]||'').trim();
+                if(adSt!=='사용중') continue;
 
-            // 날짜로 찾지 못한 경우, 모든 금액 추출
-            if (numbers.length === 0) {
-                const regex = /[\d,]+(?:\.\d+)?/g;
-                const matches = text.match(regex) || [];
-                matches.forEach(match => {
-                    const num = match.replace(/,/g, '');
-                    const numValue = parseFloat(num);
-                    if (numValue >= minValue) {
-                        numbers.push(num);
-                    }
+                const camp=String(row[iCamp]||'').trim();
+                const grp=String(row[iGroup]||'').trim();
+                const ad=iAd>=0?String(row[iAd]||'').trim():(String(row[col('긴 광고 제목 1')]||'').trim());
+                if(!camp) continue;
+                if(iCampSt>=0&&!activeCamps.has(camp)) continue;
+
+                const budget  = parseNum(row[iBudget]);
+                const cost    = parseNum(row[iCost]);
+                const convVal = parseNum(row[iConvVal]);
+                const cpa     = parseNum(row[iCpa]);
+                const ctr     = parseFloat(String(row[iCtr]||'').replace('%',''))||0;
+                const cpc     = parseNum(row[iCpc]);
+                const roas    = cost>0?(convVal/cost*100):0;
+                const conv    = (cost>0&&cpa>0)?Math.round(cost/cpa):0;
+
+                if(!campaigns[camp]) campaigns[camp]={name:camp,budget,ads:[]};
+
+                const direct=getDirectData(ad,'gg');
+                campaigns[camp].ads.push({
+                  name:ad,cost,roas,cpa,conv,rev:convVal,ctr,cpc,
+                  directAmount:direct?direct.order_amount:null,
+                  directCount:direct?direct.order_count:null,
+                  directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,
+                  directCpa:(direct&&direct.order_count>0)?cost/direct.order_count:null,
                 });
-            }
+              }
+              const sorted={};
+              Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
+              res(sorted);
+            }catch(err){rej(err);}
+          },error:rej});
+        }catch(err){rej(err);}
+      };
+      textReader.onerror=rej;
+    };
+    bufReader.onerror=rej;
+  });
+}
 
-            return numbers.slice(0, 10);
-        }
+// ── Parser: PMAX ──────────────────────────────────────────────────────────────
+function parsePmaxCSV(file){
+  return new Promise((res,rej)=>{
+    const bufReader=new FileReader();
+    bufReader.readAsArrayBuffer(file.slice(0,4));
+    bufReader.onload=e=>{
+      const buf=new Uint8Array(e.target.result);
+      const encoding=(buf[0]===0xFF&&buf[1]===0xFE)?'UTF-16':'UTF-8';
+      const textReader=new FileReader();
+      textReader.readAsText(file,encoding);
+      textReader.onload=ev=>{
+        try{
+          Papa.parse(ev.target.result,{header:false,skipEmptyLines:true,delimiter:'\t',complete:r=>{
+            try{
+              let headerIdx=-1;
+              r.data.forEach((row,i)=>{if(row.some(c=>String(c).trim()==='캠페인')&&row.some(c=>String(c).trim()==='비용')) headerIdx=i;});
+              if(headerIdx<0){rej(new Error('PMAX CSV 헤더를 찾을 수 없습니다'));return;}
+              const headers=r.data[headerIdx].map(h=>String(h).trim());
+              const col=n=>headers.indexOf(n);
+              const iCamp=col('캠페인'),iBudget=col('예산'),iStatus=col('캠페인 상태'),iCost=col('비용'),iCpa=col('전환당비용'),iCpc=col('평균 CPC'),iCtr=col('클릭률(CTR)'),iRevenue=col('전환 가치');
+              const campaigns={};
+              for(let i=headerIdx+1;i<r.data.length;i++){
+                const row=r.data[i];
+                const camp=iCamp>=0?String(row[iCamp]||'').trim():'';
+                const status=iStatus>=0?String(row[iStatus]||'').trim():'';
+                if(!camp||camp.startsWith('총')) continue;
+                if(status&&status!=='사용중') continue;
+                const budget=iBudget>=0?parseNum(row[iBudget]):0;
+                const cost=iCost>=0?parseNum(row[iCost]):0;
+                const cpa=iCpa>=0?parseNum(row[iCpa]):0;
+                const cpc=iCpc>=0?parseNum(row[iCpc]):0;
+                const ctrRaw=iCtr>=0?String(row[iCtr]||'').replace('%','').trim():'0';
+                const ctr=parseFloat(ctrRaw)||0;
+                const rev=iRevenue>=0?parseNum(String(row[iRevenue]||'').replace(/,/g,'')):0;
+                const roas=cost>0?rev/cost*100:0;
+                const conv=(cpa>0&&cost>0)?Math.round(cost/cpa):0;
+                const clicks=cpc>0?Math.round(cost/cpc):0;
+                const impressions=(ctr>0&&clicks>0)?Math.round(clicks/(ctr/100)):0;
+                const pmaxNum=camp.match(/pmax[_\s]*(\d+)/i);
+                const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix(camp));
+                const direct=parsed.direct?(parsed.direct[pmaxKey]||null):null;
+                campaigns[camp]={name:camp,budget,isPmax:true,ads:[{name:camp,cost,cpa,conv,rev,roas,ctr,cpc,clicks,impressions,directAmount:direct?direct.order_amount:null,directCount:direct?direct.order_count:null,directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,directCpa:(direct&&direct.order_count>0)?cost/direct.order_count:null}]};
+              }
+              const sorted={};
+              Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
+              res(sorted);
+            }catch(err){rej(err);}
+          },error:rej});
+        }catch(err){rej(err);}
+      };
+      textReader.onerror=rej;
+    };
+    bufReader.onerror=rej;
+  });
+}
 
-        function displayExtractedData(container, numbers) {
-            const dataHtml = numbers.length > 0
-                ? numbers.map(num => `<div class="number-item">${num}</div>`).join('')
-                : '<div class="number-item">숫자를 찾을 수 없습니다</div>';
-
-            container.innerHTML += `
-                <div class="extracted-data">
-                    <h4>📊 추출된 숫자:</h4>
-                    ${dataHtml}
-                </div>
-            `;
-        }
-
-        function updateSummaryFromImage(platformId, numbers, brand) {
-            const firstNumber = numbers.length > 0 ? numbers[0] : '-';
-
-            // 광고 플랫폼 식별
-            const isAdsPlatform = ['metaads', 'tiktokads', 'googleads', 'navergfa'].some(p => platformId.includes(p));
-
-            if (isAdsPlatform) {
-                // 광고 플랫폼: 비용 필드에 입력
-                const adsCostMap = {
-                    'metaads': 'meta',
-                    'tiktokads': 'tiktok',
-                    'googleads': 'google',
-                    'navergfa': 'naver'
-                };
-
-                for (let [key, value] of Object.entries(adsCostMap)) {
-                    if (platformId.includes(key)) {
-                        const costInput = document.getElementById(`${value}-cost-${brand}`);
-                        if (costInput && !costInput.value) {
-                            costInput.value = firstNumber;
-                            const displayId = `${value}-cost-${brand}-display`;
-                            const displayElement = document.getElementById(displayId);
-                            if (displayElement) displayElement.textContent = firstNumber;
-                        }
-                        break;
-                    }
-                }
-            } else {
-                // 매출 매체: 매출 필드에 입력
-                const summaryElement = document.getElementById(`${platformId}-total`);
-                if (summaryElement) summaryElement.textContent = firstNumber;
-            }
-        }
-
-        document.addEventListener('input', (e) => {
-            if (e.target.id.includes('cost')) {
-                const displayId = e.target.id + '-display';
-                const displayElement = document.getElementById(displayId);
-                if (displayElement) {
-                    displayElement.textContent = e.target.value || '-';
-                }
-            }
+// ── Parser: TikTok XLSX ───────────────────────────────────────────────────────
+function parseTikTokXLSX(file){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+        const campaigns={};
+        rows.forEach(r=>{
+          const camp=String(r['캠페인 이름']||'').trim();
+          const grp=String(r['광고 그룹 이름']||r['광고그룹 이름']||'').trim();
+          const ad=String(r['광고 이름']||'').trim();
+          if(!camp||camp.startsWith('총')||!ad||ad==='-') return;
+          const campBudget=parseNum(r['캠페인 예산']||r['캠페인 예산 (KRW)']);
+          const grpBudgetRaw=String(r['Ad Group Budget']||r['광고 그룹 예산']||'').trim();
+          const grpBudget=/^\d/.test(grpBudgetRaw)?parseNum(grpBudgetRaw):0;
+          const cost=parseNum(r['비용']||r['지출 금액']||r['소비 금액']);
+          const cpa=parseNum(r['전환당 비용']||r['결과당 비용']||r['전환 시간별 전환당 비용']||r['구매당 비용(웹사이트)']);
+          const conv=parseNum(r['구매 수(웹사이트)']||r['전환수']||r['결과']);
+          const rev=parseNum(r['구매 금액(웹사이트)']||r['전환 가치']||r['매출']);
+          const roasRaw=parseNum(r['결제 완료 ROAS(웹사이트)']||r['구매 ROAS(웹사이트)']||r['ROAS']);
+          const roas=roasRaw>0?(roasRaw<50?roasRaw*100:roasRaw):(cost>0&&rev>0?rev/cost*100:0);
+          const ctr=parseFloat(String(r['CTR(목적지)']||r['CTR']||'').replace('%',''))||0;
+          const cpc=parseNum(r['CPC(목적지)']||r['CPC']);
+          const clicks=parseNum(r['클릭수(목적지)']||r['클릭수']);
+          const impressions=parseNum(r['노출수']);
+          const direct=getDirectData(ad,'tk');
+          if(!campaigns[camp]) campaigns[camp]={name:camp,budget:campBudget,groups:{}};
+          else if(campBudget>0&&campaigns[camp].budget===0) campaigns[camp].budget=campBudget;
+          const grpKey=grp||'(그룹 없음)';
+          if(!campaigns[camp].groups[grpKey]) campaigns[camp].groups[grpKey]={name:grpKey,budget:grpBudget,ads:[]};
+          campaigns[camp].groups[grpKey].ads.push({
+            name:ad,cost,cpa,conv,rev,roas,ctr,cpc,clicks,impressions,
+            directAmount:direct?direct.order_amount:null,
+            directCount:direct?direct.order_count:null,
+            directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,
+            directCpa:(direct&&direct.order_count>0)?cost/direct.order_count:null,
+          });
         });
+        const sorted={};
+        Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
+        res(sorted);
+      }catch(err){rej(err);}
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
 
-        document.addEventListener('paste', async (e) => {
-            const items = e.clipboardData.items;
-            for (let item of items) {
-                if (item.type.indexOf('image') !== -1) {
-                    e.preventDefault();
-                    const blob = item.getAsFile();
+// ── Budget Change Calculation ────────────────────────────────────────────────
+function calculateAllBudgetChanges() {
+  const changes = { meta: 0, google: 0, tiktok: 0, total: 0 };
 
-                    const activeTab = document.querySelector('.tab-content.active').id;
-                    let platformId = 'cafe24';
-
-                    if (activeTab === 'grannysolad') platformId = 'cafe24';
-                    else if (activeTab === 'hatke') platformId = 'hatke-cafe24';
-                    else if (activeTab === 'basetune') platformId = 'basetune-cafe24';
-
-                    processImage(blob, platformId);
-                }
-            }
-        });
-
-        // 모든 업로드 존에 포커스 가능하게
-        document.addEventListener('DOMContentLoaded', () => {
-            const uploadZones = document.querySelectorAll('.upload-zone');
-            uploadZones.forEach(zone => {
-                zone.style.cursor = 'pointer';
-            });
-        });
-
-        function updateDashboard() {
-            // 대시보드 로직 (추후 구현)
+  if (parsed.meta) {
+    Object.values(parsed.meta).forEach(camp => {
+      const campKey = 'meta__camp__' + camp.name;
+      if (actions[campKey] && actions[campKey].budgetTo && actions[campKey].budgetFrom) {
+        const change = (parseNum(actions[campKey].budgetTo) - parseNum(actions[campKey].budgetFrom)) * 10000;
+        changes.meta += change;
+      }
+      Object.values(camp.groups).forEach(grp => {
+        const grpKey = 'meta__grp__' + camp.name + '__' + grp.name;
+        if (actions[grpKey] && actions[grpKey].budgetTo && actions[grpKey].budgetFrom) {
+          const change = (parseNum(actions[grpKey].budgetTo) - parseNum(actions[grpKey].budgetFrom)) * 10000;
+          changes.meta += change;
         }
+      });
+    });
+  }
 
-        window.addEventListener('load', () => {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date-granny').value = today;
-            document.getElementById('dashboard-date').value = today;
-        });
-    </script>
+  if (parsed.google) {
+    Object.values(parsed.google).forEach(camp => {
+      const campKey = 'gg__camp__' + camp.name;
+      if (actions[campKey] && actions[campKey].budgetTo && actions[campKey].budgetFrom) {
+        const change = (parseNum(actions[campKey].budgetTo) - parseNum(actions[campKey].budgetFrom)) * 10000;
+        changes.google += change;
+      }
+    });
+  }
+
+  if (parsed.tiktok) {
+    Object.values(parsed.tiktok).forEach(camp => {
+      const campKey = 'tk__camp__' + camp.name;
+      if (actions[campKey] && actions[campKey].budgetTo && actions[campKey].budgetFrom) {
+        const change = (parseNum(actions[campKey].budgetTo) - parseNum(actions[campKey].budgetFrom)) * 10000;
+        changes.tiktok += change;
+      }
+      Object.values(camp.groups).forEach(grp => {
+        const grpKey = 'tk__grp__' + camp.name + '__' + grp.name;
+        if (actions[grpKey] && actions[grpKey].budgetTo && actions[grpKey].budgetFrom) {
+          const change = (parseNum(actions[grpKey].budgetTo) - parseNum(actions[grpKey].budgetFrom)) * 10000;
+          changes.tiktok += change;
+        }
+      });
+    });
+  }
+
+  changes.total = changes.meta + changes.google + changes.tiktok;
+  return changes;
+}
+
+// ── Filter and Search ────────────────────────────────────────────────────────
+function filterAndRender() {
+  searchQuery = document.getElementById('search-input').value.toLowerCase();
+  renderTable(activeTab);
+}
+
+function matchesSearch(text) {
+  if (!searchQuery) return true;
+  return String(text).toLowerCase().includes(searchQuery);
+}
+
+function shouldShowRow(campName, grpName = null, adName = null) {
+  if (matchesSearch(campName)) return true;
+  if (grpName && matchesSearch(grpName)) return true;
+  if (adName && matchesSearch(adName)) return true;
+  return false;
+}
+
+// ── Sorting ──────────────────────────────────────────────────────────────────
+function sortColumn(columnName) {
+  if (sortState.column === columnName) {
+    sortState.direction = sortState.direction === 'asc' ? 'desc' : (sortState.direction === 'desc' ? null : 'asc');
+    if (sortState.direction === null) {
+      sortState.column = null;
+    }
+  } else {
+    sortState.column = columnName;
+    sortState.direction = 'asc';
+  }
+  renderTable(activeTab);
+}
+
+function getSortIndicator(columnName) {
+  if (sortState.column !== columnName) return '';
+  return sortState.direction === 'asc' ? ' ▲' : (sortState.direction === 'desc' ? ' ▼' : '');
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderAll(){
+  const tabs=[];
+  if(parsed.meta&&Object.keys(parsed.meta).length)   tabs.push({id:'meta',  label:'메타', count:Object.keys(parsed.meta).length});
+  if(parsed.google&&Object.keys(parsed.google).length) tabs.push({id:'google',label:'구글', count:Object.keys(parsed.google).length});
+  if(parsed.tiktok&&Object.keys(parsed.tiktok).length) tabs.push({id:'tiktok',label:'틱톡', count:Object.keys(parsed.tiktok).length});
+  if(!tabs.length){document.getElementById('empty-state').style.display='block';return;}
+  activeTab=tabs[0].id;
+  renderTabs(tabs); renderSummary(); renderTable(activeTab);
+  document.getElementById('result').style.display='block';
+}
+
+function renderTabs(tabs){
+  document.getElementById('tabs').innerHTML=tabs.map(t=>
+    `<div class="tab ${t.id===activeTab?'active':''}" onclick="switchTab('${t.id}')">${t.label}<span class="tab-n">${t.count}</span></div>`
+  ).join('');
+}
+
+function switchTab(id){
+  activeTab=id;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.textContent.startsWith(id==='meta'?'메타':id==='google'?'구글':'틱톡')));
+  renderTable(id);
+}
+
+function renderSummary(){
+  let totalCost=0,totalRev=0,totalDirect=0;
+  if(parsed.meta)   Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;})));
+  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;}));
+  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;})));
+
+  const roas=totalCost>0?totalRev/totalCost*100:0;
+  const dRoas=totalCost>0?totalDirect/totalCost*100:0;
+
+  const budgetChanges = calculateAllBudgetChanges();
+
+  let summaryHtml=`
+    <div class="s-card"><div class="s-lbl">총 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(totalCost)}</div></div>
+    <div class="s-card"><div class="s-lbl">총 매출 (매체)</div><div class="s-val">${fmtW(totalRev)}</div></div>
+    <div class="s-card"><div class="s-lbl">매체 ROAS</div><div class="s-val ${mCls(roas)}">${roas>0?roas.toFixed(0)+'%':'–'}</div></div>
+    <div class="s-card"><div class="s-lbl">직접 ROAS</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
+    <div class="s-card"><div class="s-lbl">직접 전환 매출</div><div class="s-val">${fmtW(totalDirect)}</div></div>`;
+
+  if (budgetChanges.meta !== 0) {
+    summaryHtml += `<div class="s-card"><div class="s-lbl">메타 증감액</div><div class="s-val ${budgetChanges.meta > 0 ? 'm-good' : 'm-danger'}">${budgetChanges.meta > 0 ? '+' : ''}${fmtWon(budgetChanges.meta)}</div></div>`;
+  }
+  if (budgetChanges.google !== 0) {
+    summaryHtml += `<div class="s-card"><div class="s-lbl">구글 증감액</div><div class="s-val ${budgetChanges.google > 0 ? 'm-good' : 'm-danger'}">${budgetChanges.google > 0 ? '+' : ''}${fmtWon(budgetChanges.google)}</div></div>`;
+  }
+  if (budgetChanges.tiktok !== 0) {
+    summaryHtml += `<div class="s-card"><div class="s-lbl">틱톡 증감액</div><div class="s-val ${budgetChanges.tiktok > 0 ? 'm-good' : 'm-danger'}">${budgetChanges.tiktok > 0 ? '+' : ''}${fmtWon(budgetChanges.tiktok)}</div></div>`;
+  }
+  if (budgetChanges.total !== 0) {
+    summaryHtml += `<div class="s-card" style="border-color:var(--accent)"><div class="s-lbl">전체 증감액</div><div class="s-val" style="color:${budgetChanges.total > 0 ? 'var(--green)' : 'var(--red)'};font-size:18px;font-weight:800">${budgetChanges.total > 0 ? '+' : ''}${fmtWon(budgetChanges.total)}</div></div>`;
+  }
+
+  document.getElementById('summary-bar').innerHTML=summaryHtml;
+}
+
+function renderTable(tab){
+  const el=document.getElementById('tab-content');
+  if(tab==='meta')   el.innerHTML=buildMetaTable();
+  if(tab==='google') el.innerHTML=buildGoogleTable();
+  if(tab==='tiktok') el.innerHTML=buildTikTokTable();
+}
+
+// ── Toggle ────────────────────────────────────────────────────────────────────
+let _cIdx=0; const _cMap={};
+function cid(name){if(!(name in _cMap))_cMap[name]=_cIdx++;return 'c'+_cMap[name];}
+let _gIdx=0; const _gMap={};
+function gid(c,g){const k=c+'|||'+g;if(!(k in _gMap))_gMap[k]=_gIdx++;return 'g'+_gMap[k];}
+function toggleCamp(id){
+  collapsed.camps.has(id)?collapsed.camps.delete(id):collapsed.camps.add(id);
+  document.querySelectorAll('[data-camp="'+id+'"]').forEach(r=>r.style.display=collapsed.camps.has(id)?'none':'');
+  const arr=document.getElementById('arr-'+id);
+  if(arr) arr.textContent=collapsed.camps.has(id)?'▶':'▼';
+}
+function toggleGrp(gId){
+  collapsed.grps.has(gId)?collapsed.grps.delete(gId):collapsed.grps.add(gId);
+  document.querySelectorAll('[data-grp="'+gId+'"]').forEach(r=>{if(!r.classList.contains('row-grp')) r.style.display=collapsed.grps.has(gId)?'none':'';});
+  const arr=document.getElementById('arr-'+gId);
+  if(arr) arr.textContent=collapsed.grps.has(gId)?'▶':'▼';
+}
+
+// ── Table headers ─────────────────────────────────────────────────────────────
+function buildTableHeader() {
+  return `<tr>
+    <th style="min-width:240px" onclick="sortColumn('이름')">이름${getSortIndicator('이름')}</th>
+    <th onclick="sortColumn('CPA')">CPA${getSortIndicator('CPA')}</th>
+    <th onclick="sortColumn('ROAS')">ROAS${getSortIndicator('ROAS')}</th>
+    <th onclick="sortColumn('CTR')">CTR${getSortIndicator('CTR')}</th>
+    <th onclick="sortColumn('전환')">전환${getSortIndicator('전환')}</th>
+    <th onclick="sortColumn('비용')">비용${getSortIndicator('비용')}</th>
+    <th onclick="sortColumn('매출')">매출${getSortIndicator('매출')}</th>
+    <th>예산(만원)</th>
+    <th style="min-width:84px">액션</th>
+    <th>직접CPA</th><th>직접ROAS</th><th>직접전환수</th><th>직접전환값</th>
+    <th style="min-width:110px">메모</th>
+  </tr>`;
+}
+
+// ── Table: Meta ───────────────────────────────────────────────────────────────
+function buildMetaTable(){
+  if(!parsed.meta) return '';
+  let rows='';
+  Object.values(parsed.meta).forEach(camp=>{
+    const cId=cid(camp.name); const isC=collapsed.camps.has(cId);
+    const cKey='meta__camp__'+camp.name;
+    const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads));
+
+    if (!shouldShowRow(camp.name)) return;
+
+    rows+=`<tr class="row-camp">
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}</td>
+      <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+    Object.values(camp.groups).forEach(grp=>{
+      const gId=gid(camp.name,grp.name); const isG=collapsed.grps.has(gId);
+      const grpHide=isC?'style="display:none"':'';
+      const gKey='meta__grp__'+camp.name+'__'+grp.name;
+      const ga=aggAds(grp.ads);
+
+      if (!shouldShowRow(camp.name, grp.name)) return;
+
+      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
+        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
+        <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td><span class="m-na">–</span></td><td>${ga.conv}개</td>
+        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
+        <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
+      grp.ads.forEach(ad=>{
+        const adHide=(isC||isG)?'style="display:none"':'';
+        const aKey='meta__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
+
+        if (!shouldShowRow(camp.name, grp.name, ad.name)) return;
+
+        rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
+          <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
+          <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
+          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
+          <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
+          <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
+          <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
+          <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+          <td>${memoEl(aKey)}</td></tr>`;
+      });
+    });
+  });
+  return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ── Table: Google ─────────────────────────────────────────────────────────────
+function buildGoogleTable(){
+  if(!parsed.google) return '';
+  let rows='';
+  Object.values(parsed.google).forEach(camp=>{
+    const cId=cid('gg_'+camp.name); const isC=collapsed.camps.has(cId);
+    const cKey='gg__camp__'+camp.name; const ca=aggAds(camp.ads);
+
+    if (!shouldShowRow(camp.name)) return;
+
+    if(camp.isPmax){
+      rows+=`<tr class="row-camp">
+        <td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span><span class="badge-pmax">PMAX</span></td>
+        <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
+        <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+        <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+      return;
+    }
+    rows+=`<tr class="row-camp">
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
+      <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+    camp.ads.forEach(ad=>{
+      const adHide=isC?'style="display:none"':'';
+      const aKey='gg__ad__'+camp.name+'__'+ad.name;
+
+      if (!shouldShowRow(camp.name, null, ad.name)) return;
+
+      rows+=`<tr class="row-ad" data-camp="${cId}" ${adHide}>
+        <td class="name-cell" style="padding-left:18px"><span title="${ad.name}">${shorten(ad.name,36)}</span></td>
+        <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
+        <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
+        <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
+        <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
+        <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
+        <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+        <td>${memoEl(aKey)}</td></tr>`;
+    });
+  });
+  return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ── Table: TikTok ─────────────────────────────────────────────────────────────
+function buildTikTokTable(){
+  if(!parsed.tiktok) return '';
+  let rows='';
+  Object.values(parsed.tiktok).forEach(camp=>{
+    const cId=cid('tk_'+camp.name); const isC=collapsed.camps.has(cId);
+    const cKey='tk__camp__'+camp.name;
+    const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads));
+
+    if (!shouldShowRow(camp.name)) return;
+
+    rows+=`<tr class="row-camp">
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
+      <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+    Object.values(camp.groups).forEach(grp=>{
+      const gId=gid('tk_'+camp.name,grp.name); const isG=collapsed.grps.has(gId);
+      const grpHide=isC?'style="display:none"':'';
+      const gKey='tk__grp__'+camp.name+'__'+grp.name;
+      const ga=aggAds(grp.ads);
+
+      if (!shouldShowRow(camp.name, grp.name)) return;
+
+      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
+        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
+        <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td><td>${ga.conv}개</td>
+        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
+        <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
+      grp.ads.forEach(ad=>{
+        const adHide=(isC||isG)?'style="display:none"':'';
+        const aKey='tk__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
+
+        if (!shouldShowRow(camp.name, grp.name, ad.name)) return;
+
+        rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
+          <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
+          <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
+          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
+          <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
+          <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
+          <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
+          <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+          <td>${memoEl(aKey)}</td></tr>`;
+      });
+    });
+  });
+  return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ── UI Components ─────────────────────────────────────────────────────────────
+function actSel(key){
+  if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const v=actions[key].action;
+  return `<select class="act-sel ${actCls(v)}" id="sel-${CSS.escape(key)}" onchange="setAction('${key}',this.value)">
+    <option ${v==='유지'?'selected':''}>유지</option>
+    <option ${v==='끄기'?'selected':''}>끄기</option>
+    <option ${v==='증액'?'selected':''}>증액</option>
+    <option ${v==='감액'?'selected':''}>감액</option>
+    <option ${v==='지켜보기'?'selected':''}>지켜보기</option>
+  </select>`;
+}
+function budgetEl(key,current){
+  const cur=fmtMan(current,true);
+  if(!actions[key]) actions[key]={action:'유지',budgetFrom:cur,budgetTo:cur,memo:''};
+  return `<div class="budget-wrap">
+    <input class="budget-in" value="${cur}" readonly title="현재예산(만원)" style="color:var(--muted)">
+    <span class="budget-arrow">→</span>
+    <input class="budget-in" value="${actions[key].budgetTo||cur}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
+  </div>`;
+}
+function memoEl(key){
+  if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  return `<input class="memo-in" placeholder="메모…" value="${actions[key].memo||''}" onchange="setMemo('${key}',this.value)">`;
+}
+function setAction(key,val){if(!actions[key])actions[key]={};actions[key].action=val;const el=document.getElementById('sel-'+CSS.escape(key));if(el) el.className='act-sel '+actCls(val);triggerAutoSave();}
+function setBudget(key,cur,val){if(!actions[key])actions[key]={};actions[key].budgetFrom=fmtMan(cur,true);actions[key].budgetTo=val;renderSummary();triggerAutoSave();}
+function setMemo(key,val){if(!actions[key])actions[key]={};actions[key].memo=val;triggerAutoSave();}
+function actCls(v){return v==='끄기'?'a-off':v==='증액'?'a-up':v==='감액'?'a-down':v==='지켜보기'?'a-watch':'';}
+
+function campObjectiveBadge(name){
+  const m=name.match(/\(([^)]*)/);
+  if(!m) return '';
+  const inner='_'+m[1].toLowerCase()+'_';
+  const badges=[
+    {pattern:/_trf_/,label:'트래픽',bg:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'rgba(139,92,246,0.35)'},
+    {pattern:/_atc_/,label:'장바구니',bg:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'rgba(245,158,11,0.35)'},
+    {pattern:/_ic_/,label:'결제시작',bg:'rgba(16,185,129,0.15)',color:'#10b981',border:'rgba(16,185,129,0.35)'},
+    {pattern:/_re_/,label:'리타겟팅',bg:'rgba(239,68,68,0.15)',color:'#ef4444',border:'rgba(239,68,68,0.35)'},
+  ];
+  for(const b of badges){if(b.pattern.test(inner)) return `<span class="badge-obj" style="background:${b.bg};color:${b.color};border-color:${b.border}">${b.label}</span>`;}
+  return '';
+}
+
+// ── Screenshot Download ──────────────────────────────────────────────────────
+function downloadScreenshot() {
+  const element = document.getElementById('result');
+  if (!element) {
+    alert('분석 결과가 없습니다.');
+    return;
+  }
+
+  html2canvas(element, {
+    scale: 2,
+    backgroundColor: '#0f1117',
+    logging: false
+  }).then(canvas => {
+    const link = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    link.href = canvas.toDataURL('image/png');
+    link.download = `액션리포트_${today}.png`;
+    link.click();
+  });
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+const SCHEMA_VER=3;
+function histKey(){return 'hattke_history_'+(currentBrand||'default');}
+function loadHistoryData(){try{return JSON.parse(localStorage.getItem(histKey())||'{}');}catch{return {};}}
+function migrateRecord(rec){if(Array.isArray(rec.tiktok)) rec.tiktok=null;rec.schemaVersion=SCHEMA_VER;return rec;}
+
+function autoSave(){
+  const actionDate=document.getElementById('action-date').value;
+  if(!actionDate||!currentBrand) return;
+  const hist=loadHistoryData();
+  hist[actionDate]={schemaVersion:SCHEMA_VER,actionDate,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value,savedAt:new Date().toISOString(),meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,actions:Object.assign({},actions)};
+  localStorage.setItem(histKey(),JSON.stringify(hist));
+  renderHistoryChips();
+}
+
+function triggerAutoSave(){if(autoSaveTimer) clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(autoSave,800);}
+
+function renderHistoryChips(){
+  const hist=loadHistoryData();
+  const el=document.getElementById('hist-chips');
+  const dates=Object.keys(hist).sort().reverse();
+  if(!dates.length){el.innerHTML='<span class="hist-empty">저장된 기록이 없습니다.</span>';return;}
+  el.innerHTML=dates.map(d=>{
+    const rec=hist[d];
+    const count=rec.actions?Object.values(rec.actions).filter(v=>v.action&&v.action!=='유지').length:0;
+    return `<div class="hist-chip" onclick="loadHistoryDate('${d}')">📅 ${fmtDateKo(d)} <span style="color:var(--muted);font-size:10px">(${count}건)</span><button class="hist-del" onclick="deleteHistDate(event,'${d}')" title="삭제">✕</button></div>`;
+  }).join('');
+}
+
+function deleteHistDate(e,date){
+  e.stopPropagation();
+  if(!confirm(`${fmtDateKo(date)} 기록을 삭제할까요?`)) return;
+  const hist=loadHistoryData();
+  delete hist[date];
+  localStorage.setItem(histKey(),JSON.stringify(hist));
+  renderHistoryChips(); renderDateList();
+}
+
+function showReport(){renderDateList();document.getElementById('modal').classList.add('show');}
+function closeReport(){document.getElementById('modal').classList.remove('show');}
+function showVersionHistory(){document.getElementById('version-modal').classList.add('show');}
+
+function renderDateList(){
+  const hist=loadHistoryData();
+  const dates=Object.keys(hist).sort().reverse();
+  const el=document.getElementById('date-list-content');
+  if(!dates.length){el.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:24px">저장된 기록이 없습니다.</div>';return;}
+  el.innerHTML=dates.map(d=>{
+    const rec=hist[d];
+    const count=rec.actions?Object.values(rec.actions).filter(v=>v.action&&v.action!=='유지').length:0;
+    const ps=rec.periodStart,pe=rec.periodEnd;
+    const period=ps&&pe?`${fmtShortKo(ps)} ~ ${fmtShortKo(pe)}`:'';
+    return `<div class="date-list-item" onclick="loadHistoryDate('${d}')">
+      <div class="date-list-info">
+        <div class="date-list-name">${fmtDateKo(d)}</div>
+        <div class="date-list-sub">${count}건의 액션${period?' · '+period:''}</div>
+      </div>
+      <button class="date-list-del" onclick="deleteHistDate(event,'${d}')" title="삭제">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function loadHistoryDate(date){
+  const hist=loadHistoryData();
+  let rec=hist[date];
+  if(!rec) return;
+  rec=migrateRecord(rec);
+  if(!currentSession){currentSession={meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,actions:Object.assign({},actions),actionDate:document.getElementById('action-date').value,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value};}
+  try{parsed.meta=rec.meta||null;}catch{parsed.meta=null;}
+  try{parsed.google=rec.google||null;}catch{parsed.google=null;}
+  try{parsed.tiktok=rec.tiktok||null;}catch{parsed.tiktok=null;}
+  Object.keys(actions).forEach(k=>delete actions[k]);
+  Object.assign(actions,rec.actions||{});
+  document.getElementById('action-date').value=rec.actionDate||date;
+  document.getElementById('period-start').value=rec.periodStart||'';
+  document.getElementById('period-end').value=rec.periodEnd||'';
+  closeReport();
+  try{renderAll();}catch(e){console.warn(e);}
+  const banner=document.getElementById('session-banner');
+  document.getElementById('session-banner-text').innerHTML=`${fmtDateKo(date)} 기록 보는 중 <span style="font-size:11px;color:var(--muted);font-weight:400">— 현재 세션의 데이터가 아닙니다</span>`;
+  banner.classList.add('show');
+}
+
+function returnToCurrentSession(){
+  if(!currentSession) return;
+  parsed.meta=currentSession.meta; parsed.google=currentSession.google; parsed.tiktok=currentSession.tiktok;
+  Object.keys(actions).forEach(k=>delete actions[k]);
+  Object.assign(actions,currentSession.actions);
+  document.getElementById('action-date').value=currentSession.actionDate;
+  document.getElementById('period-start').value=currentSession.periodStart;
+  document.getElementById('period-end').value=currentSession.periodEnd;
+  currentSession=null;
+  document.getElementById('session-banner').classList.remove('show');
+  renderAll();
+}
+
+function fmtDateKo(d){if(!d)return '';const[y,m,dd]=d.split('-');const days=['일','월','화','수','목','금','토'];const day=new Date(d).getDay();return `${y}년 ${parseInt(m)}월 ${parseInt(dd)}일 (${days[day]})`;}
+function fmtShortKo(d){if(!d)return '';const[,m,dd]=d.split('-');return `${parseInt(m)}월 ${parseInt(dd)}일`;}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function parseNum(v){if(v===null||v===undefined||v===''||v==='-') return 0;return parseFloat(String(v).replace(/,/g,''))||0;}
+function aggAds(ads){
+  let cost=0,rev=0,conv=0,dAmount=0,dCount=0,clicks=0,impressions=0;
+  ads.forEach(a=>{cost+=a.cost||0;rev+=a.rev||0;conv+=a.conv||0;dAmount+=a.directAmount||0;dCount+=a.directCount||0;clicks+=a.clicks||0;impressions+=a.impressions||0;});
+  return{cost,rev,conv,roas:cost>0?rev/cost*100:0,cpa:conv>0?cost/conv:0,dAmount,dCount,dRoas:cost>0?dAmount/cost*100:0,dCpa:dCount>0?cost/dCount:0,clicks,impressions,ctr:impressions>0?clicks/impressions*100:0};
+}
+function fmtW(v){if(!v||v===0)return '<span class="m-na">–</span>';return Math.round(v).toLocaleString('ko-KR')+'원';}
+function fmtWon(v){return Math.abs(Math.round(v)).toLocaleString('ko-KR')+'원';}
+function fmtN(v){if(!v||v===0)return '<span class="m-na">–</span>';return Math.round(v).toLocaleString('ko-KR')+'건';}
+function fmtMan(v,raw=false){const n=parseNum(v);const m=Math.round(n/10000);return raw?String(m):(m>0?m+'만':'–');}
+function shorten(n,len=28){return n&&n.length>len?n.slice(0,len)+'…':(n||'');}
+
+function mCls(v){
+  const t=getThresh();
+  if(!v||v<=0) return 'm-na';
+  if(v<t.roas_danger) return 'm-danger';
+  if(v<t.roas_warn)   return 'm-warn';
+  return 'm-good';
+}
+function roasBadge(v){if(!v||v<=0)return '<span class="m-na">–</span>';return `<span class="${mCls(v)}">${v.toFixed(0)}%</span>`;}
+function cpaBadge(v){
+  const t=getThresh();
+  if(!v||v<=0)return '<span class="m-na">–</span>';
+  const cls=v>t.cpa_danger?'m-danger':v<t.cpa_good?'m-good':'m-warn';
+  return `<span class="${cls}">${Math.round(v).toLocaleString('ko-KR')}원</span>`;
+}
+</script>
 </body>
 </html>
