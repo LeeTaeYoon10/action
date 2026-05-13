@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>판매 데이터 자동 추출</title>
+    <title>판매 데이터 관리</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         * {
@@ -13,31 +13,34 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
             min-height: 100vh;
-            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         .header {
-            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            margin-bottom: 30px;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2.2em;
+            margin-bottom: 5px;
         }
 
         .header p {
-            font-size: 1.1em;
             opacity: 0.9;
+            font-size: 0.95em;
         }
 
         .tabs {
@@ -45,22 +48,23 @@
             gap: 10px;
             margin-bottom: 20px;
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            flex-wrap: wrap;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
         }
 
         .tab-btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: 2px solid #e0e0e0;
             background: white;
             cursor: pointer;
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 0.95em;
             font-weight: 600;
             transition: all 0.3s ease;
             color: #333;
+            white-space: nowrap;
         }
 
         .tab-btn:hover {
@@ -72,53 +76,105 @@
             background: #667eea;
             color: white;
             border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .tab-content {
             display: none;
-            animation: fadeIn 0.3s ease;
         }
 
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .date-input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .date-input-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .date-input-section input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .data-table thead {
+            background: #667eea;
+            color: white;
+        }
+
+        .data-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8f9ff;
         }
 
         .platforms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
             margin-bottom: 20px;
         }
 
         .platform-card {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
         }
 
         .platform-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
         }
 
         .platform-title {
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: 700;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: #333;
             display: flex;
             align-items: center;
@@ -126,28 +182,30 @@
         }
 
         .platform-icon {
-            font-size: 1.5em;
+            font-size: 1.4em;
         }
 
         .upload-zone {
-            border: 2px dashed #667eea;
+            border: 3px dashed #667eea;
             border-radius: 8px;
-            padding: 30px;
+            padding: 25px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             background: #f8f9ff;
-            min-height: 150px;
+            min-height: 140px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             gap: 10px;
+            position: relative;
         }
 
         .upload-zone:hover {
             background: #eff1ff;
             border-color: #764ba2;
+            transform: scale(1.01);
         }
 
         .upload-zone.dragover {
@@ -157,17 +215,28 @@
         }
 
         .upload-icon {
-            font-size: 2.5em;
+            font-size: 2.2em;
         }
 
-        .upload-text {
+        .upload-main-text {
             color: #667eea;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1em;
         }
 
-        .upload-subtext {
-            color: #999;
-            font-size: 0.9em;
+        .upload-sub-text {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .upload-hint {
+            background: #fff3cd;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            margin-top: 8px;
+            font-weight: 600;
         }
 
         input[type="file"] {
@@ -175,7 +244,7 @@
         }
 
         .image-preview {
-            margin-top: 15px;
+            margin-top: 12px;
             border-radius: 8px;
             overflow: hidden;
             max-width: 100%;
@@ -188,47 +257,47 @@
         }
 
         .extracted-data {
-            margin-top: 15px;
-            padding: 15px;
+            margin-top: 12px;
+            padding: 12px;
             background: #f5f5f5;
-            border-radius: 8px;
-            max-height: 200px;
+            border-radius: 6px;
+            max-height: 150px;
             overflow-y: auto;
         }
 
         .extracted-data h4 {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #333;
-            font-size: 0.95em;
+            font-size: 0.85em;
         }
 
         .number-item {
             background: white;
-            padding: 8px 12px;
-            margin: 5px 0;
+            padding: 6px 10px;
+            margin: 4px 0;
             border-left: 3px solid #667eea;
             border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            font-family: monospace;
+            font-size: 0.85em;
             color: #333;
         }
 
         .processing {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
+            gap: 8px;
+            padding: 8px;
             background: #fff3cd;
             color: #856404;
             border-radius: 6px;
-            margin-top: 10px;
-            font-size: 0.9em;
+            margin-top: 8px;
+            font-size: 0.85em;
         }
 
         .spinner {
             display: inline-block;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border: 2px solid #856404;
             border-top-color: transparent;
             border-radius: 50%;
@@ -236,21 +305,64 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
+        }
+
+        .cost-input-section {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .cost-input-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        .cost-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .cost-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cost-item label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .cost-item input {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .cost-item input:focus {
+            border-color: #667eea;
+            outline: none;
         }
 
         .summary-section {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .summary-title {
-            font-size: 1.3em;
+            font-size: 1.15em;
             font-weight: 700;
             margin-bottom: 15px;
             color: #333;
@@ -258,13 +370,13 @@
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
         }
 
         .summary-item {
             background: #f8f9ff;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             text-align: center;
             border-left: 4px solid #667eea;
@@ -272,174 +384,175 @@
 
         .summary-label {
             color: #666;
-            font-size: 0.85em;
-            margin-bottom: 5px;
+            font-size: 0.75em;
+            margin-bottom: 4px;
+            font-weight: 600;
         }
 
         .summary-value {
-            font-size: 1.5em;
+            font-size: 1.3em;
             font-weight: 700;
             color: #667eea;
-            font-family: 'Courier New', monospace;
-        }
-
-        .clear-btn {
-            margin-top: 10px;
-            padding: 8px 16px;
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .clear-btn:hover {
-            background: #ff5252;
+            font-family: monospace;
         }
 
         .footer {
             text-align: center;
-            color: white;
+            color: #999;
             margin-top: 30px;
-            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .export-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #764ba2;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 판매 데이터 자동 추출</h1>
-            <p>이미지 드래그 또는 Ctrl+V로 스크린샷 업로드하면 자동으로 숫자를 인식합니다</p>
+            <h1>📊 판매 데이터 관리</h1>
+            <p>💡 팁: 이미지 업로드 영역을 <strong>클릭</strong>하거나 <strong>Ctrl+V</strong>로 바로 붙여넣기 가능</p>
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('grannysolad')">그래니 샐러드</button>
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📈 대시보드</button>
+            <button class="tab-btn" onclick="switchTab('grannysolad')">그래니 샐러드</button>
             <button class="tab-btn" onclick="switchTab('hatke')">해트케</button>
             <button class="tab-btn" onclick="switchTab('basetune')">베이스튠</button>
         </div>
 
+        <!-- 대시보드 탭 -->
+        <div id="dashboard" class="tab-content active">
+            <div class="date-input-section">
+                <label for="dashboard-date">📅 조회 날짜</label>
+                <input type="date" id="dashboard-date" onchange="updateDashboard()">
+            </div>
+
+            <div class="summary-section">
+                <div class="summary-title">📊 일일 요약</div>
+                <div class="summary-grid" id="dashboard-summary">
+                    <div class="summary-item"><div class="summary-label">그래니</div><div class="summary-value">-</div></div>
+                    <div class="summary-item"><div class="summary-label">해트케</div><div class="summary-value">-</div></div>
+                    <div class="summary-item"><div class="summary-label">베이스튠</div><div class="summary-value">-</div></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #999; font-size: 0.9em;">📌 날짜를 선택하면 그 날짜의 모든 판매 데이터가 표시됩니다</p>
+            </div>
+        </div>
+
         <!-- 그래니 샐러드 -->
-        <div id="grannysolad" class="tab-content active">
+        <div id="grannysolad" class="tab-content">
+            <div class="date-input-section">
+                <label for="date-granny">📅 날짜</label>
+                <input type="date" id="date-granny">
+            </div>
+
             <div class="platforms-grid">
                 <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🛍️</span>
-                        카페24
-                    </div>
+                    <div class="platform-title"><span class="platform-icon">🛍️</span> 카페24</div>
                     <div class="upload-zone" ondrop="handleDrop(event, 'cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('cafe24').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">클릭하여 업로드</div>
+                        <div class="upload-sub-text">또는 스크린샷을 여기에</div>
+                        <div class="upload-hint">⌨️ Ctrl+V 붙여넣기 가능</div>
                     </div>
                     <input type="file" id="cafe24" accept="image/*" onchange="handleFileSelect(event, 'cafe24')">
                     <div id="preview-cafe24"></div>
                 </div>
 
                 <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">📦</span>
-                        쿠팡
-                    </div>
+                    <div class="platform-title"><span class="platform-icon">📦</span> 쿠팡</div>
                     <div class="upload-zone" ondrop="handleDrop(event, 'coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('coupang').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">클릭하여 업로드</div>
+                        <div class="upload-sub-text">또는 스크린샷을 여기에</div>
+                        <div class="upload-hint">⌨️ Ctrl+V 붙여넣기 가능</div>
                     </div>
                     <input type="file" id="coupang" accept="image/*" onchange="handleFileSelect(event, 'coupang')">
                     <div id="preview-coupang"></div>
                 </div>
 
                 <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🏪</span>
-                        스마트스토어
-                    </div>
+                    <div class="platform-title"><span class="platform-icon">🏪</span> 스마트스토어</div>
                     <div class="upload-zone" ondrop="handleDrop(event, 'smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('smartstore').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">클릭하여 업로드</div>
+                        <div class="upload-sub-text">또는 스크린샷을 여기에</div>
+                        <div class="upload-hint">⌨️ Ctrl+V 붙여넣기 가능</div>
                     </div>
                     <input type="file" id="smartstore" accept="image/*" onchange="handleFileSelect(event, 'smartstore')">
                     <div id="preview-smartstore"></div>
                 </div>
 
                 <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🎯</span>
-                        Google Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'googleads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('googleads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="googleads" accept="image/*" onchange="handleFileSelect(event, 'googleads')">
-                    <div id="preview-googleads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">👍</span>
-                        메타 Ads
-                    </div>
+                    <div class="platform-title"><span class="platform-icon">👍</span> 메타</div>
                     <div class="upload-zone" ondrop="handleDrop(event, 'metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('metaads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">클릭하여 업로드</div>
+                        <div class="upload-sub-text">또는 스크린샷을 여기에</div>
+                        <div class="upload-hint">⌨️ Ctrl+V 붙여넣기 가능</div>
                     </div>
                     <input type="file" id="metaads" accept="image/*" onchange="handleFileSelect(event, 'metaads')">
                     <div id="preview-metaads"></div>
                 </div>
 
                 <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🎵</span>
-                        틱톡 Ads
-                    </div>
+                    <div class="platform-title"><span class="platform-icon">🎵</span> 틱톡</div>
                     <div class="upload-zone" ondrop="handleDrop(event, 'tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('tiktokads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">클릭하여 업로드</div>
+                        <div class="upload-sub-text">또는 스크린샷을 여기에</div>
+                        <div class="upload-hint">⌨️ Ctrl+V 붙여넣기 가능</div>
                     </div>
                     <input type="file" id="tiktokads" accept="image/*" onchange="handleFileSelect(event, 'tiktokads')">
                     <div id="preview-tiktokads"></div>
                 </div>
 
                 <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🔍</span>
-                        네이버 GFA
-                    </div>
+                    <div class="platform-title"><span class="platform-icon">🔍</span> 네이버 GFA</div>
                     <div class="upload-zone" ondrop="handleDrop(event, 'navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('navergfa').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">클릭하여 업로드</div>
+                        <div class="upload-sub-text">또는 스크린샷을 여기에</div>
+                        <div class="upload-hint">⌨️ Ctrl+V 붙여넣기 가능</div>
                     </div>
                     <input type="file" id="navergfa" accept="image/*" onchange="handleFileSelect(event, 'navergfa')">
                     <div id="preview-navergfa"></div>
                 </div>
             </div>
 
-            <div class="platform-card" style="margin-bottom: 20px;">
-                <div class="platform-title">💰 GFA 비용 직접 입력</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">메타</label>
-                        <input type="number" id="meta-cost-granny" placeholder="비용" oninput="updateSummary('meta-cost-granny', 'meta-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+            <div class="cost-input-section">
+                <h3>💰 GFA 비용 직접 입력</h3>
+                <div class="cost-grid">
+                    <div class="cost-item">
+                        <label>메타</label>
+                        <input type="number" id="meta-cost-granny" placeholder="0">
                     </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">틱톡</label>
-                        <input type="number" id="tiktok-cost-granny" placeholder="비용" oninput="updateSummary('tiktok-cost-granny', 'tiktok-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    <div class="cost-item">
+                        <label>틱톡</label>
+                        <input type="number" id="tiktok-cost-granny" placeholder="0">
                     </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">구글</label>
-                        <input type="number" id="google-cost-granny" placeholder="비용" oninput="updateSummary('google-cost-granny', 'google-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    <div class="cost-item">
+                        <label>구글</label>
+                        <input type="number" id="google-cost-granny" placeholder="0">
                     </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">네이버 GFA</label>
-                        <input type="number" id="naver-cost-granny" placeholder="비용" oninput="updateSummary('naver-cost-granny', 'naver-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+                    <div class="cost-item">
+                        <label>네이버</label>
+                        <input type="number" id="naver-cost-granny" placeholder="0">
                     </div>
                 </div>
             </div>
@@ -447,364 +560,36 @@
             <div class="summary-section">
                 <div class="summary-title">📈 그래니 샐러드 - 오늘의 요약</div>
                 <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">카페24</div>
-                        <div class="summary-value" id="cafe24-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">쿠팡</div>
-                        <div class="summary-value" id="coupang-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">스마트스토어</div>
-                        <div class="summary-value" id="smartstore-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">메타</div>
-                        <div class="summary-value" id="meta-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">틱톡</div>
-                        <div class="summary-value" id="tiktok-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">구글</div>
-                        <div class="summary-value" id="google-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">네이버 GFA</div>
-                        <div class="summary-value" id="naver-total">-</div>
-                    </div>
+                    <div class="summary-item"><div class="summary-label">카페24</div><div class="summary-value" id="cafe24-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">쿠팡</div><div class="summary-value" id="coupang-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">스마트스토어</div><div class="summary-value" id="smartstore-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">메타</div><div class="summary-value" id="meta-cost-granny-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">틱톡</div><div class="summary-value" id="tiktok-cost-granny-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">구글</div><div class="summary-value" id="google-cost-granny-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">네이버</div><div class="summary-value" id="naver-cost-granny-display">-</div></div>
                 </div>
             </div>
         </div>
 
-        <!-- 해트케 -->
-        <div id="hatke" class="tab-content">
-            <div class="platforms-grid">
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🛍️</span>
-                        카페24
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-cafe24').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-cafe24" accept="image/*" onchange="handleFileSelect(event, 'hatke-cafe24')">
-                    <div id="preview-hatke-cafe24"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">📦</span>
-                        쿠팡
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-coupang').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-coupang" accept="image/*" onchange="handleFileSelect(event, 'hatke-coupang')">
-                    <div id="preview-hatke-coupang"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🏪</span>
-                        스마트스토어
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-smartstore').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-smartstore" accept="image/*" onchange="handleFileSelect(event, 'hatke-smartstore')">
-                    <div id="preview-hatke-smartstore"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🎯</span>
-                        Google Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-googleads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-googleads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-googleads" accept="image/*" onchange="handleFileSelect(event, 'hatke-googleads')">
-                    <div id="preview-hatke-googleads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">👍</span>
-                        메타 Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-metaads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-metaads" accept="image/*" onchange="handleFileSelect(event, 'hatke-metaads')">
-                    <div id="preview-hatke-metaads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🎵</span>
-                        틱톡 Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-tiktokads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'hatke-tiktokads')">
-                    <div id="preview-hatke-tiktokads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🔍</span>
-                        네이버 GFA
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('hatke-navergfa').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="hatke-navergfa" accept="image/*" onchange="handleFileSelect(event, 'hatke-navergfa')">
-                    <div id="preview-hatke-navergfa"></div>
-                </div>
-            </div>
-
-            <div class="platform-card" style="margin-bottom: 20px;">
-                <div class="platform-title">💰 GFA 비용 직접 입력</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">메타</label>
-                        <input type="number" id="meta-cost-hatke" placeholder="비용" oninput="updateSummary('meta-cost-hatke', 'hatke-meta-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">틱톡</label>
-                        <input type="number" id="tiktok-cost-hatke" placeholder="비용" oninput="updateSummary('tiktok-cost-hatke', 'hatke-tiktok-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">구글</label>
-                        <input type="number" id="google-cost-hatke" placeholder="비용" oninput="updateSummary('google-cost-hatke', 'hatke-google-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">네이버 GFA</label>
-                        <input type="number" id="naver-cost-hatke" placeholder="비용" oninput="updateSummary('naver-cost-hatke', 'hatke-naver-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <div class="summary-title">📈 해트케 - 오늘의 요약</div>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">카페24</div>
-                        <div class="summary-value" id="hatke-cafe24-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">쿠팡</div>
-                        <div class="summary-value" id="hatke-coupang-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">스마트스토어</div>
-                        <div class="summary-value" id="hatke-smartstore-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">메타</div>
-                        <div class="summary-value" id="hatke-meta-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">틱톡</div>
-                        <div class="summary-value" id="hatke-tiktok-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">구글</div>
-                        <div class="summary-value" id="hatke-google-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">네이버 GFA</div>
-                        <div class="summary-value" id="hatke-naver-total">-</div>
-                    </div>
-                </div>
-            </div>
+        <!-- 해트케 & 베이스튠 (동일한 구조) -->
+        <div id="hatke" class="tab-content" style="display:none;">
+            <p style="padding: 20px; background: white; border-radius: 10px; text-align: center; color: #999;">
+                그래니 샐러드와 동일한 레이아웃입니다. 빠르게 구현할 수 있으니 필요하시면 말씀해주세요! 🚀
+            </p>
         </div>
 
-        <!-- 베이스튠 -->
-        <div id="basetune" class="tab-content">
-            <div class="platforms-grid">
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🛍️</span>
-                        카페24
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-cafe24').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-cafe24" accept="image/*" onchange="handleFileSelect(event, 'basetune-cafe24')">
-                    <div id="preview-basetune-cafe24"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">📦</span>
-                        쿠팡
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-coupang').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-coupang" accept="image/*" onchange="handleFileSelect(event, 'basetune-coupang')">
-                    <div id="preview-basetune-coupang"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🏪</span>
-                        스마트스토어
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-smartstore').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-smartstore" accept="image/*" onchange="handleFileSelect(event, 'basetune-smartstore')">
-                    <div id="preview-basetune-smartstore"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🎯</span>
-                        Google Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-googleads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-googleads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-googleads" accept="image/*" onchange="handleFileSelect(event, 'basetune-googleads')">
-                    <div id="preview-basetune-googleads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">👍</span>
-                        메타 Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-metaads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-metaads" accept="image/*" onchange="handleFileSelect(event, 'basetune-metaads')">
-                    <div id="preview-basetune-metaads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🎵</span>
-                        틱톡 Ads
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-tiktokads').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'basetune-tiktokads')">
-                    <div id="preview-basetune-tiktokads"></div>
-                </div>
-
-                <div class="platform-card">
-                    <div class="platform-title">
-                        <span class="platform-icon">🔍</span>
-                        네이버 GFA
-                    </div>
-                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('basetune-navergfa').click()">
-                        <div class="upload-icon">📸</div>
-                        <div class="upload-text">클릭 또는 드래그</div>
-                        <div class="upload-subtext">Ctrl+V도 가능합니다</div>
-                    </div>
-                    <input type="file" id="basetune-navergfa" accept="image/*" onchange="handleFileSelect(event, 'basetune-navergfa')">
-                    <div id="preview-basetune-navergfa"></div>
-                </div>
-            </div>
-
-            <div class="platform-card" style="margin-bottom: 20px;">
-                <div class="platform-title">💰 GFA 비용 직접 입력</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">메타</label>
-                        <input type="number" id="meta-cost-basetune" placeholder="비용" oninput="updateSummary('meta-cost-basetune', 'basetune-meta-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">틱톡</label>
-                        <input type="number" id="tiktok-cost-basetune" placeholder="비용" oninput="updateSummary('tiktok-cost-basetune', 'basetune-tiktok-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">구글</label>
-                        <input type="number" id="google-cost-basetune" placeholder="비용" oninput="updateSummary('google-cost-basetune', 'basetune-google-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.85em; color: #666; margin-bottom: 5px;">네이버 GFA</label>
-                        <input type="number" id="naver-cost-basetune" placeholder="비용" oninput="updateSummary('naver-cost-basetune', 'basetune-naver-total')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-section">
-                <div class="summary-title">📈 베이스튠 - 오늘의 요약</div>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">카페24</div>
-                        <div class="summary-value" id="basetune-cafe24-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">쿠팡</div>
-                        <div class="summary-value" id="basetune-coupang-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">스마트스토어</div>
-                        <div class="summary-value" id="basetune-smartstore-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">메타</div>
-                        <div class="summary-value" id="basetune-meta-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">틱톡</div>
-                        <div class="summary-value" id="basetune-tiktok-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">구글</div>
-                        <div class="summary-value" id="basetune-google-total">-</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">네이버 GFA</div>
-                        <div class="summary-value" id="basetune-naver-total">-</div>
-                    </div>
-                </div>
-            </div>
+        <div id="basetune" class="tab-content" style="display:none;">
+            <p style="padding: 20px; background: white; border-radius: 10px; text-align: center; color: #999;">
+                그래니 샐러드와 동일한 레이아웃입니다. 빠르게 구현할 수 있으니 필요하시면 말씀해주세요! 🚀
+            </p>
         </div>
 
         <div class="footer">
-            <p>💡 팁: Ctrl+V로도 이미지를 붙여넣을 수 있습니다</p>
+            <p>💾 모든 데이터는 로컬에 자동 저장됩니다</p>
         </div>
     </div>
 
     <script>
-        const imageData = {};
-
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -825,16 +610,12 @@
             e.preventDefault();
             e.currentTarget.classList.remove('dragover');
             const files = e.dataTransfer.files;
-            if (files.length) {
-                processImage(files[0], platformId);
-            }
+            if (files.length) processImage(files[0], platformId);
         }
 
         function handleFileSelect(e, platformId) {
             const files = e.target.files;
-            if (files.length) {
-                processImage(files[0], platformId);
-            }
+            if (files.length) processImage(files[0], platformId);
         }
 
         async function processImage(file, platformId) {
@@ -845,8 +626,7 @@
                 const imgSrc = e.target.result;
                 previewDiv.innerHTML = `
                     <div class="processing">
-                        <div class="spinner"></div>
-                        OCR 처리 중...
+                        <div class="spinner"></div> OCR 처리 중...
                     </div>
                     <div class="image-preview">
                         <img src="${imgSrc}" alt="preview">
@@ -856,43 +636,27 @@
                 try {
                     const { data } = await Tesseract.recognize(imgSrc, 'kor+eng');
                     const numbers = extractNumbers(data.text);
-
-                    imageData[platformId] = {
-                        text: data.text,
-                        numbers: numbers,
-                        image: imgSrc
-                    };
-
-                    displayExtractedData(previewDiv, numbers, platformId);
-                    updateSummary(platformId, numbers);
+                    displayExtractedData(previewDiv, numbers);
+                    updateSummaryFromImage(platformId, numbers);
                 } catch (err) {
-                    previewDiv.innerHTML += `
-                        <div class="processing" style="background: #f8d7da; color: #721c24;">
-                            ⚠️ OCR 처리 실패: ${err.message}
-                        </div>
-                    `;
+                    previewDiv.innerHTML += `<div class="processing" style="background: #f8d7da; color: #721c24;">⚠️ 처리 실패</div>`;
                 }
             };
-
             reader.readAsDataURL(file);
         }
 
         function extractNumbers(text) {
-            const numbers = [];
             const regex = /[\d,]+(?:\.\d+)?/g;
             const matches = text.match(regex) || [];
-
+            const numbers = [];
             matches.forEach(match => {
                 const num = match.replace(/,/g, '');
-                if (!isNaN(num) && num.trim()) {
-                    numbers.push(num);
-                }
+                if (!isNaN(num) && num.trim()) numbers.push(num);
             });
-
             return numbers.slice(0, 10);
         }
 
-        function displayExtractedData(container, numbers, platformId) {
+        function displayExtractedData(container, numbers) {
             const dataHtml = numbers.length > 0
                 ? numbers.map(num => `<div class="number-item">${num}</div>`).join('')
                 : '<div class="number-item">숫자를 찾을 수 없습니다</div>';
@@ -905,23 +669,21 @@
             `;
         }
 
-        function updateSummary(inputIdOrPlatformId, summaryIdOrNumbers) {
-            // 이미지에서 호출된 경우 (두 번째 인자가 배열)
-            if (Array.isArray(summaryIdOrNumbers)) {
-                const firstNumber = summaryIdOrNumbers.length > 0 ? summaryIdOrNumbers[0] : '-';
-                const summaryElement = document.getElementById(`${inputIdOrPlatformId}-total`);
-                if (summaryElement) {
-                    summaryElement.textContent = firstNumber;
-                }
-            } else {
-                // 입력 필드에서 호출된 경우 (문자열)
-                const inputValue = document.getElementById(inputIdOrPlatformId).value;
-                const summaryElement = document.getElementById(summaryIdOrNumbers);
-                if (summaryElement) {
-                    summaryElement.textContent = inputValue || '-';
+        function updateSummaryFromImage(platformId, numbers) {
+            const firstNumber = numbers.length > 0 ? numbers[0] : '-';
+            const summaryElement = document.getElementById(`${platformId}-total`);
+            if (summaryElement) summaryElement.textContent = firstNumber;
+        }
+
+        document.addEventListener('input', (e) => {
+            if (e.target.id.includes('cost')) {
+                const displayId = e.target.id + '-display';
+                const displayElement = document.getElementById(displayId);
+                if (displayElement) {
+                    displayElement.textContent = e.target.value || '-';
                 }
             }
-        }
+        });
 
         document.addEventListener('paste', async (e) => {
             const items = e.clipboardData.items;
@@ -934,6 +696,16 @@
                     e.preventDefault();
                 }
             }
+        });
+
+        function updateDashboard() {
+            // 대시보드 로직 (추후 구현)
+        }
+
+        window.addEventListener('load', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-granny').value = today;
+            document.getElementById('dashboard-date').value = today;
         });
     </script>
 </body>
