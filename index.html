@@ -1424,41 +1424,54 @@ function downloadScreenshot() {
       ${m.html}`;
     document.body.appendChild(container);
 
-    // 렌더링 후 scrollHeight 측정 → 높이 명시 고정 → 캡처
+    // 청크 방식: 전체를 CHUNK 단위로 나눠 캡처 후 하나의 Canvas에 합치기
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const w = 1400;
-      const h = container.scrollHeight;
-      // 높이를 명시적으로 고정해야 html2canvas가 전체를 캡처함
-      container.style.height = h + 'px';
-      container.style.overflow = 'hidden';
+      const W = 1400;
+      const H = container.scrollHeight;
+      const CHUNK = 1200;
+      const SCALE = 2;
 
-      // body 높이도 확보해서 잘림 방지
-      const prevMinH = document.body.style.minHeight;
-      document.body.style.minHeight = (h + 100) + 'px';
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width  = W * SCALE;
+      finalCanvas.height = H * SCALE;
+      const ctx = finalCanvas.getContext('2d');
 
-      html2canvas(container, {
-        scale: 2, backgroundColor: '#0f1117',
-        logging: false, useCORS: true, allowTaint: true,
-        width: w, height: h,
-        windowWidth: w, windowHeight: h + 100,
-        scrollX: 0, scrollY: 0,
-        x: 0, y: 0
-      }).then(canvas => {
-        document.body.style.minHeight = prevMinH;
-        document.body.removeChild(container);
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = m.filename;
-        document.body.appendChild(link);
-        link.click();
-        setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 300);
-      }).catch(err => {
-        document.body.style.minHeight = prevMinH;
-        if (document.body.contains(container)) document.body.removeChild(container);
-        console.error('스크린샷 오류:', err);
-        btn.disabled = false;
-        btn.textContent = originalText;
-      });
+      const chunks = [];
+      for (let y = 0; y < H; y += CHUNK) chunks.push(y);
+
+      function drawChunk(i) {
+        if (i >= chunks.length) {
+          // 모든 청크 합쳐짐 → 다운로드
+          document.body.removeChild(container);
+          const link = document.createElement('a');
+          link.href = finalCanvas.toDataURL('image/png');
+          link.download = m.filename;
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 300);
+          return;
+        }
+        const y = chunks[i];
+        const chunkH = Math.min(CHUNK, H - y);
+        html2canvas(container, {
+          scale: SCALE, backgroundColor: '#0f1117',
+          logging: false, useCORS: true, allowTaint: true,
+          width: W, height: chunkH,
+          windowWidth: W, windowHeight: chunkH,
+          scrollX: 0, scrollY: 0,
+          x: 0, y: y
+        }).then(canvas => {
+          ctx.drawImage(canvas, 0, y * SCALE);
+          drawChunk(i + 1);
+        }).catch(err => {
+          if (document.body.contains(container)) document.body.removeChild(container);
+          console.error('스크린샷 오류:', err);
+          btn.disabled = false;
+          btn.textContent = originalText;
+        });
+      }
+
+      drawChunk(0);
     }));
   }
 
