@@ -571,17 +571,214 @@
             </div>
         </div>
 
-        <!-- 해트케 & 베이스튠 (동일한 구조) -->
+        <!-- 해트케 -->
         <div id="hatke" class="tab-content" style="display:none;">
-            <p style="padding: 20px; background: white; border-radius: 10px; text-align: center; color: #999;">
-                그래니 샐러드와 동일한 레이아웃입니다. 빠르게 구현할 수 있으니 필요하시면 말씀해주세요! 🚀
-            </p>
+            <div class="date-input-section">
+                <label for="date-hatke">📅 날짜</label>
+                <input type="date" id="date-hatke">
+            </div>
+
+            <div class="platforms-grid">
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🛍️</span> 카페24</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="hatke-cafe24" accept="image/*" onchange="handleFileSelect(event, 'hatke-cafe24')" style="display:none;">
+                    <div id="preview-hatke-cafe24"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">📦</span> 쿠팡</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="hatke-coupang" accept="image/*" onchange="handleFileSelect(event, 'hatke-coupang')" style="display:none;">
+                    <div id="preview-hatke-coupang"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🏪</span> 스마트스토어</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="hatke-smartstore" accept="image/*" onchange="handleFileSelect(event, 'hatke-smartstore')" style="display:none;">
+                    <div id="preview-hatke-smartstore"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">👍</span> 메타</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="hatke-metaads" accept="image/*" onchange="handleFileSelect(event, 'hatke-metaads')" style="display:none;">
+                    <div id="preview-hatke-metaads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🎵</span> 틱톡</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="hatke-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'hatke-tiktokads')" style="display:none;">
+                    <div id="preview-hatke-tiktokads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🔍</span> 네이버 GFA</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'hatke-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="hatke-navergfa" accept="image/*" onchange="handleFileSelect(event, 'hatke-navergfa')" style="display:none;">
+                    <div id="preview-hatke-navergfa"></div>
+                </div>
+            </div>
+
+            <div class="cost-input-section">
+                <h3>💰 광고 비용 직접 입력</h3>
+                <div class="cost-grid">
+                    <div class="cost-item"><label>메타</label><input type="number" id="meta-cost-hatke" placeholder="0"></div>
+                    <div class="cost-item"><label>틱톡</label><input type="number" id="tiktok-cost-hatke" placeholder="0"></div>
+                    <div class="cost-item"><label>구글</label><input type="number" id="google-cost-hatke" placeholder="0"></div>
+                    <div class="cost-item"><label>네이버</label><input type="number" id="naver-cost-hatke" placeholder="0"></div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <div class="summary-title">📈 해트케 - 오늘의 요약</div>
+                <div class="summary-grid">
+                    <div class="summary-item"><div class="summary-label">카페24</div><div class="summary-value" id="hatke-cafe24-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">쿠팡</div><div class="summary-value" id="hatke-coupang-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">스마트스토어</div><div class="summary-value" id="hatke-smartstore-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">메타</div><div class="summary-value" id="meta-cost-hatke-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">틱톡</div><div class="summary-value" id="tiktok-cost-hatke-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">구글</div><div class="summary-value" id="google-cost-hatke-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">네이버</div><div class="summary-value" id="naver-cost-hatke-display">-</div></div>
+                </div>
+            </div>
         </div>
 
+        <!-- 베이스튠 -->
         <div id="basetune" class="tab-content" style="display:none;">
-            <p style="padding: 20px; background: white; border-radius: 10px; text-align: center; color: #999;">
-                그래니 샐러드와 동일한 레이아웃입니다. 빠르게 구현할 수 있으니 필요하시면 말씀해주세요! 🚀
-            </p>
+            <div class="date-input-section">
+                <label for="date-basetune">📅 날짜</label>
+                <input type="date" id="date-basetune">
+            </div>
+
+            <div class="platforms-grid">
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🛍️</span> 카페24</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-cafe24')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="basetune-cafe24" accept="image/*" onchange="handleFileSelect(event, 'basetune-cafe24')" style="display:none;">
+                    <div id="preview-basetune-cafe24"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">📦</span> 쿠팡</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-coupang')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="basetune-coupang" accept="image/*" onchange="handleFileSelect(event, 'basetune-coupang')" style="display:none;">
+                    <div id="preview-basetune-coupang"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🏪</span> 스마트스토어</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-smartstore')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="basetune-smartstore" accept="image/*" onchange="handleFileSelect(event, 'basetune-smartstore')" style="display:none;">
+                    <div id="preview-basetune-smartstore"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">👍</span> 메타</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-metaads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="basetune-metaads" accept="image/*" onchange="handleFileSelect(event, 'basetune-metaads')" style="display:none;">
+                    <div id="preview-basetune-metaads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🎵</span> 틱톡</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-tiktokads')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="basetune-tiktokads" accept="image/*" onchange="handleFileSelect(event, 'basetune-tiktokads')" style="display:none;">
+                    <div id="preview-basetune-tiktokads"></div>
+                </div>
+
+                <div class="platform-card">
+                    <div class="platform-title"><span class="platform-icon">🔍</span> 네이버 GFA</div>
+                    <div class="upload-zone" ondrop="handleDrop(event, 'basetune-navergfa')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-main-text">스크린샷 붙여넣기</div>
+                        <div class="upload-sub-text">드래그하거나</div>
+                        <div class="upload-hint">⌨️ Ctrl+V</div>
+                    </div>
+                    <input type="file" id="basetune-navergfa" accept="image/*" onchange="handleFileSelect(event, 'basetune-navergfa')" style="display:none;">
+                    <div id="preview-basetune-navergfa"></div>
+                </div>
+            </div>
+
+            <div class="cost-input-section">
+                <h3>💰 광고 비용 직접 입력</h3>
+                <div class="cost-grid">
+                    <div class="cost-item"><label>메타</label><input type="number" id="meta-cost-basetune" placeholder="0"></div>
+                    <div class="cost-item"><label>틱톡</label><input type="number" id="tiktok-cost-basetune" placeholder="0"></div>
+                    <div class="cost-item"><label>구글</label><input type="number" id="google-cost-basetune" placeholder="0"></div>
+                    <div class="cost-item"><label>네이버</label><input type="number" id="naver-cost-basetune" placeholder="0"></div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <div class="summary-title">📈 베이스튠 - 오늘의 요약</div>
+                <div class="summary-grid">
+                    <div class="summary-item"><div class="summary-label">카페24</div><div class="summary-value" id="basetune-cafe24-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">쿠팡</div><div class="summary-value" id="basetune-coupang-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">스마트스토어</div><div class="summary-value" id="basetune-smartstore-total">-</div></div>
+                    <div class="summary-item"><div class="summary-label">메타</div><div class="summary-value" id="meta-cost-basetune-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">틱톡</div><div class="summary-value" id="tiktok-cost-basetune-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">구글</div><div class="summary-value" id="google-cost-basetune-display">-</div></div>
+                    <div class="summary-item"><div class="summary-label">네이버</div><div class="summary-value" id="naver-cost-basetune-display">-</div></div>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
@@ -636,13 +833,18 @@
                 try {
                     const { data } = await Tesseract.recognize(imgSrc, 'kor+eng');
 
+                    // 브랜드 파악
+                    let brand = 'granny';
+                    if (platformId.includes('hatke')) brand = 'hatke';
+                    else if (platformId.includes('basetune')) brand = 'basetune';
+
                     // 해당 날짜 가져오기
-                    let dateInput = document.getElementById('date-granny');
+                    let dateInput = document.getElementById(`date-${brand}`);
                     let selectedDate = dateInput ? dateInput.value : null;
 
-                    const numbers = extractNumbers(data.text, selectedDate);
+                    const numbers = extractNumbers(data.text, selectedDate, platformId);
                     displayExtractedData(previewDiv, numbers);
-                    updateSummaryFromImage(platformId, numbers);
+                    updateSummaryFromImage(platformId, numbers, brand);
                 } catch (err) {
                     previewDiv.innerHTML += `<div class="processing" style="background: #f8d7da; color: #721c24;">⚠️ 처리 실패</div>`;
                 }
@@ -650,8 +852,10 @@
             reader.readAsDataURL(file);
         }
 
-        function extractNumbers(text, selectedDate) {
+        function extractNumbers(text, selectedDate, platformId) {
             const numbers = [];
+            const isAdsPlatform = ['metaads', 'tiktokads', 'googleads', 'navergfa'].some(p => platformId.includes(p));
+            const minValue = isAdsPlatform ? 1000 : 100000;
 
             // selectedDate가 있으면 해당 날짜로 변환 (YYYY-MM-DD → MM월 DD일)
             let targetDate = null;
@@ -676,21 +880,21 @@
                     amountMatches.forEach(match => {
                         const num = match.replace(/,/g, '');
                         const numValue = parseFloat(num);
-                        if (numValue >= 100000) {
+                        if (numValue >= minValue) {
                             numbers.push(num);
                         }
                     });
                 }
             }
 
-            // 날짜로 찾지 못한 경우, 모든 큰 금액 추출
+            // 날짜로 찾지 못한 경우, 모든 금액 추출
             if (numbers.length === 0) {
                 const regex = /[\d,]+(?:\.\d+)?/g;
                 const matches = text.match(regex) || [];
                 matches.forEach(match => {
                     const num = match.replace(/,/g, '');
                     const numValue = parseFloat(num);
-                    if (numValue >= 100000) {
+                    if (numValue >= minValue) {
                         numbers.push(num);
                     }
                 });
@@ -712,27 +916,37 @@
             `;
         }
 
-        function updateSummaryFromImage(platformId, numbers) {
+        function updateSummaryFromImage(platformId, numbers, brand) {
             const firstNumber = numbers.length > 0 ? numbers[0] : '-';
-            const summaryElement = document.getElementById(`${platformId}-total`);
-            if (summaryElement) summaryElement.textContent = firstNumber;
 
-            // 광고 플랫폼의 비용 자동 입력
-            const costMap = {
-                'metaads': 'meta-cost-granny',
-                'tiktokads': 'tiktok-cost-granny',
-                'googleads': 'google-cost-granny',
-                'navergfa': 'naver-cost-granny'
-            };
+            // 광고 플랫폼 식별
+            const isAdsPlatform = ['metaads', 'tiktokads', 'googleads', 'navergfa'].some(p => platformId.includes(p));
 
-            if (costMap[platformId] && numbers.length > 1) {
-                const costInput = document.getElementById(costMap[platformId]);
-                if (costInput && !costInput.value) {
-                    costInput.value = numbers[1];
-                    const displayId = costMap[platformId] + '-display';
-                    const displayElement = document.getElementById(displayId);
-                    if (displayElement) displayElement.textContent = numbers[1];
+            if (isAdsPlatform) {
+                // 광고 플랫폼: 비용 필드에 입력
+                const adsCostMap = {
+                    'metaads': 'meta',
+                    'tiktokads': 'tiktok',
+                    'googleads': 'google',
+                    'navergfa': 'naver'
+                };
+
+                for (let [key, value] of Object.entries(adsCostMap)) {
+                    if (platformId.includes(key)) {
+                        const costInput = document.getElementById(`${value}-cost-${brand}`);
+                        if (costInput && !costInput.value) {
+                            costInput.value = firstNumber;
+                            const displayId = `${value}-cost-${brand}-display`;
+                            const displayElement = document.getElementById(displayId);
+                            if (displayElement) displayElement.textContent = firstNumber;
+                        }
+                        break;
+                    }
                 }
+            } else {
+                // 매출 매체: 매출 필드에 입력
+                const summaryElement = document.getElementById(`${platformId}-total`);
+                if (summaryElement) summaryElement.textContent = firstNumber;
             }
         }
 
