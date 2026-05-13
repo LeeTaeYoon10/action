@@ -69,7 +69,7 @@
     .section { background: white; border-radius: var(--radius); padding: 20px 22px; margin-bottom: 14px; box-shadow: var(--shadow); }
     .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
     .section-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .sales-icon { background: #DBEAFE; } .ad-icon { background: #FEF3C7; } .search-icon { background: #D1FAE5; } .summary-icon { background: #EDE9FE; }
+    .sales-icon { background: #DBEAFE; } .ad-icon { background: #FEF3C7; } .search-icon { background: #D1FAE5; } .summary-icon { background: #EDE9FE; } .history-icon { background: #FEF9C3; }
     .section-title { font-size: 15px; font-weight: 700; }
 
     /* Input Grid */
@@ -117,21 +117,8 @@
     .search-input { padding: 9px 11px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 13px; color: var(--gray-800); transition: border-color 0.15s; }
     .search-input:focus { outline: none; border-color: var(--primary); }
 
-    /* Summary Table */
-    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-100); }
-    .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-    .summary-table th { background: var(--gray-50); padding: 10px 13px; text-align: right; font-weight: 600; color: var(--gray-500); font-size: 11px; border-bottom: 1.5px solid var(--gray-200); }
-    .summary-table th.left { text-align: left; }
-    .summary-table td { padding: 12px 13px; text-align: right; border-bottom: 1px solid var(--gray-100); }
-    .summary-table td.left { text-align: left; font-weight: 700; color: var(--gray-700); }
-    .summary-table tr:last-child td { border-bottom: none; }
-    .summary-table tr.total-row td { background: var(--primary-light); color: var(--primary); font-weight: 700; }
-    .roas-good { color: var(--success); font-weight: 700; }
-    .roas-bad { color: var(--danger); font-weight: 700; }
-    .empty-row { text-align: center !important; color: var(--gray-400); padding: 28px !important; }
-
     /* Action Row */
-    .action-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .action-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; transition: all 0.2s; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: #4338CA; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
@@ -141,16 +128,113 @@
     .btn-success:hover { background: #D1FAE5; }
     .btn-capture { background: #F0F9FF; color: #0284C7; }
     .btn-capture:hover { background: #E0F2FE; }
+    .btn-save { background: #FEF9C3; color: #854D0E; }
+    .btn-save:hover { background: #FEF08A; }
     .refund-input { border-color: #FCA5A5 !important; background: #FFF5F5 !important; }
     .refund-input:focus { border-color: var(--danger) !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.08) !important; }
     .refund-label { color: var(--danger) !important; }
 
+    /* ── Sticky Results Bar ── */
+    .results-bar {
+      position: sticky; top: 68px; z-index: 90;
+      background: #1E1B4B;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-bottom: 2px solid rgba(255,255,255,0.08);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .result-card {
+      padding: 12px 18px;
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    .result-card:last-child { border-right: none; }
+    .result-brand-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .result-brand-name { font-size: 13px; font-weight: 700; color: white; }
+    .btn-cap-brand {
+      background: rgba(255,255,255,0.12); border: none; border-radius: 6px;
+      padding: 4px 10px; cursor: pointer; font-size: 12px; color: white;
+      transition: background 0.2s; display: flex; align-items: center; gap: 4px;
+    }
+    .btn-cap-brand:hover { background: rgba(255,255,255,0.22); }
+    .result-metrics {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    .result-metric { display: flex; flex-direction: column; gap: 2px; }
+    .result-metric-label { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.3px; }
+    .result-metric-value { font-size: 13px; font-weight: 700; color: white; }
+    .rv-good { color: #34D399 !important; }
+    .rv-bad  { color: #F87171 !important; }
+    .rv-dim  { color: rgba(255,255,255,0.3) !important; }
+
+    /* ── Brand Result Cards (하단 결과) ── */
+    .brand-result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .brc { border: 1.5px solid var(--gray-200); border-radius: 12px; overflow: hidden; }
+    .brc-header {
+      background: #1E1B4B;
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brc-brand { font-size: 14px; font-weight: 700; color: white; }
+    .brc-date { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+    /* KPI bar (핵심 지표 한눈에) */
+    .brc-kpi {
+      background: #2D2A5E;
+      padding: 12px 16px;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .kpi-item { display: flex; flex-direction: column; gap: 2px; }
+    .kpi-label { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.3px; }
+    .kpi-row { display: flex; align-items: baseline; gap: 3px; }
+    .kpi-number { font-size: 22px; font-weight: 800; color: white; line-height: 1; }
+    .kpi-unit { font-size: 11px; color: rgba(255,255,255,0.5); }
+    .kpi-good { color: #34D399 !important; }
+    .kpi-bad  { color: #F87171 !important; }
+    .kpi-dim  { color: rgba(255,255,255,0.3) !important; }
+
+    /* Detail rows */
+    .brc-body { padding: 12px 16px; }
+    .brd-group { margin-bottom: 10px; }
+    .brd-group-title { font-size: 10px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--gray-100); }
+    .brd-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 12px; }
+    .brd-row-label { color: var(--gray-500); }
+    .brd-row-value { font-weight: 600; color: var(--gray-700); }
+    .brd-row.total .brd-row-label { font-weight: 700; color: var(--gray-700); }
+    .brd-row.total .brd-row-value { font-weight: 800; color: var(--primary); }
+    .brd-row.search-vol .brd-row-label { color: #059669; }
+    .brd-row.search-vol .brd-row-value { color: #059669; font-weight: 700; }
+
+    /* History Table */
+    .history-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .history-count { font-size: 12px; color: var(--gray-500); background: var(--gray-100); padding: 3px 10px; border-radius: 20px; }
+    .history-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-100); }
+    .history-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    .history-table th { background: var(--gray-50); padding: 9px 12px; text-align: right; font-weight: 600; color: var(--gray-500); font-size: 11px; border-bottom: 1.5px solid var(--gray-200); }
+    .history-table th.left { text-align: left; }
+    .history-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--gray-100); }
+    .history-table td.left { text-align: left; }
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table tr:hover td { background: var(--gray-50); }
+    .btn-del { background: none; border: none; cursor: pointer; color: var(--gray-400); font-size: 14px; padding: 2px 6px; border-radius: 4px; }
+    .btn-del:hover { background: #FEE2E2; color: var(--danger); }
+    .empty-history { text-align: center; color: var(--gray-400); padding: 28px; }
+    .roas-good { color: var(--success); font-weight: 700; }
+    .roas-bad { color: var(--danger); font-weight: 700; }
+
     /* Toast */
-    .toast { position: fixed; bottom: 22px; right: 22px; background: var(--gray-900); color: white; padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; z-index: 9999; }
+    .toast { position: fixed; bottom: 22px; right: 22px; background: var(--gray-900,#111); color: white; padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; z-index: 9999; }
     @keyframes slideUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    @media (max-width: 1100px) { .input-grid-4 { grid-template-columns: repeat(2, 1fr); } .input-grid-5 { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 800px) { .input-grid-3, .search-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 1100px) { .input-grid-4 { grid-template-columns: repeat(2, 1fr); } .result-metrics { grid-template-columns: repeat(2, 1fr); } .brand-result-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .input-grid-3, .search-grid { grid-template-columns: repeat(2, 1fr); } .results-bar { grid-template-columns: 1fr; } .brc-kpi { grid-template-columns: repeat(3,1fr); } }
     @media (max-width: 560px) { .input-grid-3, .input-grid-4, .input-grid-5, .search-grid { grid-template-columns: 1fr; } .container { padding: 14px; } }
   </style>
 </head>
@@ -167,6 +251,52 @@
   <div class="header-right">
     <span class="date-label">날짜</span>
     <input type="date" id="date-input" class="date-input">
+  </div>
+</div>
+
+<!-- ══ 상단 고정 결과 바 ══ -->
+<div class="results-bar">
+  <div class="result-card" id="result-granysalad">
+    <div class="result-brand-header">
+      <span class="result-brand-name">🥗 그래니 샐러드</span>
+      <button class="btn-cap-brand" onclick="captureBrand('granysalad')">📸 캡처</button>
+    </div>
+    <div class="result-metrics">
+      <div class="result-metric"><span class="result-metric-label">총매출</span><span class="result-metric-value rv-dim" id="rv-granysalad-sales">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">총광고비</span><span class="result-metric-value rv-dim" id="rv-granysalad-cost">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">ROAS</span><span class="result-metric-value rv-dim" id="rv-granysalad-roas">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">CPA</span><span class="result-metric-value rv-dim" id="rv-granysalad-cpa">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">객단가</span><span class="result-metric-value rv-dim" id="rv-granysalad-avg">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">자사율</span><span class="result-metric-value rv-dim" id="rv-granysalad-self">-</span></div>
+    </div>
+  </div>
+  <div class="result-card" id="result-hatkei">
+    <div class="result-brand-header">
+      <span class="result-brand-name">🎩 해트케</span>
+      <button class="btn-cap-brand" onclick="captureBrand('hatkei')">📸 캡처</button>
+    </div>
+    <div class="result-metrics">
+      <div class="result-metric"><span class="result-metric-label">총매출</span><span class="result-metric-value rv-dim" id="rv-hatkei-sales">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">총광고비</span><span class="result-metric-value rv-dim" id="rv-hatkei-cost">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">ROAS</span><span class="result-metric-value rv-dim" id="rv-hatkei-roas">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">CPA</span><span class="result-metric-value rv-dim" id="rv-hatkei-cpa">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">객단가</span><span class="result-metric-value rv-dim" id="rv-hatkei-avg">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">자사율</span><span class="result-metric-value rv-dim" id="rv-hatkei-self">-</span></div>
+    </div>
+  </div>
+  <div class="result-card" id="result-basetune">
+    <div class="result-brand-header">
+      <span class="result-brand-name">🎵 베이스튠</span>
+      <button class="btn-cap-brand" onclick="captureBrand('basetune')">📸 캡처</button>
+    </div>
+    <div class="result-metrics">
+      <div class="result-metric"><span class="result-metric-label">총매출</span><span class="result-metric-value rv-dim" id="rv-basetune-sales">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">총광고비</span><span class="result-metric-value rv-dim" id="rv-basetune-cost">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">ROAS</span><span class="result-metric-value rv-dim" id="rv-basetune-roas">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">CPA</span><span class="result-metric-value rv-dim" id="rv-basetune-cpa">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">객단가</span><span class="result-metric-value rv-dim" id="rv-basetune-avg">-</span></div>
+      <div class="result-metric"><span class="result-metric-label">자사율</span><span class="result-metric-value rv-dim" id="rv-basetune-self">-</span></div>
+    </div>
   </div>
 </div>
 
@@ -428,40 +558,234 @@
     <div class="section">
       <div class="section-header"><div class="section-icon search-icon">🔍</div><span class="section-title">검색량</span></div>
       <div class="search-grid">
-        <div class="search-group"><label class="search-label">베이스튠</label><input type="text" class="search-input" id="sv-basetune-0" placeholder="검색량"></div>
-        <div class="search-group"><label class="search-label">키워드 2</label><input type="text" class="search-input" id="sv-basetune-1" placeholder="검색량"></div>
-        <div class="search-group"><label class="search-label">키워드 3</label><input type="text" class="search-input" id="sv-basetune-2" placeholder="검색량"></div>
-        <div class="search-group"><label class="search-label">메모</label><input type="text" class="search-input" id="memo-basetune" placeholder="메모"></div>
+        <div class="search-group"><label class="search-label">베이스튠</label><input type="text" class="search-input" id="sv-basetune-0" placeholder="검색량" oninput="calc()"></div>
+        <div class="search-group"><label class="search-label">키워드 2</label><input type="text" class="search-input" id="sv-basetune-1" placeholder="검색량" oninput="calc()"></div>
+        <div class="search-group"><label class="search-label">키워드 3</label><input type="text" class="search-input" id="sv-basetune-2" placeholder="검색량" oninput="calc()"></div>
+        <div class="search-group"><label class="search-label">메모</label><input type="text" class="search-input" id="memo-basetune" placeholder="메모" oninput="calc()"></div>
       </div>
     </div>
   </div>
 
   <!-- ═══════════════ 결과 요약 ═══════════════ -->
-  <div class="section">
+  <div class="section" id="results-section">
     <div class="section-header">
       <div class="section-icon summary-icon">📈</div>
       <span class="section-title">결과 요약</span>
     </div>
-    <div class="table-wrap">
-      <table class="summary-table">
-        <thead>
-          <tr>
-            <th class="left">브랜드</th>
-            <th>카페24</th><th>쿠팡</th><th>스마트스토어</th>
-            <th>총합 매출</th><th>총합 건수</th>
-            <th>메타비용</th><th>틱톡비용</th><th>구글비용</th><th>GFA비용</th><th>총비용</th>
-            <th>ROAS</th><th>CPA</th><th>객단가</th><th>자사율</th>
-          </tr>
-        </thead>
-        <tbody id="summary-tbody">
-          <tr><td colspan="15" class="empty-row">숫자를 입력하면 자동으로 계산됩니다</td></tr>
-        </tbody>
-      </table>
-    </div>
+
+    <!-- 3개 브랜드 결과 카드 (가로 스크롤 없이 한번에) -->
+    <div class="brand-result-grid">
+
+      <!-- 그래니 샐러드 -->
+      <div class="brc" id="brc-granysalad">
+        <div class="brc-header">
+          <span class="brc-brand">🥗 그래니 샐러드</span>
+          <span class="brc-date" id="brc-date-granysalad"></span>
+        </div>
+        <div class="brc-kpi">
+          <div class="kpi-item">
+            <span class="kpi-label">총매출</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-granysalad-sales">-</span>
+              <span class="kpi-unit" id="kpi-granysalad-sales-unit"></span>
+            </div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">CPA</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-granysalad-cpa">-</span>
+              <span class="kpi-unit" id="kpi-granysalad-cpa-unit"></span>
+            </div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">ROAS</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-granysalad-roas">-</span>
+              <span class="kpi-unit" id="kpi-granysalad-roas-unit"></span>
+            </div>
+          </div>
+        </div>
+        <div class="brc-body">
+          <div class="brd-group">
+            <div class="brd-group-title">매출</div>
+            <div class="brd-row"><span class="brd-row-label">카페24</span><span class="brd-row-value" id="brd-granysalad-c24">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">쿠팡</span><span class="brd-row-value" id="brd-granysalad-cpg">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">스마트스토어</span><span class="brd-row-value" id="brd-granysalad-ss">-</span></div>
+            <div class="brd-row total"><span class="brd-row-label">총합 매출</span><span class="brd-row-value" id="brd-granysalad-total">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">총합 건수</span><span class="brd-row-value" id="brd-granysalad-count">-</span></div>
+          </div>
+          <div class="brd-group">
+            <div class="brd-group-title">광고비</div>
+            <div class="brd-row"><span class="brd-row-label">메타</span><span class="brd-row-value" id="brd-granysalad-meta">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">틱톡</span><span class="brd-row-value" id="brd-granysalad-tiktok">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">구글</span><span class="brd-row-value" id="brd-granysalad-google">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">GFA</span><span class="brd-row-value" id="brd-granysalad-gfa">-</span></div>
+            <div class="brd-row total"><span class="brd-row-label">총 광고비</span><span class="brd-row-value" id="brd-granysalad-cost">-</span></div>
+          </div>
+          <div class="brd-group">
+            <div class="brd-group-title">지표</div>
+            <div class="brd-row"><span class="brd-row-label">객단가</span><span class="brd-row-value" id="brd-granysalad-avg">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">자사율</span><span class="brd-row-value" id="brd-granysalad-self">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 해트케 -->
+      <div class="brc" id="brc-hatkei">
+        <div class="brc-header">
+          <span class="brc-brand">🎩 해트케</span>
+          <span class="brc-date" id="brc-date-hatkei"></span>
+        </div>
+        <div class="brc-kpi">
+          <div class="kpi-item">
+            <span class="kpi-label">총매출</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-hatkei-sales">-</span>
+              <span class="kpi-unit" id="kpi-hatkei-sales-unit"></span>
+            </div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">CPA</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-hatkei-cpa">-</span>
+              <span class="kpi-unit" id="kpi-hatkei-cpa-unit"></span>
+            </div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">ROAS</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-hatkei-roas">-</span>
+              <span class="kpi-unit" id="kpi-hatkei-roas-unit"></span>
+            </div>
+          </div>
+        </div>
+        <div class="brc-body">
+          <div class="brd-group">
+            <div class="brd-group-title">매출</div>
+            <div class="brd-row"><span class="brd-row-label">카페24</span><span class="brd-row-value" id="brd-hatkei-c24">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">쿠팡</span><span class="brd-row-value" id="brd-hatkei-cpg">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">스마트스토어</span><span class="brd-row-value" id="brd-hatkei-ss">-</span></div>
+            <div class="brd-row total"><span class="brd-row-label">총합 매출</span><span class="brd-row-value" id="brd-hatkei-total">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">총합 건수</span><span class="brd-row-value" id="brd-hatkei-count">-</span></div>
+          </div>
+          <div class="brd-group">
+            <div class="brd-group-title">광고비</div>
+            <div class="brd-row"><span class="brd-row-label">메타</span><span class="brd-row-value" id="brd-hatkei-meta">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">틱톡</span><span class="brd-row-value" id="brd-hatkei-tiktok">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">구글</span><span class="brd-row-value" id="brd-hatkei-google">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">GFA</span><span class="brd-row-value" id="brd-hatkei-gfa">-</span></div>
+            <div class="brd-row total"><span class="brd-row-label">총 광고비</span><span class="brd-row-value" id="brd-hatkei-cost">-</span></div>
+          </div>
+          <div class="brd-group">
+            <div class="brd-group-title">지표</div>
+            <div class="brd-row"><span class="brd-row-label">객단가</span><span class="brd-row-value" id="brd-hatkei-avg">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">자사율</span><span class="brd-row-value" id="brd-hatkei-self">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 베이스튠 -->
+      <div class="brc" id="brc-basetune">
+        <div class="brc-header">
+          <span class="brc-brand">🎵 베이스튠</span>
+          <span class="brc-date" id="brc-date-basetune"></span>
+        </div>
+        <div class="brc-kpi">
+          <div class="kpi-item">
+            <span class="kpi-label">총매출</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-basetune-sales">-</span>
+              <span class="kpi-unit" id="kpi-basetune-sales-unit"></span>
+            </div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">CPA</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-basetune-cpa">-</span>
+              <span class="kpi-unit" id="kpi-basetune-cpa-unit"></span>
+            </div>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-label">ROAS</span>
+            <div class="kpi-row">
+              <span class="kpi-number kpi-dim" id="kpi-basetune-roas">-</span>
+              <span class="kpi-unit" id="kpi-basetune-roas-unit"></span>
+            </div>
+          </div>
+        </div>
+        <div class="brc-body">
+          <div class="brd-group">
+            <div class="brd-group-title">매출</div>
+            <div class="brd-row"><span class="brd-row-label">카페24</span><span class="brd-row-value" id="brd-basetune-c24">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">쿠팡</span><span class="brd-row-value" id="brd-basetune-cpg">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">스마트스토어</span><span class="brd-row-value" id="brd-basetune-ss">-</span></div>
+            <div class="brd-row total"><span class="brd-row-label">총합 매출</span><span class="brd-row-value" id="brd-basetune-total">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">총합 건수</span><span class="brd-row-value" id="brd-basetune-count">-</span></div>
+          </div>
+          <div class="brd-group">
+            <div class="brd-group-title">광고비</div>
+            <div class="brd-row"><span class="brd-row-label">메타</span><span class="brd-row-value" id="brd-basetune-meta">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">틱톡</span><span class="brd-row-value" id="brd-basetune-tiktok">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">구글</span><span class="brd-row-value" id="brd-basetune-google">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">GFA</span><span class="brd-row-value" id="brd-basetune-gfa">-</span></div>
+            <div class="brd-row total"><span class="brd-row-label">총 광고비</span><span class="brd-row-value" id="brd-basetune-cost">-</span></div>
+          </div>
+          <div class="brd-group">
+            <div class="brd-group-title">지표</div>
+            <div class="brd-row"><span class="brd-row-label">객단가</span><span class="brd-row-value" id="brd-basetune-avg">-</span></div>
+            <div class="brd-row"><span class="brd-row-label">자사율</span><span class="brd-row-value" id="brd-basetune-self">-</span></div>
+          </div>
+          <!-- 베이스튠 전용: 검색량 표기 -->
+          <div class="brd-group" id="brd-basetune-sv-group" style="display:none">
+            <div class="brd-group-title" style="color:#059669">검색량</div>
+            <div class="brd-row search-vol"><span class="brd-row-label" id="brd-basetune-sv0-label">베이스튠</span><span class="brd-row-value" id="brd-basetune-sv0">-</span></div>
+            <div class="brd-row search-vol" id="brd-basetune-sv1-row"><span class="brd-row-label">키워드 2</span><span class="brd-row-value" id="brd-basetune-sv1">-</span></div>
+            <div class="brd-row search-vol" id="brd-basetune-sv2-row"><span class="brd-row-label">키워드 3</span><span class="brd-row-value" id="brd-basetune-sv2">-</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.brand-result-grid -->
+
     <div class="action-row">
       <button class="btn btn-ghost" onclick="clearAll()">🗑️ 전체 초기화</button>
-      <button class="btn btn-capture" onclick="captureResult()">📸 결과 캡처</button>
+      <button class="btn btn-capture" onclick="captureResult()">📸 전체 캡처</button>
+      <button class="btn btn-save" onclick="saveHistory()">💾 기록 저장</button>
       <button class="btn btn-success" onclick="copyToClipboard()">📋 스프레드시트 복사</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 날짜별 기록 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon history-icon">🗓️</div>
+      <span class="section-title">날짜별 기록</span>
+      <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+        <span class="history-count" id="history-count">0건</span>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;" onclick="clearHistory()">전체 삭제</button>
+      </div>
+    </div>
+    <div class="history-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th class="left">날짜</th>
+            <th class="left">브랜드</th>
+            <th>총매출</th>
+            <th>총건수</th>
+            <th>광고비</th>
+            <th>ROAS</th>
+            <th>CPA</th>
+            <th>객단가</th>
+            <th>자사율</th>
+            <th>메타</th><th>틱톡</th><th>구글</th><th>GFA</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody">
+          <tr><td colspan="14" class="empty-history">💾 기록 저장 버튼을 눌러 오늘 데이터를 저장하세요</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -470,6 +794,7 @@
 <script>
 const BRANDS = ['granysalad', 'hatkei', 'basetune'];
 const BRAND_NAMES = { granysalad: '그래니 샐러드', hatkei: '해트케', basetune: '베이스튠' };
+const BRAND_ICONS = { granysalad: '🥗', hatkei: '🎩', basetune: '🎵' };
 
 // 날짜 기본값: 어제
 const yesterday = new Date();
@@ -485,145 +810,298 @@ document.querySelectorAll('.brand-tab').forEach(tab => {
 });
 
 function getVal(brand, platform, key) {
-  // 같은 brand+platform+key 인풋이 여러 개면 전부 합산 (다중 계정 대응)
   const els = document.querySelectorAll(`input[data-brand="${brand}"][data-platform="${platform}"][data-key="${key}"]`);
   return Array.from(els).reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
 }
 
 function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
-function fmtCell(n) { return n ? fmt(n) + '원' : '-'; }
+function fmtW(n) { return n ? fmt(n) + '원' : '-'; }
 
-function calc() {
-  const tbody = document.getElementById('summary-tbody');
-  let rows = '';
-
-  for (const brand of BRANDS) {
-    const c24s = getVal(brand,'cafe24','sales') - getVal(brand,'cafe24','refund');
-    const c24n = getVal(brand,'cafe24','count');
-    const cpgs = getVal(brand,'coupang','sales') - getVal(brand,'coupang','refund');
-    const cpgn = getVal(brand,'coupang','count');
-    const sss  = getVal(brand,'smartstore','sales') - getVal(brand,'smartstore','refund');
-    const ssn  = getVal(brand,'smartstore','count');
-    const meta   = getVal(brand,'meta','cost');
-    const tiktok = getVal(brand,'tiktok','cost');
-    const google = getVal(brand,'google','cost');
-    const gfa    = getVal(brand,'gfa','cost');
-
-    const totalSales = c24s + cpgs + sss;
-    const totalCount = c24n + cpgn + ssn;
-    const totalCost  = meta + tiktok + google + gfa;
-
-    if (totalSales === 0 && totalCost === 0) continue;
-
-    const roas = totalCost > 0 ? Math.round(totalSales / totalCost * 100) : null;
-    const cpa  = totalCount > 0 ? Math.round(totalCost / totalCount) : null;
-    const avg  = totalCount > 0 ? Math.round(totalSales / totalCount) : null;
-    const selfRate = totalSales > 0 ? Math.round(sss / totalSales * 100) : null;
-    const roasClass = roas ? (roas >= 200 ? 'roas-good' : roas < 100 ? 'roas-bad' : '') : '';
-
-    rows += `<tr>
-      <td class="left">${BRAND_NAMES[brand]}</td>
-      <td>${fmtCell(c24s)}</td><td>${fmtCell(cpgs)}</td><td>${fmtCell(sss)}</td>
-      <td><strong>${fmtCell(totalSales)}</strong></td>
-      <td>${totalCount ? fmt(totalCount)+'건' : '-'}</td>
-      <td>${fmtCell(meta)}</td><td>${fmtCell(tiktok)}</td><td>${fmtCell(google)}</td><td>${fmtCell(gfa)}</td>
-      <td><strong>${fmtCell(totalCost)}</strong></td>
-      <td class="${roasClass}">${roas !== null ? roas+'%' : '-'}</td>
-      <td>${cpa !== null ? fmt(cpa)+'원' : '-'}</td>
-      <td>${avg !== null ? fmt(avg)+'원' : '-'}</td>
-      <td>${selfRate !== null ? selfRate+'%' : '-'}</td>
-    </tr>`;
-  }
-
-  tbody.innerHTML = rows || '<tr><td colspan="15" class="empty-row">숫자를 입력하면 자동으로 계산됩니다</td></tr>';
+// 단축 표기: 총매출 → 천만원 단위 1자리 (예: 34,952,338 → 3.4)
+function fmtShortSales(n) {
+  if (!n) return '-';
+  const v = Math.floor(n / 1000000) / 10;
+  return v.toFixed(1);
+}
+// CPA → 만원 단위 1자리 (예: 53,316 → 5.3)
+function fmtShortCpa(n) {
+  if (!n) return '-';
+  const v = Math.floor(n / 1000) / 10;
+  return v.toFixed(1);
 }
 
+function calcBrand(brand) {
+  const c24s = getVal(brand,'cafe24','sales') - getVal(brand,'cafe24','refund');
+  const c24n = getVal(brand,'cafe24','count') - getVal(brand,'cafe24','refund_count');
+  const cpgs = getVal(brand,'coupang','sales') - getVal(brand,'coupang','refund');
+  const cpgn = getVal(brand,'coupang','count') - getVal(brand,'coupang','refund_count');
+  const sss  = getVal(brand,'smartstore','sales') - getVal(brand,'smartstore','refund');
+  const ssn  = getVal(brand,'smartstore','count') - getVal(brand,'smartstore','refund_count');
+  const meta   = getVal(brand,'meta','cost');
+  const tiktok = getVal(brand,'tiktok','cost');
+  const google = getVal(brand,'google','cost');
+  const gfa    = getVal(brand,'gfa','cost');
+  const totalSales = c24s + cpgs + sss;
+  const totalCount = c24n + cpgn + ssn;
+  const totalCost  = meta + tiktok + google + gfa;
+  const roas     = totalCost > 0 ? Math.round(totalSales / totalCost * 100) : null;
+  const cpa      = totalCount > 0 ? Math.round(totalCost / totalCount) : null;
+  const avg      = totalCount > 0 ? Math.round(totalSales / totalCount) : null;
+  const selfRate = totalSales > 0 ? Math.round(sss / totalSales * 100) : null;
+  return { c24s, c24n, cpgs, cpgn, sss, ssn, meta, tiktok, google, gfa,
+           totalSales, totalCount, totalCost, roas, cpa, avg, selfRate };
+}
+
+function calc() {
+  const date = document.getElementById('date-input').value || '';
+
+  for (const brand of BRANDS) {
+    const d = calcBrand(brand);
+    const roasCls = d.roas !== null ? (d.roas >= 200 ? 'rv-good' : d.roas < 100 ? 'rv-bad' : '') : 'rv-dim';
+
+    // ── 상단 sticky bar ──
+    const set = (id, val, cls) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = val;
+      el.className = 'result-metric-value ' + (cls || (val === '-' ? 'rv-dim' : ''));
+    };
+    set(`rv-${brand}-sales`, d.totalSales ? fmt(d.totalSales)+'원' : '-');
+    set(`rv-${brand}-cost`,  d.totalCost  ? fmt(d.totalCost)+'원'  : '-');
+    set(`rv-${brand}-roas`,  d.roas  !== null ? d.roas+'%'      : '-', roasCls);
+    set(`rv-${brand}-cpa`,   d.cpa   !== null ? fmt(d.cpa)+'원' : '-');
+    set(`rv-${brand}-avg`,   d.avg   !== null ? fmt(d.avg)+'원' : '-');
+    set(`rv-${brand}-self`,  d.selfRate !== null ? d.selfRate+'%': '-');
+
+    // ── 하단 결과 카드 날짜 ──
+    const dateEl = document.getElementById(`brc-date-${brand}`);
+    if (dateEl) dateEl.textContent = date;
+
+    // ── KPI (핵심 지표 단축 표기) ──
+    const kpiSales = document.getElementById(`kpi-${brand}-sales`);
+    const kpiSalesUnit = document.getElementById(`kpi-${brand}-sales-unit`);
+    const kpiCpa   = document.getElementById(`kpi-${brand}-cpa`);
+    const kpiCpaUnit = document.getElementById(`kpi-${brand}-cpa-unit`);
+    const kpiRoas  = document.getElementById(`kpi-${brand}-roas`);
+    const kpiRoasUnit = document.getElementById(`kpi-${brand}-roas-unit`);
+    if (kpiSales) {
+      if (d.totalSales) {
+        kpiSales.textContent = fmtShortSales(d.totalSales);
+        kpiSales.className = 'kpi-number';
+        if (kpiSalesUnit) kpiSalesUnit.textContent = '천만';
+      } else {
+        kpiSales.textContent = '-'; kpiSales.className = 'kpi-number kpi-dim';
+        if (kpiSalesUnit) kpiSalesUnit.textContent = '';
+      }
+    }
+    if (kpiCpa) {
+      if (d.cpa !== null) {
+        kpiCpa.textContent = fmtShortCpa(d.cpa);
+        kpiCpa.className = 'kpi-number';
+        if (kpiCpaUnit) kpiCpaUnit.textContent = '만';
+      } else {
+        kpiCpa.textContent = '-'; kpiCpa.className = 'kpi-number kpi-dim';
+        if (kpiCpaUnit) kpiCpaUnit.textContent = '';
+      }
+    }
+    if (kpiRoas) {
+      if (d.roas !== null) {
+        kpiRoas.textContent = d.roas;
+        kpiRoas.className = 'kpi-number ' + (d.roas >= 200 ? 'kpi-good' : d.roas < 100 ? 'kpi-bad' : '');
+        if (kpiRoasUnit) kpiRoasUnit.textContent = '%';
+      } else {
+        kpiRoas.textContent = '-'; kpiRoas.className = 'kpi-number kpi-dim';
+        if (kpiRoasUnit) kpiRoasUnit.textContent = '';
+      }
+    }
+
+    // ── 상세 행 ──
+    const brd = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    brd(`brd-${brand}-c24`,    fmtW(d.c24s));
+    brd(`brd-${brand}-cpg`,    fmtW(d.cpgs));
+    brd(`brd-${brand}-ss`,     fmtW(d.sss));
+    brd(`brd-${brand}-total`,  fmtW(d.totalSales));
+    brd(`brd-${brand}-count`,  d.totalCount ? fmt(d.totalCount)+'건' : '-');
+    brd(`brd-${brand}-meta`,   fmtW(d.meta));
+    brd(`brd-${brand}-tiktok`, fmtW(d.tiktok));
+    brd(`brd-${brand}-google`, fmtW(d.google));
+    brd(`brd-${brand}-gfa`,    fmtW(d.gfa));
+    brd(`brd-${brand}-cost`,   fmtW(d.totalCost));
+    brd(`brd-${brand}-avg`,    d.avg   !== null ? fmt(d.avg)+'원' : '-');
+    brd(`brd-${brand}-self`,   d.selfRate !== null ? d.selfRate+'%' : '-');
+  }
+
+  // ── 베이스튠 검색량 표기 ──
+  const sv0 = document.getElementById('sv-basetune-0')?.value || '';
+  const sv1 = document.getElementById('sv-basetune-1')?.value || '';
+  const sv2 = document.getElementById('sv-basetune-2')?.value || '';
+  const svGroup = document.getElementById('brd-basetune-sv-group');
+  if (svGroup) {
+    const hasSv = sv0 || sv1 || sv2;
+    svGroup.style.display = hasSv ? '' : 'none';
+    const el0 = document.getElementById('brd-basetune-sv0');
+    const el1 = document.getElementById('brd-basetune-sv1');
+    const el2 = document.getElementById('brd-basetune-sv2');
+    const row1 = document.getElementById('brd-basetune-sv1-row');
+    const row2 = document.getElementById('brd-basetune-sv2-row');
+    if (el0) el0.textContent = sv0 || '-';
+    if (el1) el1.textContent = sv1 || '-';
+    if (el2) el2.textContent = sv2 || '-';
+    if (row1) row1.style.display = sv1 ? '' : 'none';
+    if (row2) row2.style.display = sv2 ? '' : 'none';
+  }
+}
+
+// ── 복사 ──
 function copyToClipboard() {
   const date = document.getElementById('date-input').value || '';
   const lines = [];
-
   for (const brand of BRANDS) {
-    const c24s = getVal(brand,'cafe24','sales') - getVal(brand,'cafe24','refund');
-    const c24n = getVal(brand,'cafe24','count');
-    const cpgs = getVal(brand,'coupang','sales') - getVal(brand,'coupang','refund');
-    const cpgn = getVal(brand,'coupang','count');
-    const sss  = getVal(brand,'smartstore','sales') - getVal(brand,'smartstore','refund');
-    const ssn  = getVal(brand,'smartstore','count');
-    const meta   = getVal(brand,'meta','cost');
-    const tiktok = getVal(brand,'tiktok','cost');
-    const google = getVal(brand,'google','cost');
-    const gfa    = getVal(brand,'gfa','cost');
-    const totalSales = c24s+cpgs+sss, totalCount = c24n+cpgn+ssn, totalCost = meta+tiktok+google+gfa;
-    const roas = totalCost>0 ? Math.round(totalSales/totalCost*100) : '';
-    const cpa  = totalCount>0 ? Math.round(totalCost/totalCount) : '';
-    const avg  = totalCount>0 ? Math.round(totalSales/totalCount) : '';
-    const selfRate = totalSales>0 ? Math.round(sss/totalSales*100) : '';
+    const d = calcBrand(brand);
     const sv0 = document.getElementById(`sv-${brand}-0`)?.value||'';
     const sv1 = document.getElementById(`sv-${brand}-1`)?.value||'';
     const sv2 = document.getElementById(`sv-${brand}-2`)?.value||'';
     const memo = document.getElementById(`memo-${brand}`)?.value||'';
-
     lines.push([
-      date, '최종',
-      c24s||'', cpgs||'', sss||'', totalSales||'',
-      c24n||'', cpgn||'', ssn||'', totalCount||'',
-      meta||'', tiktok||'', google||'', gfa||'', totalCost||'',
-      cpa ? cpa+'원' : '', roas ? roas+'%' : '',
-      avg ? avg+'원' : '', selfRate ? selfRate+'%' : '',
+      date, BRAND_NAMES[brand],
+      d.c24s||'', d.cpgs||'', d.sss||'', d.totalSales||'',
+      d.c24n||'', d.cpgn||'', d.ssn||'', d.totalCount||'',
+      d.meta||'', d.tiktok||'', d.google||'', d.gfa||'', d.totalCost||'',
+      d.cpa ? d.cpa+'원' : '', d.roas ? d.roas+'%' : '',
+      d.avg ? d.avg+'원' : '', d.selfRate ? d.selfRate+'%' : '',
       sv0, sv1, sv2, memo
     ].join('\t'));
   }
-
   navigator.clipboard.writeText(lines.join('\n'))
     .then(() => showToast('✅ 복사 완료! 스프레드시트에 바로 붙여넣기 하세요'))
     .catch(() => showToast('❌ 복사 실패'));
 }
 
-async function captureResult() {
-  const section = document.querySelector('.section:last-of-type');
-  const date = document.getElementById('date-input').value || '날짜미정';
+// ── 캡처 공통 ──
+async function loadHtml2Canvas() {
+  if (window.html2canvas) return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
 
+async function doCapture(el, filename) {
+  await loadHtml2Canvas();
+  showToast('📸 캡처 중...');
+  const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+  let clipboardSuccess = false;
   try {
-    // html2canvas 동적 로드
-    if (!window.html2canvas) {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    clipboardSuccess = true;
+  } catch (_) {}
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast(clipboardSuccess ? '✅ 클립보드 복사 완료! Ctrl+V로 붙여넣기' : '✅ 이미지 저장 완료!');
+}
 
-    showToast('📸 캡처 중...');
-    const canvas = await html2canvas(section, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true,
-      logging: false
-    });
+async function captureResult() {
+  const date = document.getElementById('date-input').value || '날짜미정';
+  try { await doCapture(document.getElementById('results-section'), `광고데이터_전체_${date}.png`); }
+  catch(e) { showToast('❌ 캡처 실패: ' + e.message); }
+}
 
-    // 클립보드에 이미지 복사 (Ctrl+V로 바로 붙여넣기 가능)
-    let clipboardSuccess = false;
-    try {
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      clipboardSuccess = true;
-    } catch (_) {}
+async function captureBrand(brand) {
+  const date = document.getElementById('date-input').value || '날짜미정';
+  const el = document.getElementById(`brc-${brand}`);
+  if (!el) return;
+  try { await doCapture(el, `광고데이터_${BRAND_NAMES[brand]}_${date}.png`); }
+  catch(e) { showToast('❌ 캡처 실패: ' + e.message); }
+}
 
-    // 파일 다운로드도 함께
-    const link = document.createElement('a');
-    link.download = `광고데이터_${date}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+// ── 기록 저장 / 불러오기 ──
+const HISTORY_KEY = 'ad_dashboard_history';
 
-    showToast(clipboardSuccess
-      ? '✅ 클립보드 복사 완료! Ctrl+V로 바로 붙여넣기 하세요'
-      : '✅ 이미지 저장 완료! (클립보드 복사는 브라우저 권한 필요)');
-  } catch (e) {
-    showToast('❌ 캡처 실패: ' + e.message);
+function loadHistoryData() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveHistoryData(arr) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+}
+
+function saveHistory() {
+  const date = document.getElementById('date-input').value || '';
+  if (!date) { showToast('⚠️ 날짜를 먼저 선택하세요'); return; }
+
+  const arr = loadHistoryData();
+  let added = 0;
+
+  for (const brand of BRANDS) {
+    const d = calcBrand(brand);
+    if (d.totalSales === 0 && d.totalCost === 0) continue;
+    const sv0 = document.getElementById(`sv-${brand}-0`)?.value||'';
+    const sv1 = document.getElementById(`sv-${brand}-1`)?.value||'';
+    const sv2 = document.getElementById(`sv-${brand}-2`)?.value||'';
+    const memo = document.getElementById(`memo-${brand}`)?.value||'';
+
+    // 같은 날짜+브랜드 있으면 덮어쓰기
+    const idx = arr.findIndex(r => r.date === date && r.brand === brand);
+    const record = { date, brand, ...d, sv0, sv1, sv2, memo, savedAt: new Date().toISOString() };
+    if (idx >= 0) arr[idx] = record;
+    else arr.unshift(record);
+    added++;
   }
+
+  if (added === 0) { showToast('⚠️ 입력된 데이터가 없습니다'); return; }
+  saveHistoryData(arr);
+  renderHistory();
+  showToast(`✅ ${added}개 브랜드 기록 저장 완료 (${date})`);
+}
+
+function deleteHistory(date, brand) {
+  const arr = loadHistoryData().filter(r => !(r.date === date && r.brand === brand));
+  saveHistoryData(arr);
+  renderHistory();
+}
+
+function clearHistory() {
+  if (!confirm('모든 기록을 삭제할까요?')) return;
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+  showToast('🗑️ 기록이 모두 삭제되었습니다');
+}
+
+function renderHistory() {
+  const arr = loadHistoryData();
+  const tbody = document.getElementById('history-tbody');
+  const countEl = document.getElementById('history-count');
+  if (countEl) countEl.textContent = arr.length + '건';
+
+  if (arr.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-history">💾 기록 저장 버튼을 눌러 오늘 데이터를 저장하세요</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = arr.map(r => {
+    const roasCls = r.roas ? (r.roas >= 200 ? 'roas-good' : r.roas < 100 ? 'roas-bad' : '') : '';
+    return `<tr>
+      <td class="left">${r.date}</td>
+      <td class="left">${BRAND_ICONS[r.brand]||''} ${BRAND_NAMES[r.brand]||r.brand}</td>
+      <td>${r.totalSales ? fmt(r.totalSales)+'원' : '-'}</td>
+      <td>${r.totalCount ? fmt(r.totalCount)+'건' : '-'}</td>
+      <td>${r.totalCost  ? fmt(r.totalCost)+'원'  : '-'}</td>
+      <td class="${roasCls}">${r.roas !== null ? r.roas+'%' : '-'}</td>
+      <td>${r.cpa  !== null ? fmt(r.cpa)+'원'  : '-'}</td>
+      <td>${r.avg  !== null ? fmt(r.avg)+'원'  : '-'}</td>
+      <td>${r.selfRate !== null ? r.selfRate+'%' : '-'}</td>
+      <td>${r.meta   ? fmt(r.meta)+'원'   : '-'}</td>
+      <td>${r.tiktok ? fmt(r.tiktok)+'원' : '-'}</td>
+      <td>${r.google ? fmt(r.google)+'원' : '-'}</td>
+      <td>${r.gfa    ? fmt(r.gfa)+'원'    : '-'}</td>
+      <td><button class="btn-del" onclick="deleteHistory('${r.date}','${r.brand}')" title="삭제">✕</button></td>
+    </tr>`;
+  }).join('');
 }
 
 function clearAll() {
@@ -640,6 +1118,10 @@ function showToast(msg) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3500);
 }
+
+// 초기화
+renderHistory();
+calc();
 </script>
 </body>
 </html>
