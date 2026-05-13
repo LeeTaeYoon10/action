@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.4 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.5 · 버전 기록</button>
   </div>
 </div>
 
@@ -437,11 +437,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="ver-list">
       <div class="ver-item">
         <div class="ver-header">
-          <span class="ver-badge latest">v2.4</span>
-          <span class="ver-title">카페24 직접전환 연동 수정</span>
+          <span class="ver-badge latest">v2.5</span>
+          <span class="ver-title">이미지 캡처 잘림 완전 수정 + 카페24 연동</span>
           <span class="ver-date">2026.05</span>
         </div>
         <ul class="ver-features">
+          <li>이미지 캡처: 스크롤 내린 상태에서도 전체 테이블 정상 캡처</li>
           <li>카페24 한글 컬럼 형식 자동 인식 (세부항목/채널/매출액/구매건수)</li>
           <li>구글 광고명 앞 번호(예: "08 / 광고명")와 카페24 키워드 자동 매핑</li>
           <li>직접전환 CSV 인코딩 자동 감지 (UTF-16/UTF-8)</li>
@@ -1458,6 +1459,11 @@ function downloadScreenshot() {
   if (parsed.google) mediaList.push({ label:'GOOGLE', build: buildGoogleTable, filename:`액션리포트_구글_${today}.png` });
   if (parsed.tiktok) mediaList.push({ label:'TIKTOK', build: buildTikTokTable, filename:`액션리포트_틱톡_${today}.png` });
 
+  // 현재 스크롤 위치 저장 후 맨 위로 이동 (핵심: 스크롤 내려간 상태면 absolute top:0 div가 뷰포트 밖에 있어 잘림)
+  const savedScrollX = window.scrollX;
+  const savedScrollY = window.scrollY;
+  window.scrollTo(0, 0);
+
   // 캡처 중 오버레이
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,17,23,0.93);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#e2e8f0;font-size:15px;font-weight:600;pointer-events:none;';
@@ -1466,6 +1472,7 @@ function downloadScreenshot() {
 
   function restore() {
     if (document.body.contains(overlay)) document.body.removeChild(overlay);
+    window.scrollTo(savedScrollX, savedScrollY);
     btn.disabled = false;
     btn.textContent = originalText;
   }
@@ -1475,7 +1482,6 @@ function downloadScreenshot() {
     const m = mediaList[idx];
     document.getElementById('cap-msg').textContent = `이미지 생성 중… (${m.label})`;
 
-    // body 직접 자식 div 생성 (overflow 클립 없음)
     const capDiv = document.createElement('div');
     capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;';
     capDiv.innerHTML = m.build();
@@ -1485,7 +1491,7 @@ function downloadScreenshot() {
       const totalH = capDiv.scrollHeight;
       const totalW = capDiv.offsetWidth;
       const savedMinH = document.body.style.minHeight;
-      document.body.style.minHeight = totalH + 'px';
+      document.body.style.minHeight = (totalH + 100) + 'px';
 
       html2canvas(capDiv, {
         scale: 2, backgroundColor: '#0f1117',
@@ -1493,6 +1499,7 @@ function downloadScreenshot() {
         width: totalW, height: totalH,
         windowWidth: totalW, windowHeight: totalH,
         scrollX: 0, scrollY: 0,
+        ignoreElements: el => el === overlay, // 오버레이 제외
       }).then(canvas => {
         if (document.body.contains(capDiv)) document.body.removeChild(capDiv);
         document.body.style.minHeight = savedMinH;
