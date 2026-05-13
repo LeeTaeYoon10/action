@@ -966,21 +966,28 @@ function parseTikTokXLSX(file){
 }
 
 // ── Budget Change Calculation ────────────────────────────────────────────────
-function calculateAllBudgetChanges() {
-  const changes = { meta: 0, google: 0, tiktok: 0, total: 0 };
+function calculateBudgetSummary() {
+  const r = {
+    meta:   { change: 0, total: 0, hasData: false },
+    google: { change: 0, total: 0, hasData: false },
+    tiktok: { change: 0, total: 0, hasData: false },
+    all:    { change: 0, total: 0 }
+  };
 
   if (parsed.meta) {
     Object.values(parsed.meta).forEach(camp => {
-      const campKey = 'meta__camp__' + camp.name;
-      if (actions[campKey] && actions[campKey].budgetTo && actions[campKey].budgetFrom) {
-        const change = (parseNum(actions[campKey].budgetTo) - parseNum(actions[campKey].budgetFrom)) * 10000;
-        changes.meta += change;
+      const ck = 'meta__camp__' + camp.name;
+      if (camp.budget > 0 || actions[ck]?.budgetFrom) {
+        const from = actions[ck]?.budgetFrom ? parseNum(actions[ck].budgetFrom) * 10000 : camp.budget;
+        const to   = actions[ck]?.budgetTo   ? parseNum(actions[ck].budgetTo)   * 10000 : from;
+        r.meta.change += to - from; r.meta.total += to; r.meta.hasData = true;
       }
       Object.values(camp.groups).forEach(grp => {
-        const grpKey = 'meta__grp__' + camp.name + '__' + grp.name;
-        if (actions[grpKey] && actions[grpKey].budgetTo && actions[grpKey].budgetFrom) {
-          const change = (parseNum(actions[grpKey].budgetTo) - parseNum(actions[grpKey].budgetFrom)) * 10000;
-          changes.meta += change;
+        const gk = 'meta__grp__' + camp.name + '__' + grp.name;
+        if (grp.budget > 0 || actions[gk]?.budgetFrom) {
+          const from = actions[gk]?.budgetFrom ? parseNum(actions[gk].budgetFrom) * 10000 : grp.budget;
+          const to   = actions[gk]?.budgetTo   ? parseNum(actions[gk].budgetTo)   * 10000 : from;
+          r.meta.change += to - from; r.meta.total += to; r.meta.hasData = true;
         }
       });
     });
@@ -988,33 +995,42 @@ function calculateAllBudgetChanges() {
 
   if (parsed.google) {
     Object.values(parsed.google).forEach(camp => {
-      const campKey = 'gg__camp__' + camp.name;
-      if (actions[campKey] && actions[campKey].budgetTo && actions[campKey].budgetFrom) {
-        const change = (parseNum(actions[campKey].budgetTo) - parseNum(actions[campKey].budgetFrom)) * 10000;
-        changes.google += change;
+      const ck = 'gg__camp__' + camp.name;
+      if (camp.budget > 0 || actions[ck]?.budgetFrom) {
+        const from = actions[ck]?.budgetFrom ? parseNum(actions[ck].budgetFrom) * 10000 : camp.budget;
+        const to   = actions[ck]?.budgetTo   ? parseNum(actions[ck].budgetTo)   * 10000 : from;
+        r.google.change += to - from; r.google.total += to; r.google.hasData = true;
       }
     });
   }
 
   if (parsed.tiktok) {
     Object.values(parsed.tiktok).forEach(camp => {
-      const campKey = 'tk__camp__' + camp.name;
-      if (actions[campKey] && actions[campKey].budgetTo && actions[campKey].budgetFrom) {
-        const change = (parseNum(actions[campKey].budgetTo) - parseNum(actions[campKey].budgetFrom)) * 10000;
-        changes.tiktok += change;
+      const ck = 'tk__camp__' + camp.name;
+      if (camp.budget > 0 || actions[ck]?.budgetFrom) {
+        const from = actions[ck]?.budgetFrom ? parseNum(actions[ck].budgetFrom) * 10000 : camp.budget;
+        const to   = actions[ck]?.budgetTo   ? parseNum(actions[ck].budgetTo)   * 10000 : from;
+        r.tiktok.change += to - from; r.tiktok.total += to; r.tiktok.hasData = true;
       }
       Object.values(camp.groups).forEach(grp => {
-        const grpKey = 'tk__grp__' + camp.name + '__' + grp.name;
-        if (actions[grpKey] && actions[grpKey].budgetTo && actions[grpKey].budgetFrom) {
-          const change = (parseNum(actions[grpKey].budgetTo) - parseNum(actions[grpKey].budgetFrom)) * 10000;
-          changes.tiktok += change;
+        const gk = 'tk__grp__' + camp.name + '__' + grp.name;
+        if (grp.budget > 0 || actions[gk]?.budgetFrom) {
+          const from = actions[gk]?.budgetFrom ? parseNum(actions[gk].budgetFrom) * 10000 : grp.budget;
+          const to   = actions[gk]?.budgetTo   ? parseNum(actions[gk].budgetTo)   * 10000 : from;
+          r.tiktok.change += to - from; r.tiktok.total += to; r.tiktok.hasData = true;
         }
       });
     });
   }
 
-  changes.total = changes.meta + changes.google + changes.tiktok;
-  return changes;
+  r.all.change = r.meta.change + r.google.change + r.tiktok.change;
+  r.all.total  = r.meta.total  + r.google.total  + r.tiktok.total;
+  return r;
+}
+
+function calculateAllBudgetChanges() {
+  const s = calculateBudgetSummary();
+  return { meta: s.meta.change, google: s.google.change, tiktok: s.tiktok.change, total: s.all.change };
 }
 
 // ── Filter and Search ────────────────────────────────────────────────────────
@@ -1087,29 +1103,36 @@ function renderSummary(){
   const roas=totalCost>0?totalRev/totalCost*100:0;
   const dRoas=totalCost>0?totalDirect/totalCost*100:0;
 
-  const budgetChanges = calculateAllBudgetChanges();
+  const bs = calculateBudgetSummary();
 
-  let summaryHtml=`
+  function budgetCard(label, s) {
+    if (!s.hasData) return '';
+    const chgColor = s.change > 0 ? 'var(--green)' : s.change < 0 ? 'var(--red)' : 'var(--muted)';
+    const chgStr = s.change === 0 ? '±0' : (s.change > 0 ? '+' : '') + fmtW(s.change);
+    return `<div class="s-card">
+      <div class="s-lbl">${label} 예산</div>
+      <div class="s-val" style="color:${chgColor};font-size:14px">${chgStr}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">총 ${s.total > 0 ? fmtW(s.total) : '–'}</div>
+    </div>`;
+  }
+
+  const hasAnyBudget = bs.meta.hasData || bs.google.hasData || bs.tiktok.hasData;
+  const allCard = hasAnyBudget ? `<div class="s-card" style="border-color:var(--accent)">
+    <div class="s-lbl">전체 예산 변경</div>
+    <div class="s-val" style="color:${bs.all.change>0?'var(--green)':bs.all.change<0?'var(--red)':'var(--muted)'};font-size:16px;font-weight:800">${bs.all.change===0?'±0':(bs.all.change>0?'+':'')+fmtW(bs.all.change)}</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px">총 ${bs.all.total>0?fmtW(bs.all.total):'–'}</div>
+  </div>` : '';
+
+  document.getElementById('summary-bar').innerHTML=`
     <div class="s-card"><div class="s-lbl">총 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(totalCost)}</div></div>
     <div class="s-card"><div class="s-lbl">총 매출 (매체)</div><div class="s-val">${fmtW(totalRev)}</div></div>
     <div class="s-card"><div class="s-lbl">매체 ROAS</div><div class="s-val ${mCls(roas)}">${roas>0?roas.toFixed(0)+'%':'–'}</div></div>
     <div class="s-card"><div class="s-lbl">직접 ROAS</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
-    <div class="s-card"><div class="s-lbl">직접 전환 매출</div><div class="s-val">${fmtW(totalDirect)}</div></div>`;
-
-  if (budgetChanges.meta !== 0) {
-    summaryHtml += `<div class="s-card"><div class="s-lbl">메타 증감액</div><div class="s-val ${budgetChanges.meta > 0 ? 'm-good' : 'm-danger'}">${budgetChanges.meta > 0 ? '+' : ''}${fmtWon(budgetChanges.meta)}</div></div>`;
-  }
-  if (budgetChanges.google !== 0) {
-    summaryHtml += `<div class="s-card"><div class="s-lbl">구글 증감액</div><div class="s-val ${budgetChanges.google > 0 ? 'm-good' : 'm-danger'}">${budgetChanges.google > 0 ? '+' : ''}${fmtWon(budgetChanges.google)}</div></div>`;
-  }
-  if (budgetChanges.tiktok !== 0) {
-    summaryHtml += `<div class="s-card"><div class="s-lbl">틱톡 증감액</div><div class="s-val ${budgetChanges.tiktok > 0 ? 'm-good' : 'm-danger'}">${budgetChanges.tiktok > 0 ? '+' : ''}${fmtWon(budgetChanges.tiktok)}</div></div>`;
-  }
-  if (budgetChanges.total !== 0) {
-    summaryHtml += `<div class="s-card" style="border-color:var(--accent)"><div class="s-lbl">전체 증감액</div><div class="s-val" style="color:${budgetChanges.total > 0 ? 'var(--green)' : 'var(--red)'};font-size:18px;font-weight:800">${budgetChanges.total > 0 ? '+' : ''}${fmtWon(budgetChanges.total)}</div></div>`;
-  }
-
-  document.getElementById('summary-bar').innerHTML=summaryHtml;
+    <div class="s-card"><div class="s-lbl">직접 전환 매출</div><div class="s-val">${fmtW(totalDirect)}</div></div>
+    ${budgetCard('메타', bs.meta)}
+    ${budgetCard('구글', bs.google)}
+    ${budgetCard('틱톡', bs.tiktok)}
+    ${allCard}`;
 }
 
 function renderTable(tab){
@@ -1347,7 +1370,6 @@ function downloadScreenshot() {
     alert('분석 결과가 없습니다.');
     return;
   }
-
   if (typeof html2canvas === 'undefined') {
     alert('라이브러리 로드 중입니다. 잠시 후 다시 시도해주세요.');
     return;
@@ -1359,60 +1381,59 @@ function downloadScreenshot() {
   btn.textContent = '이미지 생성 중…';
 
   const today = new Date().toISOString().slice(0, 10);
-
-  // 모든 매체 테이블을 담는 임시 컨테이너 생성
-  const container = document.createElement('div');
-  container.style.cssText = [
-    'position:fixed', 'left:-99999px', 'top:0',
-    'background:#0f1117', 'padding:28px 32px',
-    'width:1400px', 'color:#e2e8f0',
+  const summaryHTML = document.getElementById('summary-bar')?.innerHTML || '';
+  const baseStyle = [
+    'position:fixed','left:-99999px','top:0',
+    'background:#0f1117','padding:28px 32px',
+    'width:1400px','color:#e2e8f0',
     'font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif',
     'font-size:13px'
   ].join(';');
 
-  const summaryHTML = document.getElementById('summary-bar')?.innerHTML || '';
+  const mediaList = [];
+  if (parsed.meta)   mediaList.push({ label:'META',   html: buildMetaTable(),   filename:`액션리포트_메타_${today}.png` });
+  if (parsed.google) mediaList.push({ label:'GOOGLE', html: buildGoogleTable(), filename:`액션리포트_구글_${today}.png` });
+  if (parsed.tiktok) mediaList.push({ label:'TIKTOK', html: buildTikTokTable(), filename:`액션리포트_틱톡_${today}.png` });
 
-  const sections = [];
-  if (parsed.meta)   sections.push(`<div style="margin-bottom:32px"><div style="font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">META</div>${buildMetaTable()}</div>`);
-  if (parsed.google) sections.push(`<div style="margin-bottom:32px"><div style="font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">GOOGLE</div>${buildGoogleTable()}</div>`);
-  if (parsed.tiktok) sections.push(`<div style="margin-bottom:32px"><div style="font-size:12px;font-weight:700;color:#8892a4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">TIKTOK</div>${buildTikTokTable()}</div>`);
+  function captureOne(idx) {
+    if (idx >= mediaList.length) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      return;
+    }
+    const m = mediaList[idx];
+    const container = document.createElement('div');
+    container.style.cssText = baseStyle;
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2e3348">
+        <span style="font-size:15px;font-weight:700">마케팅 액션 리포트 · ${m.label}</span>
+        <span style="font-size:12px;color:#8892a4">${today}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">${summaryHTML}</div>
+      ${m.html}`;
+    document.body.appendChild(container);
 
-  container.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2e3348">
-      <span style="font-size:15px;font-weight:700">마케팅 액션 리포트</span>
-      <span style="font-size:12px;color:#8892a4">${today}</span>
-    </div>
-    <div style="margin-bottom:24px">${summaryHTML}</div>
-    ${sections.join('')}
-  `;
+    html2canvas(container, {
+      scale: 2, backgroundColor: '#0f1117',
+      logging: false, useCORS: true, allowTaint: true,
+      width: container.scrollWidth, height: container.scrollHeight
+    }).then(canvas => {
+      document.body.removeChild(container);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = m.filename;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 300);
+    }).catch(err => {
+      if (document.body.contains(container)) document.body.removeChild(container);
+      console.error('스크린샷 오류:', err);
+      btn.disabled = false;
+      btn.textContent = originalText;
+    });
+  }
 
-  document.body.appendChild(container);
-
-  html2canvas(container, {
-    scale: 2,
-    backgroundColor: '#0f1117',
-    logging: false,
-    useCORS: true,
-    allowTaint: true,
-    width: container.scrollWidth,
-    height: container.scrollHeight
-  }).then(canvas => {
-    document.body.removeChild(container);
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `액션리포트_${today}.png`;
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => document.body.removeChild(link), 100);
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }).catch(err => {
-    if (document.body.contains(container)) document.body.removeChild(container);
-    console.error('스크린샷 오류:', err);
-    alert('이미지 생성 실패\n콘솔에서 오류 확인: F12 > Console');
-    btn.disabled = false;
-    btn.textContent = originalText;
-  });
+  captureOne(0);
 }
 
 // ── History ───────────────────────────────────────────────────────────────────
