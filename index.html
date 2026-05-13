@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v1.9 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.0 · 버전 기록</button>
   </div>
 </div>
 
@@ -1406,12 +1406,24 @@ function downloadScreenshot() {
       return;
     }
     const m = mediaList[idx];
+    // wrapper: 뷰포트 클리핑 창
+    const CHUNK = 900;
+    const W = 1400;
+    const SCALE = 2;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = [
+      'position:fixed','left:0','top:0',
+      'width:' + W + 'px','height:' + CHUNK + 'px',
+      'overflow:hidden','z-index:-9999','pointer-events:none',
+      'background:#0f1117'
+    ].join(';');
+
     const container = document.createElement('div');
     container.style.cssText = [
       'position:absolute','left:0','top:0',
       'background:#0f1117','padding:28px 32px',
-      'width:1400px','color:#e2e8f0','overflow:visible',
-      'z-index:-9999','pointer-events:none',
+      'width:' + W + 'px','color:#e2e8f0','overflow:visible',
       'font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif',
       'font-size:13px'
     ].join(';');
@@ -1422,15 +1434,11 @@ function downloadScreenshot() {
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">${summaryHTML}</div>
       ${m.html}`;
-    document.body.appendChild(container);
+    wrapper.appendChild(container);
+    document.body.appendChild(wrapper);
 
-    // 청크 방식: 전체를 CHUNK 단위로 나눠 캡처 후 하나의 Canvas에 합치기
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const W = 1400;
       const H = container.scrollHeight;
-      const CHUNK = 1200;
-      const SCALE = 2;
-
       const finalCanvas = document.createElement('canvas');
       finalCanvas.width  = W * SCALE;
       finalCanvas.height = H * SCALE;
@@ -1441,8 +1449,7 @@ function downloadScreenshot() {
 
       function drawChunk(i) {
         if (i >= chunks.length) {
-          // 모든 청크 합쳐짐 → 다운로드
-          document.body.removeChild(container);
+          document.body.removeChild(wrapper);
           const link = document.createElement('a');
           link.href = finalCanvas.toDataURL('image/png');
           link.download = m.filename;
@@ -1453,21 +1460,25 @@ function downloadScreenshot() {
         }
         const y = chunks[i];
         const chunkH = Math.min(CHUNK, H - y);
-        html2canvas(container, {
-          scale: SCALE, backgroundColor: '#0f1117',
-          logging: false, useCORS: true, allowTaint: true,
-          width: W, height: chunkH,
-          windowWidth: W, windowHeight: chunkH,
-          scrollX: 0, scrollY: 0,
-          x: 0, y: y
-        }).then(canvas => {
-          ctx.drawImage(canvas, 0, y * SCALE);
-          drawChunk(i + 1);
-        }).catch(err => {
-          if (document.body.contains(container)) document.body.removeChild(container);
-          console.error('스크린샷 오류:', err);
-          btn.disabled = false;
-          btn.textContent = originalText;
+        // container를 위로 올려서 해당 청크가 wrapper 안에 보이도록
+        container.style.transform = `translateY(-${y}px)`;
+        wrapper.style.height = chunkH + 'px';
+
+        requestAnimationFrame(() => {
+          html2canvas(wrapper, {
+            scale: SCALE, backgroundColor: '#0f1117',
+            logging: false, useCORS: true, allowTaint: true,
+            width: W, height: chunkH,
+            windowWidth: W, windowHeight: chunkH
+          }).then(canvas => {
+            ctx.drawImage(canvas, 0, y * SCALE);
+            drawChunk(i + 1);
+          }).catch(err => {
+            if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+            console.error('스크린샷 오류:', err);
+            btn.disabled = false;
+            btn.textContent = originalText;
+          });
         });
       }
 
