@@ -1455,9 +1455,9 @@ function downloadScreenshot() {
 
   const today = new Date().toISOString().slice(0, 10);
   const mediaList = [];
-  if (parsed.meta)   mediaList.push({ label:'META',   build: buildMetaTable,   filename:`액션리포트_메타_${today}.png` });
-  if (parsed.google) mediaList.push({ label:'GOOGLE', build: buildGoogleTable, filename:`액션리포트_구글_${today}.png` });
-  if (parsed.tiktok) mediaList.push({ label:'TIKTOK', build: buildTikTokTable, filename:`액션리포트_틱톡_${today}.png` });
+  if (parsed.meta)   mediaList.push({ label:'META',   build: buildMetaTable,   filename:`액션리포트_메타_${today}.jpg` });
+  if (parsed.google) mediaList.push({ label:'GOOGLE', build: buildGoogleTable, filename:`액션리포트_구글_${today}.jpg` });
+  if (parsed.tiktok) mediaList.push({ label:'TIKTOK', build: buildTikTokTable, filename:`액션리포트_틱톡_${today}.jpg` });
 
   // 현재 스크롤 위치 저장 후 맨 위로 이동 (핵심: 스크롤 내려간 상태면 absolute top:0 div가 뷰포트 밖에 있어 잘림)
   const savedScrollX = window.scrollX;
@@ -1509,7 +1509,7 @@ function downloadScreenshot() {
         if (document.body.contains(capDiv)) document.body.removeChild(capDiv);
         document.body.style.minHeight = savedMinH;
         const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL('image/jpeg', 0.92);
         link.download = m.filename;
         document.body.appendChild(link);
         link.click();
