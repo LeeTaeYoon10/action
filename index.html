@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.1 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.2 · 버전 기록</button>
   </div>
 </div>
 
@@ -508,6 +508,19 @@ const BRAND_CONFIG = {
 
 function selectBrand(brand) {
   currentBrand = brand;
+  // 브랜드 전환 시 이전 브랜드 액션/데이터 초기화 (예산 섞임 방지)
+  Object.keys(actions).forEach(k => delete actions[k]);
+  parsed.meta = null; parsed.google = null; parsed.tiktok = null; parsed.direct = null;
+  Object.keys(files).forEach(k => delete files[k]);
+  collapsed.camps.clear(); collapsed.grps.clear();
+  document.getElementById('result').style.display = 'none';
+  ['meta','google','pmax','tiktok','direct'].forEach(t => {
+    const fn = document.getElementById('fn-'+t);
+    if (fn) fn.textContent = '드래그 또는 클릭';
+    const card = document.getElementById('card-'+t);
+    if (card) card.classList.remove('loaded','dragover');
+  });
+
   const cfg = BRAND_CONFIG[brand];
   document.body.className = cfg.cls;
   document.getElementById('brand-selector').style.display = 'none';
@@ -815,31 +828,27 @@ function parseGoogleCSV(file){
               const iCtr     = col('클릭률(CTR)');
               const iCpc     = col('평균 CPC');
 
-              const isActiveGG=s=>{const v=String(s||'').trim();return v==='사용중'||v==='';};
-
-              const activeCamps=new Set(); const activeGrps=new Set();
+              // 1차: 활성 캠페인 등록 (광고 상태 무관 - 모든 캠페인이 보이도록)
+              const campaigns={};
               for(let i=headerIdx+1;i<r.data.length;i++){
                 const row=r.data[i];
-                const campSt=iCampSt>=0?String(row[iCampSt]||'').trim():'';
                 const camp=String(row[iCamp]||'').trim();
-                const grp=String(row[iGroup]||'').trim();
-                if(campSt===''||campSt==='사용중') activeCamps.add(camp);
-                activeGrps.add(camp+'|||'+grp);
+                if(!camp) continue;
+                const campSt=iCampSt>=0?String(row[iCampSt]||'').trim():'';
+                if(iCampSt>=0&&campSt!==''&&campSt!=='사용중') continue;
+                if(!campaigns[camp]) campaigns[camp]={name:camp,budget:parseNum(row[iBudget]),ads:[]};
               }
 
-              const campaigns={};
+              // 2차: 활성 광고만 캠페인에 추가
               for(let i=headerIdx+1;i<r.data.length;i++){
                 const row=r.data[i];
                 const adSt=String(row[iAdSt]||'').trim();
                 if(adSt!=='사용중') continue;
 
                 const camp=String(row[iCamp]||'').trim();
-                const grp=String(row[iGroup]||'').trim();
-                const ad=iAd>=0?String(row[iAd]||'').trim():(String(row[col('긴 광고 제목 1')]||'').trim());
-                if(!camp) continue;
-                if(iCampSt>=0&&!activeCamps.has(camp)) continue;
+                if(!camp||!campaigns[camp]) continue;
 
-                const budget  = parseNum(row[iBudget]);
+                const ad=iAd>=0?String(row[iAd]||'').trim():(String(row[col('긴 광고 제목 1')]||'').trim());
                 const cost    = parseNum(row[iCost]);
                 const convVal = parseNum(row[iConvVal]);
                 const cpa     = parseNum(row[iCpa]);
@@ -847,8 +856,6 @@ function parseGoogleCSV(file){
                 const cpc     = parseNum(row[iCpc]);
                 const roas    = cost>0?(convVal/cost*100):0;
                 const conv    = (cost>0&&cpa>0)?Math.round(cost/cpa):0;
-
-                if(!campaigns[camp]) campaigns[camp]={name:camp,budget,ads:[]};
 
                 const direct=getDirectData(ad,'gg');
                 campaigns[camp].ads.push({
@@ -1404,20 +1411,7 @@ function downloadScreenshot() {
   overlay.innerHTML = '<div id="cap-msg">이미지 생성 중…</div><div style="font-size:12px;color:#8892a4">잠시만 기다려주세요</div>';
   document.body.appendChild(overlay);
 
-  const resultEl   = document.getElementById('result');
-  const tabContent = document.getElementById('tab-content');
-  const prevTab    = tabContent.innerHTML;
-  const prevTabOvf = tabContent.style.overflow;
-  const prevTabH   = tabContent.style.height;
-  const prevResOvf = resultEl.style.overflow;
-  const prevResH   = resultEl.style.height;
-
   function restore() {
-    tabContent.innerHTML      = prevTab;
-    tabContent.style.overflow = prevTabOvf;
-    tabContent.style.height   = prevTabH;
-    resultEl.style.overflow   = prevResOvf;
-    resultEl.style.height     = prevResH;
     if (document.body.contains(overlay)) document.body.removeChild(overlay);
     btn.disabled = false;
     btn.textContent = originalText;
@@ -1428,29 +1422,39 @@ function downloadScreenshot() {
     const m = mediaList[idx];
     document.getElementById('cap-msg').textContent = `이미지 생성 중… (${m.label})`;
 
-    tabContent.innerHTML      = m.build();
-    tabContent.style.overflow = 'visible';
-    tabContent.style.height   = 'auto';
-    resultEl.style.overflow   = 'visible';
-    resultEl.style.height     = 'auto';
+    // body 직접 자식 div 생성 (overflow 클립 없음)
+    const capDiv = document.createElement('div');
+    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;';
+    capDiv.innerHTML = m.build();
+    document.body.appendChild(capDiv);
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const totalH = resultEl.scrollHeight;
-      const totalW = resultEl.scrollWidth;
-      html2canvas(resultEl, {
+      const totalH = capDiv.scrollHeight;
+      const totalW = capDiv.offsetWidth;
+      const savedMinH = document.body.style.minHeight;
+      document.body.style.minHeight = totalH + 'px';
+
+      html2canvas(capDiv, {
         scale: 2, backgroundColor: '#0f1117',
         logging: false, useCORS: true, allowTaint: true,
         width: totalW, height: totalH,
         windowWidth: totalW, windowHeight: totalH,
-        scrollX: -window.scrollX, scrollY: -window.scrollY,
+        scrollX: 0, scrollY: 0,
       }).then(canvas => {
+        if (document.body.contains(capDiv)) document.body.removeChild(capDiv);
+        document.body.style.minHeight = savedMinH;
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = m.filename;
         document.body.appendChild(link);
         link.click();
-        setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 400);
+        setTimeout(() => {
+          if (document.body.contains(link)) document.body.removeChild(link);
+          captureOne(idx + 1);
+        }, 400);
       }).catch(err => {
+        if (document.body.contains(capDiv)) document.body.removeChild(capDiv);
+        document.body.style.minHeight = savedMinH;
         console.error('스크린샷 오류:', err);
         restore();
       });
