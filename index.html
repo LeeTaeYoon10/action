@@ -1396,9 +1396,10 @@ function downloadScreenshot() {
     const m = mediaList[idx];
     const container = document.createElement('div');
     container.style.cssText = [
-      'position:absolute','left:-99999px','top:0',
+      'position:absolute','left:0','top:0',
       'background:#0f1117','padding:28px 32px',
       'width:1400px','color:#e2e8f0','overflow:visible',
+      'z-index:-9999','pointer-events:none',
       'font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif',
       'font-size:13px'
     ].join(';');
@@ -1411,31 +1412,33 @@ function downloadScreenshot() {
       ${m.html}`;
     document.body.appendChild(container);
 
-    // 렌더링 완료 후 실제 높이 측정
-    const w = container.offsetWidth;
-    const h = container.offsetHeight;
+    // 두 프레임 대기 후 실제 scrollHeight 측정
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const w = 1400;
+      const h = container.scrollHeight;
 
-    html2canvas(container, {
-      scale: 2, backgroundColor: '#0f1117',
-      logging: false, useCORS: true, allowTaint: true,
-      width: w, height: h,
-      windowWidth: w, windowHeight: h,
-      scrollX: 0, scrollY: 0,
-      x: 0, y: 0
-    }).then(canvas => {
-      document.body.removeChild(container);
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = m.filename;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 300);
-    }).catch(err => {
-      if (document.body.contains(container)) document.body.removeChild(container);
-      console.error('스크린샷 오류:', err);
-      btn.disabled = false;
-      btn.textContent = originalText;
-    });
+      html2canvas(container, {
+        scale: 2, backgroundColor: '#0f1117',
+        logging: false, useCORS: true, allowTaint: true,
+        width: w, height: h,
+        windowWidth: w, windowHeight: h,
+        scrollX: 0, scrollY: 0,
+        x: 0, y: 0
+      }).then(canvas => {
+        document.body.removeChild(container);
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = m.filename;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => { document.body.removeChild(link); captureOne(idx + 1); }, 300);
+      }).catch(err => {
+        if (document.body.contains(container)) document.body.removeChild(container);
+        console.error('스크린샷 오류:', err);
+        btn.disabled = false;
+        btn.textContent = originalText;
+      });
+    }));
   }
 
   captureOne(0);
