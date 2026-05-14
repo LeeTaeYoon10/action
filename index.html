@@ -199,8 +199,8 @@ th:hover { background: var(--border); }
 td { padding: 7px 10px; border-bottom: 1px solid rgba(46,51,72,0.4); vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,255,255,0.02); }
-.row-camp td { background: rgba(79,127,255,0.06); }
-.row-camp .name-cell { font-weight: 700; font-size: 12px; }
+.row-camp td { background: rgba(79,127,255,0.18); border-bottom: 1px solid rgba(79,127,255,0.25); }
+.row-camp .name-cell { font-weight: 700; font-size: 12px; color: #c5d8ff; }
 .row-grp td { background: rgba(255,255,255,0.01); }
 .row-grp .name-cell { padding-left: 18px; color: var(--muted); font-weight: 500; font-size: 11px; }
 .row-ad .name-cell { padding-left: 34px; font-size: 11px; }
@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.8 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.9 · 버전 기록</button>
   </div>
 </div>
 
@@ -437,7 +437,18 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="ver-list">
       <div class="ver-item">
         <div class="ver-header">
-          <span class="ver-badge latest">v2.5</span>
+          <span class="ver-badge latest">v2.9</span>
+          <span class="ver-title">이미지 캡처 요약 바 포함 + 캠페인 행 강조</span>
+          <span class="ver-date">2026.05</span>
+        </div>
+        <ul class="ver-features">
+          <li>이미지 다운로드 시 상단 요약 바(총 광고비/매출/ROAS/예산 등) 함께 캡처</li>
+          <li>캠페인 행 파란색 배경으로 광고그룹/소재와 명확히 구분</li>
+        </ul>
+      </div>
+      <div class="ver-item">
+        <div class="ver-header">
+          <span class="ver-badge">v2.5</span>
           <span class="ver-title">이미지 캡처 잘림 완전 수정 + 카페24 연동</span>
           <span class="ver-date">2026.05</span>
         </div>
@@ -1495,8 +1506,12 @@ function downloadScreenshot() {
     document.getElementById('cap-msg').textContent = `이미지 생성 중… (${m.label})`;
 
     const capDiv = document.createElement('div');
-    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;';
-    capDiv.innerHTML = m.build();
+    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;padding:20px;';
+    const summaryBarEl = document.getElementById('summary-bar');
+    const summaryHTML = summaryBarEl
+      ? `<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">${summaryBarEl.innerHTML}</div>`
+      : '';
+    capDiv.innerHTML = summaryHTML + m.build();
     // 캡처용: .table-wrap의 max-height 제한 해제 (이게 없으면 뷰포트 높이로 잘림)
     capDiv.querySelectorAll('.table-wrap').forEach(el => {
       el.style.maxHeight = 'none';
