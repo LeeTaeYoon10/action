@@ -298,7 +298,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.7 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.8 · 버전 기록</button>
   </div>
 </div>
 
@@ -657,6 +657,15 @@ function normKey(k){
     .replace(/\s+/g,'')
     .toLowerCase();
 }
+// 카페24 키워드 ↔ 구글 광고명 매칭용: 공백·언더스코어 모두 제거
+function normKeyFull(k){
+  return k
+    .replace(/\s*\(j[sh]\)\s*/gi,'')
+    .replace(/\s*\([a-z]{2,3}\)\s*$/i,'')
+    .replace(/_AN\s*$/i,'')
+    .replace(/[\s_]+/g,'')
+    .toLowerCase();
+}
 function termSuffix(term){ const m=term.match(/\)_(.+)$/); if(m) return normKey(m[1].trim()); const i=term.indexOf('_'); return i>=0?normKey(term.slice(i+1).trim()):normKey(term.trim()); }
 function adSuffix(name){ const i=name.indexOf('_'); return i>=0?normKey(name.slice(i+1).trim()):normKey(name.trim()); }
 function getDirectData(adName, channel){
@@ -670,11 +679,13 @@ function getDirectData(adName, channel){
   }
   if(channel==='gg'){
     let r=parsed.direct['__gg__'+key]||null;
-    // 카페24 형식: 광고명 앞 숫자(예: "08 / 광고명") → 키 "08" 로 조회
+    // 폴백1: "08 / 광고명" → 앞 숫자 "08" 로 조회 (DMG_003 vid 형식)
     if(!r){
       const m=adName.match(/^(\d+)\s*\//);
       if(m) r=parsed.direct['__gg__'+normKey(m[1])]||null;
     }
+    // 폴백2: 광고명 전체 정규화 조회 (카페24 키워드가 전체 광고명인 경우: "001_260318_hy_광고명_T(ty)" ↔ "001 260318 hy 광고명_T(ty)")
+    if(!r) r=parsed.direct['__gg__'+normKeyFull(adName)]||null;
     return r;
   }
   return parsed.direct[key]||null;
@@ -709,7 +720,8 @@ function parseDirectCSV(file){
                   // 키: 키워드 우선, 없으면 세부항목에서 앞 문자(유형) 제거
                   const rawKey=kw||(detail.replace(/^[a-z]+/i,''));
                   if(!rawKey) return;
-                  const key=normKey(rawKey); // e.g. "08"
+                  // normKeyFull: 공백·언더스코어 모두 제거 → "001 260318 hy 광고명_T(ty)" ↔ "001_260318_hy_광고명_T(ty)" 매칭
+                  const key=normKeyFull(rawKey);
                   if(!map[key]) map[key]={order_amount:0,order_count:0};
                   map[key].order_amount+=amt; map[key].order_count+=cnt;
                   const chKey=(ch==='tk'||ch==='tiktok')?'__tk__'+key
