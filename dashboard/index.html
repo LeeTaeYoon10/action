@@ -847,7 +847,7 @@ function calcBrand(brand) {
   const roas     = totalCost > 0 ? Math.round(totalSales / totalCost * 100) : null;
   const cpa      = totalCount > 0 ? Math.round(totalCost / totalCount) : null;
   const avg      = totalCount > 0 ? Math.round(totalSales / totalCount) : null;
-  const selfRate = totalCount > 0 ? Math.round(ssn / totalCount * 100) : null;
+  const selfRate = totalCount > 0 ? Math.round(c24n / totalCount * 100) : null;
   return { c24s, c24n, cpgs, cpgn, sss, ssn, meta, tiktok, google, gfa,
            totalSales, totalCount, totalCost, roas, cpa, avg, selfRate };
 }
