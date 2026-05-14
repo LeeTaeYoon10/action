@@ -202,6 +202,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .row-camp td { background: rgba(79,127,255,0.18); border-bottom: 1px solid rgba(79,127,255,0.25); }
 .row-camp .name-cell { font-weight: 700; font-size: 12px; color: #c5d8ff; }
 .row-grp td { background: rgba(255,255,255,0.01); }
+/* ── 비용(6번) / 직접전환값(13번) 컬럼 보라색 강조 ─ */
+table thead th:nth-child(6), table thead th:nth-child(13) { background: rgba(139,92,246,0.20); color: #c4b5fd; }
+table tbody td:nth-child(6), table tbody td:nth-child(13) { background: rgba(139,92,246,0.10); }
+tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139,92,246,0.22); }
 .row-grp .name-cell { padding-left: 18px; color: var(--muted); font-weight: 500; font-size: 11px; }
 .row-ad .name-cell { padding-left: 34px; font-size: 11px; }
 .toggle-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 9px; padding: 2px 4px; margin-right: 4px; transition: all 0.15s; line-height: 1; }
