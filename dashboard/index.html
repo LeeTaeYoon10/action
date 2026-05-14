@@ -817,6 +817,13 @@ function getVal(brand, platform, key) {
 function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
 function fmtW(n) { return n ? fmt(n) + '원' : '-'; }
 
+const DAYS = ['일','월','화','수','목','금','토'];
+function fmtDateWithDay(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${dateStr} (${DAYS[d.getDay()]})`;
+}
+
 // 단축 표기: 총매출 → 천만원 단위 1자리 (예: 34,952,338 → 3.4)
 function fmtShortSales(n) {
   if (!n) return '-';
@@ -873,9 +880,9 @@ function calc() {
     set(`rv-${brand}-avg`,   d.avg   !== null ? fmt(d.avg)+'원' : '-');
     set(`rv-${brand}-self`,  d.selfRate !== null ? d.selfRate+'%': '-');
 
-    // ── 하단 결과 카드 날짜 ──
+    // ── 하단 결과 카드 날짜 (요일 포함) ──
     const dateEl = document.getElementById(`brc-date-${brand}`);
-    if (dateEl) dateEl.textContent = date;
+    if (dateEl) dateEl.textContent = fmtDateWithDay(date);
 
     // ── KPI (핵심 지표 단축 표기) ──
     const kpiSales = document.getElementById(`kpi-${brand}-sales`);
@@ -917,9 +924,10 @@ function calc() {
 
     // ── 상세 행 ──
     const brd = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    brd(`brd-${brand}-c24`,    fmtW(d.c24s));
-    brd(`brd-${brand}-cpg`,    fmtW(d.cpgs));
-    brd(`brd-${brand}-ss`,     fmtW(d.sss));
+    const fmtSC = (s, n) => s ? `${fmt(s)}원 · ${fmt(n)}건` : '-';
+    brd(`brd-${brand}-c24`,    fmtSC(d.c24s, d.c24n));
+    brd(`brd-${brand}-cpg`,    fmtSC(d.cpgs, d.cpgn));
+    brd(`brd-${brand}-ss`,     fmtSC(d.sss,  d.ssn));
     brd(`brd-${brand}-total`,  fmtW(d.totalSales));
     brd(`brd-${brand}-count`,  d.totalCount ? fmt(d.totalCount)+'건' : '-');
     brd(`brd-${brand}-meta`,   fmtW(d.meta));
