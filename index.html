@@ -685,11 +685,23 @@ function normKeyFull(k){
 }
 function termSuffix(term){ const m=term.match(/\)_(.+)$/); if(m) return normKey(m[1].trim()); const i=term.indexOf('_'); return i>=0?normKey(term.slice(i+1).trim()):normKey(term.trim()); }
 function adSuffix(name){ const i=name.indexOf('_'); return i>=0?normKey(name.slice(i+1).trim()):normKey(name.trim()); }
+// 편집거리(Levenshtein) – 빠른 근사 매칭용
+function editDist(a,b){
+  if(Math.abs(a.length-b.length)>3) return 99;
+  const m=a.length,n=b.length;
+  let row=Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){
+    const nr=[i];
+    for(let j=1;j<=n;j++) nr.push(a[i-1]===b[j-1]?row[j-1]:1+Math.min(row[j-1],row[j],nr[j-1]));
+    row=nr;
+    if(Math.min(...row)>3) return 99;
+  }
+  return row[n];
+}
 function getDirectData(adName, channel){
   if(!parsed.direct) return null;
   const key=adSuffix(adName);
   if(channel==='tk'){
-    // 폴백: TikTok도 normKeyFull 시도
     return parsed.direct['__tk__'+key]||parsed.direct['__tk__'+normKeyFull(adName)]||null;
   }
   if(channel==='fb'||channel==='meta'){
@@ -704,10 +716,21 @@ function getDirectData(adName, channel){
     }
     // 폴백2: 광고명 전체 normKeyFull (001_광고명 ↔ 001 광고명)
     if(!r) r=parsed.direct['__gg__'+normKeyFull(adName)]||null;
-    // 폴백3: 첫 세그먼트(001_) 제거 후 normKeyFull (카페24 키워드가 001 없이 저장된 경우)
+    // 폴백3: 첫 세그먼트(001_) 제거 후 normKeyFull
     if(!r){
       const i=adName.indexOf('_');
       if(i>=0) r=parsed.direct['__gg__'+normKeyFull(adName.slice(i+1))]||null;
+    }
+    // 폴백4: 편집거리 ≤1 유사 매칭 (광고명/카페24 1글자 차이 허용, 유일 매칭만 적용)
+    if(!r){
+      const base=normKeyFull(adName);
+      if(base.length>=10){
+        const hits=Object.keys(parsed.direct).filter(k=>{
+          if(!k.startsWith('__gg__')) return false;
+          return editDist(k.slice(6),base)<=1;
+        });
+        if(hits.length===1) r=parsed.direct[hits[0]];
+      }
     }
     return r;
   }
