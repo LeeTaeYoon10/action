@@ -1195,12 +1195,24 @@ function switchTab(id){
 
 function renderSummary(){
   let totalCost=0,totalRev=0,totalDirect=0;
-  if(parsed.meta)   Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;})));
-  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;}));
-  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;})));
+  let metaCost=0,metaDirect=0, ggCost=0,ggDirect=0, tkCost=0,tkDirect=0;
+  if(parsed.meta)   Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;metaCost+=a.cost;metaDirect+=a.directAmount||0;})));
+  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;ggCost+=a.cost;ggDirect+=a.directAmount||0;}));
+  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;tkCost+=a.cost;tkDirect+=a.directAmount||0;})));
 
   const roas=totalCost>0?totalRev/totalCost*100:0;
   const dRoas=totalCost>0?totalDirect/totalCost*100:0;
+  const metaDRoas=metaCost>0?metaDirect/metaCost*100:0;
+  const ggDRoas=ggCost>0?ggDirect/ggCost*100:0;
+  const tkDRoas=tkCost>0?tkDirect/tkCost*100:0;
+
+  function directRoasCard(label, dr, hasParsed) {
+    if (!hasParsed) return '';
+    return `<div class="s-card">
+      <div class="s-lbl">${label} 직접ROAS</div>
+      <div class="s-val ${mCls(dr)}" style="font-size:15px">${dr>0?dr.toFixed(0)+'%':'–'}</div>
+    </div>`;
+  }
 
   const bs = calculateBudgetSummary();
 
@@ -1226,7 +1238,10 @@ function renderSummary(){
     <div class="s-card"><div class="s-lbl">총 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(totalCost)}</div></div>
     <div class="s-card"><div class="s-lbl">총 매출 (매체)</div><div class="s-val">${fmtW(totalRev)}</div></div>
     <div class="s-card"><div class="s-lbl">매체 ROAS</div><div class="s-val ${mCls(roas)}">${roas>0?roas.toFixed(0)+'%':'–'}</div></div>
-    <div class="s-card"><div class="s-lbl">직접 ROAS</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
+    <div class="s-card"><div class="s-lbl">직접 ROAS (전체)</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
+    ${directRoasCard('메타', metaDRoas, !!parsed.meta)}
+    ${directRoasCard('구글', ggDRoas, !!parsed.google)}
+    ${directRoasCard('틱톡', tkDRoas, !!parsed.tiktok)}
     <div class="s-card"><div class="s-lbl">직접 전환 매출</div><div class="s-val">${fmtW(totalDirect)}</div></div>
     ${budgetCard('메타', bs.meta)}
     ${budgetCard('구글', bs.google)}
