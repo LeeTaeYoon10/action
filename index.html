@@ -665,16 +665,18 @@ async function analyze(){
 
 // ── Key normalization ─────────────────────────────────────────────────────────
 function normKey(k){
-  return k
+  const s=String(k).normalize('NFC');
+  return s
     .replace(/\s*\(j[sh]\)\s*/gi,'')
     .replace(/\s*\([a-z]{2,3}\)\s*$/i,'')
     .replace(/_AN\s*$/i,'')
     .replace(/\s+/g,'')
     .toLowerCase();
 }
-// 카페24 키워드 ↔ 구글 광고명 매칭용: 공백·언더스코어 모두 제거
+// 카페24 키워드 ↔ 구글 광고명 매칭용: 공백·언더스코어 모두 제거 + NFC 정규화
 function normKeyFull(k){
-  return k
+  const s=String(k).normalize('NFC');
+  return s
     .replace(/\s*\(j[sh]\)\s*/gi,'')
     .replace(/\s*\([a-z]{2,3}\)\s*$/i,'')
     .replace(/_AN\s*$/i,'')
@@ -687,10 +689,11 @@ function getDirectData(adName, channel){
   if(!parsed.direct) return null;
   const key=adSuffix(adName);
   if(channel==='tk'){
-    return parsed.direct['__tk__'+key]||null;
+    // 폴백: TikTok도 normKeyFull 시도
+    return parsed.direct['__tk__'+key]||parsed.direct['__tk__'+normKeyFull(adName)]||null;
   }
   if(channel==='fb'||channel==='meta'){
-    return parsed.direct['__fb__'+key]||null;
+    return parsed.direct['__fb__'+key]||parsed.direct['__fb__'+normKeyFull(adName)]||null;
   }
   if(channel==='gg'){
     let r=parsed.direct['__gg__'+key]||null;
@@ -699,8 +702,13 @@ function getDirectData(adName, channel){
       const m=adName.match(/^(\d+)\s*\//);
       if(m) r=parsed.direct['__gg__'+normKey(m[1])]||null;
     }
-    // 폴백2: 광고명 전체 정규화 조회 (카페24 키워드가 전체 광고명인 경우: "001_260318_hy_광고명_T(ty)" ↔ "001 260318 hy 광고명_T(ty)")
+    // 폴백2: 광고명 전체 normKeyFull (001_광고명 ↔ 001 광고명)
     if(!r) r=parsed.direct['__gg__'+normKeyFull(adName)]||null;
+    // 폴백3: 첫 세그먼트(001_) 제거 후 normKeyFull (카페24 키워드가 001 없이 저장된 경우)
+    if(!r){
+      const i=adName.indexOf('_');
+      if(i>=0) r=parsed.direct['__gg__'+normKeyFull(adName.slice(i+1))]||null;
+    }
     return r;
   }
   return parsed.direct[key]||null;
