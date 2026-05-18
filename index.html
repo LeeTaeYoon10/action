@@ -274,6 +274,11 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── 수동입력 ─────────────────── */
+.manual-badge { display:inline-block; background:rgba(245,158,11,0.15); color:var(--yellow); border-radius:3px; font-size:9px; font-weight:700; padding:1px 4px; margin-left:3px; vertical-align:middle; }
+.manual-edit-btn { background:none; border:none; color:var(--border); cursor:pointer; font-size:11px; padding:1px 3px; transition:color 0.15s; vertical-align:middle; line-height:1; }
+.manual-edit-btn:hover { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -502,6 +507,31 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
           <li>브랜드별 설정값 localStorage 분리 저장</li>
         </ul>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Manual Direct Modal ───────────────────────── -->
+<div class="modal-bg" id="manual-direct-modal">
+  <div class="modal" style="width:310px">
+    <button class="modal-close" onclick="document.getElementById('manual-direct-modal').classList.remove('show')">✕</button>
+    <h2 style="margin-bottom:4px">직접전환 수동 입력</h2>
+    <div id="mdirect-label" style="font-size:11px;color:var(--muted);margin-bottom:18px;word-break:break-all;max-height:36px;overflow:hidden"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--muted);width:68px">전환 건수</span>
+        <input id="mdirect-count" type="number" min="0" class="settings-input" placeholder="건" style="width:100px">
+        <span style="font-size:10px;color:var(--muted)">건</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--muted);width:68px">전환 매출</span>
+        <input id="mdirect-amount" type="number" min="0" class="settings-input" placeholder="원 단위" style="width:100px">
+        <span style="font-size:10px;color:var(--muted)">원</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" style="font-size:11px" onclick="clearManualDirect()">초기화</button>
+      <button class="btn btn-primary" style="font-size:11px" onclick="saveManualDirect()">적용</button>
     </div>
   </div>
 </div>
@@ -1227,9 +1257,24 @@ function switchTab(id){
 function renderSummary(){
   let totalCost=0,totalRev=0,totalDirect=0;
   let metaCost=0,metaDirect=0, ggCost=0,ggDirect=0, tkCost=0,tkDirect=0;
-  if(parsed.meta)   Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;metaCost+=a.cost;metaDirect+=a.directAmount||0;})));
-  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;ggCost+=a.cost;ggDirect+=a.directAmount||0;}));
-  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;tkCost+=a.cost;tkDirect+=a.directAmount||0;})));
+  if(parsed.meta) Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
+    totalCost+=a.cost;totalRev+=a.rev||0;metaCost+=a.cost;
+    const aKey='meta__ad__'+c.name+'__'+g.name+'__'+a.name;
+    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
+    totalDirect+=d;metaDirect+=d;
+  })));
+  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{
+    totalCost+=a.cost;totalRev+=a.rev||0;ggCost+=a.cost;
+    const aKey='gg__ad__'+c.name+'__'+a.name;
+    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
+    totalDirect+=d;ggDirect+=d;
+  }));
+  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
+    totalCost+=a.cost;totalRev+=a.rev||0;tkCost+=a.cost;
+    const aKey='tk__ad__'+c.name+'__'+g.name+'__'+a.name;
+    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
+    totalDirect+=d;tkDirect+=d;
+  })));
 
   const roas=totalCost>0?totalRev/totalCost*100:0;
   const dRoas=totalCost>0?totalDirect/totalCost*100:0;
@@ -1361,10 +1406,7 @@ function buildMetaTable(){
           <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
           <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
           <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
-          <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+          ${directEl(ad,aKey)}
           <td>${memoEl(aKey)}</td></tr>`;
       });
     });
@@ -1405,10 +1447,7 @@ function buildGoogleTable(){
         <td class="name-cell" style="padding-left:18px"><span title="${ad.name}">${shorten(ad.name,36)}</span></td>
         <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
         <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
-        <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
-        <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
-        <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
-        <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+        ${directEl(ad,aKey)}
         <td>${memoEl(aKey)}</td></tr>`;
     });
   });
@@ -1455,15 +1494,64 @@ function buildTikTokTable(){
           <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
           <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
           <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
-          <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+          ${directEl(ad,aKey)}
           <td>${memoEl(aKey)}</td></tr>`;
       });
     });
   });
   return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ── Manual Direct Entry ───────────────────────────────────────────────────────
+let _mDirectKey=null;
+function openManualDirect(key,label){
+  _mDirectKey=key;
+  document.getElementById('mdirect-label').textContent=label||key;
+  const a=actions[key]||{};
+  document.getElementById('mdirect-count').value=a.manualDirectCount!=null?a.manualDirectCount:'';
+  document.getElementById('mdirect-amount').value=a.manualDirectAmount!=null?a.manualDirectAmount:'';
+  document.getElementById('manual-direct-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('mdirect-count').focus(),60);
+}
+function saveManualDirect(){
+  if(!_mDirectKey) return;
+  if(!actions[_mDirectKey]) actions[_mDirectKey]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const cv=document.getElementById('mdirect-count').value;
+  const av=document.getElementById('mdirect-amount').value;
+  if(cv===''&&av===''){
+    delete actions[_mDirectKey].manualDirectCount;
+    delete actions[_mDirectKey].manualDirectAmount;
+  } else {
+    actions[_mDirectKey].manualDirectCount=cv!==''?parseFloat(cv):null;
+    actions[_mDirectKey].manualDirectAmount=av!==''?parseFloat(av):null;
+  }
+  document.getElementById('manual-direct-modal').classList.remove('show');
+  renderTable(activeTab); renderSummary(); triggerAutoSave();
+}
+function clearManualDirect(){
+  document.getElementById('mdirect-count').value='';
+  document.getElementById('mdirect-amount').value='';
+}
+// 광고 행 직접전환 셀 4개 생성 (수동입력 오버라이드 포함)
+function directEl(ad,key){
+  const manual=actions[key];
+  let dCpa=ad.directCpa,dRoas=ad.directRoas,dCount=ad.directCount,dAmount=ad.directAmount;
+  let isManual=false;
+  if(dAmount==null&&manual&&(manual.manualDirectAmount!=null||manual.manualDirectCount!=null)){
+    dAmount=manual.manualDirectAmount!=null?manual.manualDirectAmount:0;
+    dCount=manual.manualDirectCount!=null?manual.manualDirectCount:0;
+    dRoas=ad.cost>0&&dAmount>0?dAmount/ad.cost*100:0;
+    dCpa=dCount>0?ad.cost/dCount:null;
+    isManual=true;
+  }
+  const mi=isManual?'<span class="manual-badge">수동</span>':'';
+  const sk=key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const sn=(ad.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const eb=`<button class="manual-edit-btn" onclick="openManualDirect('${sk}','${sn}')" title="직접전환 수동 입력">✏</button>`;
+  return `<td>${dCpa!=null?cpaBadge(dCpa):'<span class="m-na">–</span>'}</td>`+
+    `<td>${dRoas!=null&&dRoas>0?roasBadge(dRoas):'<span class="m-na">–</span>'}</td>`+
+    `<td>${dCount!=null?fmtN(dCount)+mi:'<span class="m-na">–</span>'+mi}</td>`+
+    `<td>${dAmount!=null?fmtW(dAmount):'<span class="m-na">–</span>'}${mi}${eb}</td>`;
 }
 
 // ── UI Components ─────────────────────────────────────────────────────────────
