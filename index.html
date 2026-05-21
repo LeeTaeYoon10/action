@@ -1411,7 +1411,7 @@ function buildMetaTable(){
         rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
           <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
           <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
+          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
           ${directEl(ad,aKey)}
           <td>${memoEl(aKey)}</td></tr>`;
       });
@@ -1452,7 +1452,7 @@ function buildGoogleTable(){
       rows+=`<tr class="row-ad" data-camp="${cId}" ${adHide}>
         <td class="name-cell" style="padding-left:18px"><span title="${ad.name}">${shorten(ad.name,36)}</span></td>
         <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-        <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
+        <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
         ${directEl(ad,aKey)}
         <td>${memoEl(aKey)}</td></tr>`;
     });
@@ -1499,7 +1499,7 @@ function buildTikTokTable(){
         rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
           <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
           <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
+          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
           ${directEl(ad,aKey)}
           <td>${memoEl(aKey)}</td></tr>`;
       });
@@ -1561,9 +1561,17 @@ function directEl(ad,key){
 }
 
 // ── UI Components ─────────────────────────────────────────────────────────────
-function actSel(key){
-  if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+function actSel(key, hasBudget=true){
+  if(!actions[key]) actions[key]={action:hasBudget?'유지':'',budgetFrom:'',budgetTo:'',memo:''};
   const v=actions[key].action;
+  if(!hasBudget){
+    // 예산 없는 ad행: 기본 빈칸, 끄기·지켜보기만 선택 가능
+    return `<select class="act-sel ${actCls(v)}" id="sel-${CSS.escape(key)}" onchange="setAction('${key}',this.value)">
+      <option value="" ${v===''||v==='유지'?'selected':''}>–</option>
+      <option value="끄기" ${v==='끄기'?'selected':''}>끄기</option>
+      <option value="지켜보기" ${v==='지켜보기'?'selected':''}>지켜보기</option>
+    </select>`;
+  }
   return `<select class="act-sel ${actCls(v)}" id="sel-${CSS.escape(key)}" onchange="setAction('${key}',this.value)">
     <option ${v==='유지'?'selected':''}>유지</option>
     <option ${v==='끄기'?'selected':''}>끄기</option>
