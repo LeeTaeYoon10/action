@@ -1387,7 +1387,7 @@ function buildMetaTable(){
     rows+=`<tr class="row-camp">
       <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}</td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid(camp.name,grp.name); const isG=collapsed.grps.has(gId);
@@ -1400,7 +1400,7 @@ function buildMetaTable(){
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
         <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td><span class="m-na">–</span></td><td>${ga.conv}개</td>
-        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
+        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
       grp.ads.forEach(ad=>{
         const adHide=(isC||isG)?'style="display:none"':'';
@@ -1434,14 +1434,14 @@ function buildGoogleTable(){
       rows+=`<tr class="row-camp">
         <td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span><span class="badge-pmax">PMAX</span></td>
         <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
-        <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+        <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
         <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
       return;
     }
     rows+=`<tr class="row-camp">
       <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
     camp.ads.forEach(ad=>{
       const adHide=isC?'style="display:none"':'';
@@ -1474,7 +1474,7 @@ function buildTikTokTable(){
     rows+=`<tr class="row-camp">
       <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid('tk_'+camp.name,grp.name); const isG=collapsed.grps.has(gId);
@@ -1487,7 +1487,7 @@ function buildTikTokTable(){
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
         <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td><td>${ga.conv}개</td>
-        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
+        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
       grp.ads.forEach(ad=>{
         if(!ad.cost) return; // 비용 0 소재 숨김
