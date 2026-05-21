@@ -1615,7 +1615,24 @@ function setAction(key,val){
   renderSummary();
   triggerAutoSave();
 }
-function setBudget(key,cur,val){if(!actions[key])actions[key]={};actions[key].budgetFrom=fmtMan(cur,true);actions[key].budgetTo=val;renderSummary();triggerAutoSave();}
+function setBudget(key,cur,val){
+  if(!actions[key])actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const from=fmtMan(cur,true);
+  actions[key].budgetFrom=from;
+  actions[key].budgetTo=val;
+  // 숫자 비교로 액션 자동 변경 (끄기·지켜보기는 유지)
+  const curAct=actions[key].action;
+  if(curAct!=='끄기'&&curAct!=='지켜보기'){
+    const fromN=parseFloat(from)||0;
+    const toN=parseFloat(val)||0;
+    const newAct=toN>fromN?'증액':toN<fromN?'감액':'유지';
+    actions[key].action=newAct;
+    const sel=document.getElementById('sel-'+CSS.escape(key));
+    if(sel){sel.value=newAct;sel.className='act-sel '+actCls(newAct);}
+  }
+  renderSummary();
+  triggerAutoSave();
+}
 function setMemo(key,val){if(!actions[key])actions[key]={};actions[key].memo=val;triggerAutoSave();}
 function actCls(v){return v==='끄기'?'a-off':v==='증액'?'a-up':v==='감액'?'a-down':v==='지켜보기'?'a-watch':'';}
 
