@@ -1575,17 +1575,46 @@ function actSel(key){
 function budgetEl(key,current){
   const cur=fmtMan(current,true);
   if(!actions[key]) actions[key]={action:'유지',budgetFrom:cur,budgetTo:cur,memo:''};
+  else if(!actions[key].budgetFrom) actions[key].budgetFrom=cur;
+  const isOff=actions[key].action==='끄기';
+  const toVal=isOff?'0':(actions[key].budgetTo||cur);
+  const toStyle=isOff?'color:var(--red);opacity:0.7':'';
   return `<div class="budget-wrap">
     <input class="budget-in" value="${cur}" readonly title="현재예산(만원)" style="color:var(--muted)">
     <span class="budget-arrow">→</span>
-    <input class="budget-in" value="${actions[key].budgetTo||cur}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
+    <input class="budget-in" id="bto-${CSS.escape(key)}" value="${toVal}" ${isOff?'readonly':''} style="${toStyle}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
   </div>`;
 }
 function memoEl(key){
   if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
   return `<input class="memo-in" placeholder="메모…" value="${actions[key].memo||''}" onchange="setMemo('${key}',this.value)">`;
 }
-function setAction(key,val){if(!actions[key])actions[key]={};actions[key].action=val;const el=document.getElementById('sel-'+CSS.escape(key));if(el) el.className='act-sel '+actCls(val);triggerAutoSave();}
+function setAction(key,val){
+  if(!actions[key])actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const prev=actions[key].action;
+  actions[key].action=val;
+  // 끄기 선택 → budgetTo 자동 0
+  if(val==='끄기'){
+    actions[key]._savedBudgetTo=actions[key].budgetTo;
+    actions[key].budgetTo='0';
+  } else if(prev==='끄기'){
+    // 끄기 해제 → 이전 값 복원
+    actions[key].budgetTo=actions[key]._savedBudgetTo||actions[key].budgetFrom||'';
+    delete actions[key]._savedBudgetTo;
+  }
+  // 드롭다운 색상 업데이트
+  const el=document.getElementById('sel-'+CSS.escape(key));
+  if(el) el.className='act-sel '+actCls(val);
+  // 예산 TO 인풋 즉시 업데이트 (리렌더 없이)
+  const bto=document.getElementById('bto-'+CSS.escape(key));
+  if(bto){
+    bto.value=actions[key].budgetTo||'';
+    if(val==='끄기'){bto.setAttribute('readonly','');bto.style.color='var(--red)';bto.style.opacity='0.7';}
+    else{bto.removeAttribute('readonly');bto.style.color='';bto.style.opacity='';}
+  }
+  renderSummary();
+  triggerAutoSave();
+}
 function setBudget(key,cur,val){if(!actions[key])actions[key]={};actions[key].budgetFrom=fmtMan(cur,true);actions[key].budgetTo=val;renderSummary();triggerAutoSave();}
 function setMemo(key,val){if(!actions[key])actions[key]={};actions[key].memo=val;triggerAutoSave();}
 function actCls(v){return v==='끄기'?'a-off':v==='증액'?'a-up':v==='감액'?'a-down':v==='지켜보기'?'a-watch':'';}
