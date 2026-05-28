@@ -31,6 +31,8 @@
     .date-input:focus { outline: none; border-color: rgba(255,255,255,0.7); }
     .date-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
     .autosave-indicator { font-size: 11px; color: rgba(255,255,255,0.6); opacity: 0; transition: opacity 0.4s; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
+    .date-nav-btn { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.25); border-radius: 7px; color: white; font-size: 15px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+    .date-nav-btn:hover { background: rgba(255,255,255,0.3); }
 
     /* Container */
     .container { max-width: 1300px; margin: 0 auto; padding: 22px; }
@@ -189,7 +191,9 @@
   <div class="header-right">
     <span class="autosave-indicator" id="autosave-indicator">✓ 자동저장</span>
     <span class="date-label">날짜</span>
+    <button class="date-nav-btn" onclick="changeDay(-1)" title="전일">&#8592;</button>
     <input type="date" id="date-input" class="date-input" onchange="onDateChange()">
+    <button class="date-nav-btn" onclick="changeDay(1)" title="후일">&#8594;</button>
   </div>
 </div>
 
@@ -575,6 +579,15 @@ const DAYS = ['일','월','화','수','목','금','토'];
 const yesterday = new Date();
 yesterday.setDate(yesterday.getDate() - 1);
 document.getElementById('date-input').value = yesterday.toISOString().split('T')[0];
+
+// 날짜 화살표 이동
+function changeDay(dir) {
+  const input = document.getElementById('date-input');
+  const d = new Date(input.value + 'T00:00:00');
+  d.setDate(d.getDate() + dir);
+  input.value = d.toISOString().split('T')[0];
+  onDateChange();
+}
 
 // ── 스냅샷: 입력 필드 전체 저장/복원 ──
 function getSnapshot(brand) {
@@ -1033,7 +1046,7 @@ function showToast(msg) {
 renderHistory();
 renderDetailTable();
 renderChart();
-calc();
+onDateChange(); // 페이지 열자마자 저장 데이터 자동 로드
 </script>
 </body>
 </html>
