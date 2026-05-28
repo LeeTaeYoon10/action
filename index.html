@@ -232,6 +232,7 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
 /* ── Badges ───────────────────────── */
 .badge-pmax { display: inline-block; background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
 .badge-obj { display: inline-block; border: 1px solid; border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
+.ad-count { display: inline-block; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 10px; font-weight: 600; padding: 1px 6px; margin-left: 5px; vertical-align: middle; }
 
 /* ── Session banner ───────────────── */
 .session-banner { display: none; align-items: center; gap: 12px; background: rgba(79,127,255,0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px; }
@@ -1406,11 +1407,12 @@ function buildMetaTable(){
     const cId=cid(camp.name); const isC=collapsed.camps.has(cId);
     const cKey='meta__camp__'+camp.name;
     const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads.map(a=>resolveAd(a,'meta__ad__'+camp.name+'__'+g.name+'__'+a.name))));
+    const cAdCnt=Object.values(camp.groups).reduce((s,g)=>s+g.ads.length,0);
 
     if (!shouldShowRow(camp.name)) return;
 
     rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}</td>
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
       <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
@@ -1423,7 +1425,7 @@ function buildMetaTable(){
       if (!shouldShowRow(camp.name, grp.name)) return;
 
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
-        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
+        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td><span class="m-na">–</span></td><td>${ga.conv}개</td>
         <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
@@ -1464,7 +1466,7 @@ function buildGoogleTable(){
       return;
     }
     rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${camp.ads.length}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
       <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
@@ -1493,11 +1495,12 @@ function buildTikTokTable(){
     const cId=cid('tk_'+camp.name); const isC=collapsed.camps.has(cId);
     const cKey='tk__camp__'+camp.name;
     const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads.map(a=>resolveAd(a,'tk__ad__'+camp.name+'__'+g.name+'__'+a.name))));
+    const cAdCnt=Object.values(camp.groups).reduce((s,g)=>s+g.ads.length,0);
 
     if (!shouldShowRow(camp.name)) return;
 
     rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
       <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
@@ -1510,7 +1513,7 @@ function buildTikTokTable(){
       if (!shouldShowRow(camp.name, grp.name)) return;
 
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
-        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
+        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td><td>${ga.conv}개</td>
         <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
