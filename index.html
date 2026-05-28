@@ -1236,6 +1236,31 @@ function getSortIndicator(columnName) {
   return sortState.direction === 'asc' ? ' ▲' : (sortState.direction === 'desc' ? ' ▼' : '');
 }
 
+// 컬럼명 → ad 객체 값 추출
+function getSortVal(ad, col) {
+  if (col === '비용')   return ad.cost || 0;
+  if (col === '매출')   return ad.rev  || 0;
+  if (col === 'ROAS')   return ad.roas || 0;
+  if (col === 'CPA')    return ad.cpa  || 0;
+  if (col === 'CTR')    return ad.ctr  || 0;
+  if (col === '전환')   return ad.conv || 0;
+  if (col === '이름')   return (ad.name || '').toLowerCase();
+  return 0;
+}
+
+// ads 배열을 sortState에 따라 정렬 (원본 불변, 새 배열 반환)
+function applySortToAds(ads) {
+  if (!sortState.column || !sortState.direction) return ads;
+  const col = sortState.column;
+  const dir = sortState.direction === 'asc' ? 1 : -1;
+  return [...ads].sort((a, b) => {
+    const va = getSortVal(a, col);
+    const vb = getSortVal(b, col);
+    if (typeof va === 'string') return va.localeCompare(vb) * dir;
+    return (va - vb) * dir;
+  });
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll(){
   const tabs=[];
@@ -1402,7 +1427,7 @@ function buildMetaTable(){
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td><span class="m-na">–</span></td><td>${ga.conv}개</td>
         <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
-      grp.ads.forEach(ad=>{
+      applySortToAds(grp.ads).forEach(ad=>{
         const adHide=(isC||isG)?'style="display:none"':'';
         const aKey='meta__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
 
@@ -1443,7 +1468,7 @@ function buildGoogleTable(){
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
       <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
-    camp.ads.forEach(ad=>{
+    applySortToAds(camp.ads).forEach(ad=>{
       const adHide=isC?'style="display:none"':'';
       const aKey='gg__ad__'+camp.name+'__'+ad.name;
 
@@ -1489,7 +1514,7 @@ function buildTikTokTable(){
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td><td>${ga.conv}개</td>
         <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
-      grp.ads.forEach(ad=>{
+      applySortToAds(grp.ads).forEach(ad=>{
         if(!ad.cost) return; // 비용 0 소재 숨김
         const adHide=(isC||isG)?'style="display:none"':'';
         const aKey='tk__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
