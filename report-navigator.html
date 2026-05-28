@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>베이스튠 일별 리포트</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 520px;
+      overflow: hidden;
+    }
+
+    /* 날짜 네비게이터 */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e2235;
+      padding: 16px 20px;
+    }
+    .nav button {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav button:hover { background: rgba(255,255,255,0.25); }
+    .nav button:disabled { opacity: 0.3; cursor: default; }
+
+    .nav-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      margin: 0 12px;
+    }
+    .nav-center .date-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    /* 검색량 인풋 */
+    .search-vol-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 5px 10px;
+    }
+    .search-vol-row label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+    }
+    .search-vol-row input {
+      width: 64px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.35);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+      padding: 1px 2px;
+      font-family: inherit;
+    }
+    .search-vol-row input::placeholder { color: rgba(255,255,255,0.3); }
+
+    /* 콘텐츠 */
+    .content { padding: 20px; }
+
+    /* 복붙 텍스트 박스 */
+    .copy-box {
+      background: #f7f8fa;
+      border: 1px solid #e2e5ea;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 13.5px;
+      line-height: 1.85;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      color: #2d2d2d;
+      min-height: 180px;
+    }
+    .copy-box.empty {
+      color: #aaa;
+      font-family: inherit;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+    }
+
+    /* 복사 버튼 */
+    .copy-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 12px;
+      background: #1e2235;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .copy-btn:hover { background: #2e3555; }
+    .copy-btn.copied { background: #2ecc71; }
+
+    /* 날짜 점 인디케이터 */
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #d0d3da;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .dot.active { background: #1e2235; }
+    .dot.has-data { background: #b0b8c8; }
+    .dot.active.has-data { background: #1e2235; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="nav">
+    <button id="prevBtn" onclick="changeDate(-1)" title="전일">&#8592;</button>
+    <div class="nav-center">
+      <div class="date-text" id="dateDisplay"></div>
+      <div class="search-vol-row">
+        <label>베이스튠 검색량</label>
+        <input type="text" id="searchVolInput" placeholder="-" oninput="onSearchVolChange()" />
+      </div>
+    </div>
+    <button id="nextBtn" onclick="changeDate(1)" title="후일">&#8594;</button>
+  </div>
+
+  <div class="content">
+    <div id="reportBox" class="copy-box empty">데이터 없음</div>
+    <button class="copy-btn" id="copyBtn" onclick="copyText()">📋 복사하기</button>
+    <div class="dots" id="dots"></div>
+  </div>
+</div>
+
+<script>
+  // ─── 데이터 등록 (검색량 제외한 본문) ──────────────────
+  const reports = {
+    "05/18": `05/18 (월) 최종
+
+광고비 19,315,185
+메타 9,328,391
+틱톡 3,782,444
+구글 4,762,028
+GFA 1,442,322
+
+매출 29,315,046 / 301
+자사몰 24,059,846 / 240
+쿠팡 4,223,800 / 49
+스마트스토어 1,031,400 / 12
+
+ROAS : 152% CPA : 64,170원 객단가 : 97,392원
+결제비율 (자사몰 82.1% / 외 17.9%)`,
+
+    "05/20": `05/20 (수) 최종
+
+광고비 17,824,688
+메타 9,576,533
+틱톡 2,523,795
+구글 4,638,615
+GFA 1,085,745
+
+매출 34,554,144 / 361
+자사몰 28,788,944 / 294
+쿠팡 3,878,600 / 45
+스마트스토어 1,886,600 / 22
+
+ROAS : 194% CPA : 49,376원 객단가 : 95,718원
+결제비율 (자사몰 81.4% / 외 18.6%)`,
+
+    "05/26": `05/26 (화) 최종
+
+광고비 21,956,678
+메타 10,221,506
+틱톡 2,051,558
+구글 8,511,860
+GFA 1,171,754
+
+매출 32,890,217 / 332
+자사몰 29,959,217 / 298
+쿠팡 -86,000 / -1
+스마트스토어 3,017,000 / 35
+
+ROAS : 150% CPA : 66,134원 객단가 : 99,067원
+결제비율 (자사몰 89.8% / 외 10.2%)`,
+
+    "05/27": `05/27 (수) 최종
+
+광고비 24,071,686
+메타 12,540,930
+틱톡 1,902,405
+구글 8,377,416
+GFA 1,250,935
+
+매출 36,843,214 / 390
+자사몰 31,869,374 / 332
+쿠팡 2,216,440 / 26
+스마트스토어 2,757,400 / 32
+
+ROAS : 153% CPA : 61,722원 객단가 : 94,470원
+결제비율 (자사몰 85.1% / 외 14.9%)`
+  };
+
+  // 검색량 별도 저장 (날짜별)
+  const searchVols = {
+    "05/26": "700"
+  };
+
+  // ─── 날짜 목록 생성 (05/18 ~ 오늘) ────────────────────
+  function generateDates() {
+    const dates = [];
+    const start = new Date(2026, 4, 18);
+    const now = new Date();
+    // 연도 맞추기 (2026년 기준)
+    const today = new Date(2026, now.getMonth(), now.getDate());
+    const end = today > new Date(2026, 4, 18) ? today : new Date(2026, 4, 28);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      dates.push(`${mm}/${dd}`);
+    }
+    return dates;
+  }
+
+  const DAYS = ['일','월','화','수','목','금','토'];
+  const dates = generateDates();
+
+  // 데이터 있는 가장 마지막 날짜로 초기 인덱스 설정
+  let currentIndex = (() => {
+    for (let i = dates.length - 1; i >= 0; i--) {
+      if (reports[dates[i]]) return i;
+    }
+    return dates.length - 1;
+  })();
+
+  function getDayName(key) {
+    const [mm, dd] = key.split('/').map(Number);
+    const d = new Date(2026, mm - 1, dd);
+    return DAYS[d.getDay()];
+  }
+
+  function getFullText(key) {
+    const base = reports[key];
+    if (!base) return null;
+    const vol = (searchVols[key] || '').trim() || '-';
+    return base + `\n검색량 (베이스튠 ${vol})`;
+  }
+
+  function render() {
+    const key = dates[currentIndex];
+    document.getElementById('dateDisplay').textContent = `${key} (${getDayName(key)})`;
+
+    // 검색량 인풋 업데이트
+    document.getElementById('searchVolInput').value = searchVols[key] || '';
+
+    // 리포트 텍스트 업데이트
+    const box = document.getElementById('reportBox');
+    const text = getFullText(key);
+    if (text) {
+      box.textContent = text;
+      box.className = 'copy-box';
+    } else {
+      box.textContent = '데이터 없음';
+      box.className = 'copy-box empty';
+    }
+
+    document.getElementById('prevBtn').disabled = currentIndex === 0;
+    document.getElementById('nextBtn').disabled = currentIndex === dates.length - 1;
+
+    // 점 인디케이터
+    const dotsEl = document.getElementById('dots');
+    dotsEl.innerHTML = '';
+    dates.forEach((d, i) => {
+      const dot = document.createElement('div');
+      let cls = 'dot';
+      if (reports[d]) cls += ' has-data';
+      if (i === currentIndex) cls += ' active';
+      dot.className = cls;
+      dot.title = d;
+      dot.onclick = () => { currentIndex = i; render(); };
+      dotsEl.appendChild(dot);
+    });
+
+    // 복사 버튼 초기화
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '📋 복사하기';
+    btn.className = 'copy-btn';
+  }
+
+  function onSearchVolChange() {
+    const key = dates[currentIndex];
+    const val = document.getElementById('searchVolInput').value;
+    if (val.trim()) {
+      searchVols[key] = val;
+    } else {
+      delete searchVols[key];
+    }
+    // 리포트 박스 실시간 업데이트
+    const box = document.getElementById('reportBox');
+    const text = getFullText(key);
+    if (text) {
+      box.textContent = text;
+      box.className = 'copy-box';
+    }
+  }
+
+  function changeDate(dir) {
+    currentIndex = Math.min(Math.max(currentIndex + dir, 0), dates.length - 1);
+    render();
+  }
+
+  function copyText() {
+    const key = dates[currentIndex];
+    const text = getFullText(key);
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 복사됨!';
+      btn.className = 'copy-btn copied';
+      setTimeout(() => {
+        btn.textContent = '📋 복사하기';
+        btn.className = 'copy-btn';
+      }, 1800);
+    });
+  }
+
+  // 페이지 로드 즉시 렌더링
+  render();
+</script>
+</body>
+</html>
