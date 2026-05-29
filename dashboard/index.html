@@ -31,8 +31,9 @@
     .date-input:focus { outline: none; border-color: rgba(255,255,255,0.7); }
     .date-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
     .autosave-indicator { font-size: 11px; color: rgba(255,255,255,0.6); opacity: 0; transition: opacity 0.4s; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
-    .date-nav-btn { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.25); border-radius: 7px; color: white; font-size: 15px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+    .date-nav-btn { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.25); border-radius: 7px; color: white; font-size: 15px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; position: relative; z-index: 10; }
     .date-nav-btn:hover { background: rgba(255,255,255,0.3); }
+    .date-input { position: relative; z-index: 1; }
 
     /* Container */
     .container { max-width: 1300px; margin: 0 auto; padding: 22px; }
