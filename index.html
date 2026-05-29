@@ -1347,6 +1347,9 @@ function renderSummary(){
     <div class="s-card"><div class="s-lbl">총 매출 (매체)</div><div class="s-val">${fmtW(totalRev)}</div></div>
     <div class="s-card"><div class="s-lbl">매체 ROAS</div><div class="s-val ${mCls(roas)}">${roas>0?roas.toFixed(0)+'%':'–'}</div></div>
     <div class="s-card"><div class="s-lbl">직접 ROAS (전체)</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
+    ${parsed.meta?`<div class="s-card"><div class="s-lbl">메타 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(metaCost)}</div></div>`:''}
+    ${parsed.google?`<div class="s-card"><div class="s-lbl">구글 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(ggCost)}</div></div>`:''}
+    ${parsed.tiktok?`<div class="s-card"><div class="s-lbl">틱톡 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(tkCost)}</div></div>`:''}
     ${directRoasCard('메타', metaDRoas, !!parsed.meta)}
     ${directRoasCard('구글', ggDRoas, !!parsed.google)}
     ${directRoasCard('틱톡', tkDRoas, !!parsed.tiktok)}
