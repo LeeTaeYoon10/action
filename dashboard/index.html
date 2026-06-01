@@ -581,12 +581,15 @@ const yesterday = new Date();
 yesterday.setDate(yesterday.getDate() - 1);
 document.getElementById('date-input').value = yesterday.toISOString().split('T')[0];
 
-// 날짜 화살표 이동
+// 날짜 화살표 이동 (타임존 안전한 방식)
 function changeDay(dir) {
   const input = document.getElementById('date-input');
-  const d = new Date(input.value + 'T00:00:00');
+  const parts = input.value.split('-');
+  const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
   d.setDate(d.getDate() + dir);
-  input.value = d.toISOString().split('T')[0];
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  input.value = `${d.getFullYear()}-${mm}-${dd}`;
   onDateChange();
 }
 
