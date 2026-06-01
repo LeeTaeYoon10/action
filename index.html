@@ -199,9 +199,13 @@ th:hover { background: var(--border); }
 td { padding: 7px 10px; border-bottom: 1px solid rgba(46,51,72,0.4); vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,255,255,0.02); }
-.row-camp td { background: rgba(79,127,255,0.06); }
-.row-camp .name-cell { font-weight: 700; font-size: 12px; }
+.row-camp td { background: rgba(79,127,255,0.18); border-bottom: 1px solid rgba(79,127,255,0.25); }
+.row-camp .name-cell { font-weight: 700; font-size: 12px; color: #c5d8ff; }
 .row-grp td { background: rgba(255,255,255,0.01); }
+/* ── 비용(6번) / 직접전환값(13번) 컬럼 보라색 강조 ─ */
+table thead th:nth-child(6), table thead th:nth-child(13) { background: rgba(139,92,246,0.20); color: #c4b5fd; }
+table tbody td:nth-child(6), table tbody td:nth-child(13) { background: rgba(139,92,246,0.10); }
+tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139,92,246,0.22); }
 .row-grp .name-cell { padding-left: 18px; color: var(--muted); font-weight: 500; font-size: 11px; }
 .row-ad .name-cell { padding-left: 34px; font-size: 11px; }
 .toggle-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 9px; padding: 2px 4px; margin-right: 4px; transition: all 0.15s; line-height: 1; }
@@ -228,6 +232,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 /* ── Badges ───────────────────────── */
 .badge-pmax { display: inline-block; background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
 .badge-obj { display: inline-block; border: 1px solid; border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
+.ad-count { display: inline-block; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 10px; font-weight: 600; padding: 1px 6px; margin-left: 5px; vertical-align: middle; }
 
 /* ── Session banner ───────────────── */
 .session-banner { display: none; align-items: center; gap: 12px; background: rgba(79,127,255,0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px; }
@@ -270,6 +275,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── 수동입력 ─────────────────── */
+.manual-badge { display:inline-block; background:rgba(245,158,11,0.15); color:var(--yellow); border-radius:3px; font-size:9px; font-weight:700; padding:1px 4px; margin-left:3px; vertical-align:middle; }
+.manual-edit-btn { background:none; border:none; color:var(--border); cursor:pointer; font-size:11px; padding:1px 3px; transition:color 0.15s; vertical-align:middle; line-height:1; }
+.manual-edit-btn:hover { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -298,7 +308,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <div class="header-actions">
     <button class="brand-badge" id="brand-label" onclick="document.getElementById('brand-selector').style.display='flex'">브랜드 변경</button>
     <button class="header-badge" onclick="toggleSettings()">⚙ 기준값 설정</button>
-    <button class="header-badge" onclick="showVersionHistory()">v2.3 · 버전 기록</button>
+    <button class="header-badge" onclick="showVersionHistory()">v2.9 · 버전 기록</button>
   </div>
 </div>
 
@@ -437,7 +447,31 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class="ver-list">
       <div class="ver-item">
         <div class="ver-header">
-          <span class="ver-badge latest">v1.9</span>
+          <span class="ver-badge latest">v2.9</span>
+          <span class="ver-title">이미지 캡처 요약 바 포함 + 캠페인 행 강조</span>
+          <span class="ver-date">2026.05</span>
+        </div>
+        <ul class="ver-features">
+          <li>이미지 다운로드 시 상단 요약 바(총 광고비/매출/ROAS/예산 등) 함께 캡처</li>
+          <li>캠페인 행 파란색 배경으로 광고그룹/소재와 명확히 구분</li>
+        </ul>
+      </div>
+      <div class="ver-item">
+        <div class="ver-header">
+          <span class="ver-badge">v2.5</span>
+          <span class="ver-title">이미지 캡처 잘림 완전 수정 + 카페24 연동</span>
+          <span class="ver-date">2026.05</span>
+        </div>
+        <ul class="ver-features">
+          <li>이미지 캡처: 스크롤 내린 상태에서도 전체 테이블 정상 캡처</li>
+          <li>카페24 한글 컬럼 형식 자동 인식 (세부항목/채널/매출액/구매건수)</li>
+          <li>구글 광고명 앞 번호(예: "08 / 광고명")와 카페24 키워드 자동 매핑</li>
+          <li>직접전환 CSV 인코딩 자동 감지 (UTF-16/UTF-8)</li>
+        </ul>
+      </div>
+      <div class="ver-item">
+        <div class="ver-header">
+          <span class="ver-badge">v1.9</span>
           <span class="ver-title">이미지 전체 캡처 완전 해결</span>
           <span class="ver-date">2026.05</span>
         </div>
@@ -474,6 +508,31 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           <li>브랜드별 설정값 localStorage 분리 저장</li>
         </ul>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Manual Direct Modal ───────────────────────── -->
+<div class="modal-bg" id="manual-direct-modal">
+  <div class="modal" style="width:310px">
+    <button class="modal-close" onclick="document.getElementById('manual-direct-modal').classList.remove('show')">✕</button>
+    <h2 style="margin-bottom:4px">직접전환 수동 입력</h2>
+    <div id="mdirect-label" style="font-size:11px;color:var(--muted);margin-bottom:18px;word-break:break-all;max-height:36px;overflow:hidden"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--muted);width:68px">전환 건수</span>
+        <input id="mdirect-count" type="number" min="0" class="settings-input" placeholder="건" style="width:100px">
+        <span style="font-size:10px;color:var(--muted)">건</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--muted);width:68px">전환 매출</span>
+        <input id="mdirect-amount" type="number" min="0" class="settings-input" placeholder="원 단위" style="width:100px">
+        <span style="font-size:10px;color:var(--muted)">원</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" style="font-size:11px" onclick="clearManualDirect()">초기화</button>
+      <button class="btn btn-primary" style="font-size:11px" onclick="saveManualDirect()">적용</button>
     </div>
   </div>
 </div>
@@ -631,32 +690,84 @@ async function analyze(){
     }
     if(files.tiktok) parsed.tiktok=await parseTikTokXLSX(files.tiktok);
     renderAll(); autoSave();
-  }catch(err){ alert('파싱 오류: '+err.message); console.error(err); }
+  }catch(err){
+    const msg=err instanceof Error?err.message:(err?.message!=null?String(err.message):String(err||'알 수 없는 오류'));
+    alert('파싱 오류: '+msg);
+    console.error('[파싱 오류 상세]', err);
+  }
   btn.disabled=false; btn.textContent='분석 시작';
 }
 
 // ── Key normalization ─────────────────────────────────────────────────────────
 function normKey(k){
-  return k
+  const s=String(k).normalize('NFC');
+  return s
     .replace(/\s*\(j[sh]\)\s*/gi,'')
     .replace(/\s*\([a-z]{2,3}\)\s*$/i,'')
     .replace(/_AN\s*$/i,'')
     .replace(/\s+/g,'')
     .toLowerCase();
 }
+// 카페24 키워드 ↔ 구글 광고명 매칭용: 공백·언더스코어 모두 제거 + NFC 정규화
+function normKeyFull(k){
+  const s=String(k).normalize('NFC');
+  return s
+    .replace(/\s*\(j[sh]\)\s*/gi,'')
+    .replace(/\s*\([a-z]{2,3}\)\s*$/i,'')
+    .replace(/_AN\s*$/i,'')
+    .replace(/[\s_]+/g,'')
+    .toLowerCase();
+}
 function termSuffix(term){ const m=term.match(/\)_(.+)$/); if(m) return normKey(m[1].trim()); const i=term.indexOf('_'); return i>=0?normKey(term.slice(i+1).trim()):normKey(term.trim()); }
 function adSuffix(name){ const i=name.indexOf('_'); return i>=0?normKey(name.slice(i+1).trim()):normKey(name.trim()); }
+// 편집거리(Levenshtein) – 빠른 근사 매칭용
+function editDist(a,b){
+  if(Math.abs(a.length-b.length)>3) return 99;
+  const m=a.length,n=b.length;
+  let row=Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){
+    const nr=[i];
+    for(let j=1;j<=n;j++) nr.push(a[i-1]===b[j-1]?row[j-1]:1+Math.min(row[j-1],row[j],nr[j-1]));
+    row=nr;
+    if(Math.min(...row)>3) return 99;
+  }
+  return row[n];
+}
 function getDirectData(adName, channel){
   if(!parsed.direct) return null;
   const key=adSuffix(adName);
   if(channel==='tk'){
-    return parsed.direct['__tk__'+key]||null;
+    return parsed.direct['__tk__'+key]||parsed.direct['__tk__'+normKeyFull(adName)]||null;
   }
   if(channel==='fb'||channel==='meta'){
-    return parsed.direct['__fb__'+key]||null;
+    return parsed.direct['__fb__'+key]||parsed.direct['__fb__'+normKeyFull(adName)]||null;
   }
   if(channel==='gg'){
-    return parsed.direct['__gg__'+key]||null;
+    let r=parsed.direct['__gg__'+key]||null;
+    // 폴백1: "08 / 광고명" → 앞 숫자 "08" 로 조회 (DMG_003 vid 형식)
+    if(!r){
+      const m=adName.match(/^(\d+)\s*\//);
+      if(m) r=parsed.direct['__gg__'+normKey(m[1])]||null;
+    }
+    // 폴백2: 광고명 전체 normKeyFull (001_광고명 ↔ 001 광고명)
+    if(!r) r=parsed.direct['__gg__'+normKeyFull(adName)]||null;
+    // 폴백3: 첫 세그먼트(001_) 제거 후 normKeyFull
+    if(!r){
+      const i=adName.indexOf('_');
+      if(i>=0) r=parsed.direct['__gg__'+normKeyFull(adName.slice(i+1))]||null;
+    }
+    // 폴백4: 편집거리 ≤1 유사 매칭 (광고명/카페24 1글자 차이 허용, 유일 매칭만 적용)
+    if(!r){
+      const base=normKeyFull(adName);
+      if(base.length>=10){
+        const hits=Object.keys(parsed.direct).filter(k=>{
+          if(!k.startsWith('__gg__')) return false;
+          return editDist(k.slice(6),base)<=1;
+        });
+        if(hits.length===1) r=parsed.direct[hits[0]];
+      }
+    }
+    return r;
   }
   return parsed.direct[key]||null;
 }
@@ -664,41 +775,76 @@ function getDirectData(adName, channel){
 // ── Parser: Direct ────────────────────────────────────────────────────────────
 function parseDirectCSV(file){
   return new Promise((res,rej)=>{
-    Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>{
-      const map={};
-      r.data.forEach(row=>{
-        const term=(row.term||'').trim(); if(!term||term==='nan') return;
-        const key=termSuffix(term);
-        if(!key) return;
-        const ch=(row.channel||'').toLowerCase();
-        const medium=(row.medium||'').toLowerCase();
-        const amt=parseNum(row.order_amount);
-        const cnt=parseNum(row.order_count);
-
-        if(!map[key]) map[key]={order_amount:0,order_count:0};
-        map[key].order_amount+=amt;
-        map[key].order_count+=cnt;
-
-        const chKey = (ch==='tk'||ch==='tiktok') ? '__tk__'+key
-                    : (ch==='fb'||ch==='ig') ? '__fb__'+key
-                    : (ch==='gg'||ch==='google') ? '__gg__'+key
-                    : null;
-        if(chKey){
-          if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
-          map[chKey].order_amount+=amt;
-          map[chKey].order_count+=cnt;
-        }
-
-        if(ch==='gg'&&medium==='pmax'){
-          const pmaxNum=(row.campaign||'').match(/pmax[_\s]*(\d+)/i);
-          const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix((row.campaign||'').trim()));
-          if(!map[pmaxKey]) map[pmaxKey]={order_amount:0,order_count:0};
-          map[pmaxKey].order_amount+=amt;
-          map[pmaxKey].order_count+=cnt;
-        }
-      });
-      res(map);
-    },error:rej});
+    // 인코딩 감지 후 텍스트로 읽기
+    const bufReader=new FileReader();
+    bufReader.readAsArrayBuffer(file.slice(0,4));
+    bufReader.onload=e=>{
+      const buf=new Uint8Array(e.target.result);
+      const encoding=(buf[0]===0xFF&&buf[1]===0xFE)||(buf[0]===0xFE&&buf[1]===0xFF)?'UTF-16':'UTF-8';
+      const textReader=new FileReader();
+      textReader.readAsText(file,encoding);
+      textReader.onload=ev=>{
+        try{
+          Papa.parse(ev.target.result,{header:true,skipEmptyLines:true,complete:r=>{
+            try{
+              const map={};
+              // 카페24 형식 감지: '세부항목' 또는 '매출액' 컬럼 존재 여부
+              const isCafe24=r.data.length>0&&('세부항목' in r.data[0]||'매출액' in r.data[0]);
+              r.data.forEach(row=>{
+                if(isCafe24){
+                  // ── 카페24 형식 (한글 컬럼) ──────────────────────────────
+                  const ch=(row['채널']||'').trim().toLowerCase();
+                  const kw=(row['키워드']||'').trim();       // "08", "06" 등 숫자 식별자
+                  const detail=(row['세부항목']||'').trim(); // "vid08" 등 (폴백)
+                  const amt=parseNum(row['매출액']);
+                  const cnt=parseNum(row['구매건수']);
+                  // 키: 키워드 우선, 없으면 세부항목에서 앞 문자(유형) 제거
+                  const rawKey=kw||(detail.replace(/^[a-z]+/i,''));
+                  if(!rawKey) return;
+                  // normKeyFull: 공백·언더스코어 모두 제거 → "001 260318 hy 광고명_T(ty)" ↔ "001_260318_hy_광고명_T(ty)" 매칭
+                  const key=normKeyFull(rawKey);
+                  if(!map[key]) map[key]={order_amount:0,order_count:0};
+                  map[key].order_amount+=amt; map[key].order_count+=cnt;
+                  const chKey=(ch==='tk'||ch==='tiktok')?'__tk__'+key
+                             :(ch==='fb'||ch==='ig'||ch==='meta')?'__fb__'+key
+                             :(ch==='gg'||ch==='google')?'__gg__'+key:null;
+                  if(chKey){
+                    if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
+                    map[chKey].order_amount+=amt; map[chKey].order_count+=cnt;
+                  }
+                } else {
+                  // ── 기존 형식 (영문 컬럼: term/channel/medium) ────────────
+                  const term=(row.term||'').trim(); if(!term||term==='nan') return;
+                  const key=termSuffix(term); if(!key) return;
+                  const ch=(row.channel||'').toLowerCase();
+                  const medium=(row.medium||'').toLowerCase();
+                  const amt=parseNum(row.order_amount);
+                  const cnt=parseNum(row.order_count);
+                  if(!map[key]) map[key]={order_amount:0,order_count:0};
+                  map[key].order_amount+=amt; map[key].order_count+=cnt;
+                  const chKey=(ch==='tk'||ch==='tiktok')?'__tk__'+key
+                             :(ch==='fb'||ch==='ig')?'__fb__'+key
+                             :(ch==='gg'||ch==='google')?'__gg__'+key:null;
+                  if(chKey){
+                    if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
+                    map[chKey].order_amount+=amt; map[chKey].order_count+=cnt;
+                  }
+                  if(ch==='gg'&&medium==='pmax'){
+                    const pmaxNum=(row.campaign||'').match(/pmax[_\s]*(\d+)/i);
+                    const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix((row.campaign||'').trim()));
+                    if(!map[pmaxKey]) map[pmaxKey]={order_amount:0,order_count:0};
+                    map[pmaxKey].order_amount+=amt; map[pmaxKey].order_count+=cnt;
+                  }
+                }
+              });
+              res(map);
+            }catch(err){rej(err);}
+          },error:(e)=>rej(new Error('CSV 파싱 오류: '+String(e?.message||e||'알 수 없는 오류')))});
+        }catch(err){rej(err);}
+      };
+      textReader.onerror=(e)=>rej(new Error('직접전환 파일 읽기 오류: '+(e?.target?.error?.message||'인코딩 변환 실패')));
+    };
+    bufReader.onerror=(e)=>rej(new Error('직접전환 파일 BOM 감지 오류: '+(e?.target?.error?.message||'알 수 없음')));
   });
 }
 
@@ -790,6 +936,7 @@ function parseMetaXLSX(file){
         res(sorted);
       }catch(err){rej(err);}
     };
+    reader.onerror=(e)=>rej(new Error('메타 파일 읽기 오류: '+(e?.target?.error?.message||'알 수 없음')));
     reader.readAsArrayBuffer(file);
   });
 }
@@ -870,12 +1017,12 @@ function parseGoogleCSV(file){
               Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
               res(sorted);
             }catch(err){rej(err);}
-          },error:rej});
+          },error:(e)=>rej(new Error('구글 CSV 파싱 오류: '+String(e?.message||e||'알 수 없는 오류')))});
         }catch(err){rej(err);}
       };
-      textReader.onerror=rej;
+      textReader.onerror=(e)=>rej(new Error('구글 파일 읽기 오류: '+(e?.target?.error?.message||'인코딩 변환 실패')));
     };
-    bufReader.onerror=rej;
+    bufReader.onerror=(e)=>rej(new Error('구글 파일 BOM 감지 오류: '+(e?.target?.error?.message||'알 수 없음')));
   });
 }
 
@@ -926,12 +1073,12 @@ function parsePmaxCSV(file){
               Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
               res(sorted);
             }catch(err){rej(err);}
-          },error:rej});
+          },error:(e)=>rej(new Error('PMax CSV 파싱 오류: '+String(e?.message||e||'알 수 없는 오류')))});
         }catch(err){rej(err);}
       };
-      textReader.onerror=rej;
+      textReader.onerror=(e)=>rej(new Error('PMax 파일 읽기 오류: '+(e?.target?.error?.message||'인코딩 변환 실패')));
     };
-    bufReader.onerror=rej;
+    bufReader.onerror=(e)=>rej(new Error('PMax 파일 BOM 감지 오류: '+(e?.target?.error?.message||'알 수 없음')));
   });
 }
 
@@ -980,6 +1127,7 @@ function parseTikTokXLSX(file){
         res(sorted);
       }catch(err){rej(err);}
     };
+    reader.onerror=(e)=>rej(new Error('틱톡 파일 읽기 오류: '+(e?.target?.error?.message||'알 수 없음')));
     reader.readAsArrayBuffer(file);
   });
 }
@@ -1089,6 +1237,31 @@ function getSortIndicator(columnName) {
   return sortState.direction === 'asc' ? ' ▲' : (sortState.direction === 'desc' ? ' ▼' : '');
 }
 
+// 컬럼명 → ad 객체 값 추출
+function getSortVal(ad, col) {
+  if (col === '비용')   return ad.cost || 0;
+  if (col === '매출')   return ad.rev  || 0;
+  if (col === 'ROAS')   return ad.roas || 0;
+  if (col === 'CPA')    return ad.cpa  || 0;
+  if (col === 'CTR')    return ad.ctr  || 0;
+  if (col === '전환')   return ad.conv || 0;
+  if (col === '이름')   return (ad.name || '').toLowerCase();
+  return 0;
+}
+
+// ads 배열을 sortState에 따라 정렬 (원본 불변, 새 배열 반환)
+function applySortToAds(ads) {
+  if (!sortState.column || !sortState.direction) return ads;
+  const col = sortState.column;
+  const dir = sortState.direction === 'asc' ? 1 : -1;
+  return [...ads].sort((a, b) => {
+    const va = getSortVal(a, col);
+    const vb = getSortVal(b, col);
+    if (typeof va === 'string') return va.localeCompare(vb) * dir;
+    return (va - vb) * dir;
+  });
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll(){
   const tabs=[];
@@ -1115,12 +1288,39 @@ function switchTab(id){
 
 function renderSummary(){
   let totalCost=0,totalRev=0,totalDirect=0;
-  if(parsed.meta)   Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;})));
-  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;}));
-  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{totalCost+=a.cost;totalRev+=a.rev||0;totalDirect+=a.directAmount||0;})));
+  let metaCost=0,metaDirect=0, ggCost=0,ggDirect=0, tkCost=0,tkDirect=0;
+  if(parsed.meta) Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
+    totalCost+=a.cost;totalRev+=a.rev||0;metaCost+=a.cost;
+    const aKey='meta__ad__'+c.name+'__'+g.name+'__'+a.name;
+    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
+    totalDirect+=d;metaDirect+=d;
+  })));
+  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{
+    totalCost+=a.cost;totalRev+=a.rev||0;ggCost+=a.cost;
+    const aKey='gg__ad__'+c.name+'__'+a.name;
+    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
+    totalDirect+=d;ggDirect+=d;
+  }));
+  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
+    totalCost+=a.cost;totalRev+=a.rev||0;tkCost+=a.cost;
+    const aKey='tk__ad__'+c.name+'__'+g.name+'__'+a.name;
+    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
+    totalDirect+=d;tkDirect+=d;
+  })));
 
   const roas=totalCost>0?totalRev/totalCost*100:0;
   const dRoas=totalCost>0?totalDirect/totalCost*100:0;
+  const metaDRoas=metaCost>0?metaDirect/metaCost*100:0;
+  const ggDRoas=ggCost>0?ggDirect/ggCost*100:0;
+  const tkDRoas=tkCost>0?tkDirect/tkCost*100:0;
+
+  function directRoasCard(label, dr, hasParsed) {
+    if (!hasParsed) return '';
+    return `<div class="s-card">
+      <div class="s-lbl">${label} 직접ROAS</div>
+      <div class="s-val ${mCls(dr)}" style="font-size:15px">${dr>0?dr.toFixed(0)+'%':'–'}</div>
+    </div>`;
+  }
 
   const bs = calculateBudgetSummary();
 
@@ -1146,7 +1346,13 @@ function renderSummary(){
     <div class="s-card"><div class="s-lbl">총 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(totalCost)}</div></div>
     <div class="s-card"><div class="s-lbl">총 매출 (매체)</div><div class="s-val">${fmtW(totalRev)}</div></div>
     <div class="s-card"><div class="s-lbl">매체 ROAS</div><div class="s-val ${mCls(roas)}">${roas>0?roas.toFixed(0)+'%':'–'}</div></div>
-    <div class="s-card"><div class="s-lbl">직접 ROAS</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
+    <div class="s-card"><div class="s-lbl">직접 ROAS (전체)</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
+    ${parsed.meta?`<div class="s-card"><div class="s-lbl">메타 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(metaCost)}</div></div>`:''}
+    ${parsed.google?`<div class="s-card"><div class="s-lbl">구글 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(ggCost)}</div></div>`:''}
+    ${parsed.tiktok?`<div class="s-card"><div class="s-lbl">틱톡 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(tkCost)}</div></div>`:''}
+    ${directRoasCard('메타', metaDRoas, !!parsed.meta)}
+    ${directRoasCard('구글', ggDRoas, !!parsed.google)}
+    ${directRoasCard('틱톡', tkDRoas, !!parsed.tiktok)}
     <div class="s-card"><div class="s-lbl">직접 전환 매출</div><div class="s-val">${fmtW(totalDirect)}</div></div>
     ${budgetCard('메타', bs.meta)}
     ${budgetCard('구글', bs.google)}
@@ -1203,29 +1409,30 @@ function buildMetaTable(){
   Object.values(parsed.meta).forEach(camp=>{
     const cId=cid(camp.name); const isC=collapsed.camps.has(cId);
     const cKey='meta__camp__'+camp.name;
-    const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads));
+    const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads.map(a=>resolveAd(a,'meta__ad__'+camp.name+'__'+g.name+'__'+a.name))));
+    const cAdCnt=Object.values(camp.groups).reduce((s,g)=>s+g.ads.length,0);
 
     if (!shouldShowRow(camp.name)) return;
 
     rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}</td>
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid(camp.name,grp.name); const isG=collapsed.grps.has(gId);
       const grpHide=isC?'style="display:none"':'';
       const gKey='meta__grp__'+camp.name+'__'+grp.name;
-      const ga=aggAds(grp.ads);
+      const ga=aggAds(grp.ads.map(a=>resolveAd(a,'meta__ad__'+camp.name+'__'+grp.name+'__'+a.name)));
 
       if (!shouldShowRow(camp.name, grp.name)) return;
 
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
-        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
+        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td><span class="m-na">–</span></td><td>${ga.conv}개</td>
-        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
+        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
-      grp.ads.forEach(ad=>{
+      applySortToAds(grp.ads).forEach(ad=>{
         const adHide=(isC||isG)?'style="display:none"':'';
         const aKey='meta__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
 
@@ -1234,11 +1441,8 @@ function buildMetaTable(){
         rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
           <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
           <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
-          <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
+          ${directEl(ad,aKey)}
           <td>${memoEl(aKey)}</td></tr>`;
       });
     });
@@ -1252,7 +1456,7 @@ function buildGoogleTable(){
   let rows='';
   Object.values(parsed.google).forEach(camp=>{
     const cId=cid('gg_'+camp.name); const isC=collapsed.camps.has(cId);
-    const cKey='gg__camp__'+camp.name; const ca=aggAds(camp.ads);
+    const cKey='gg__camp__'+camp.name; const ca=aggAds(camp.ads.map(a=>resolveAd(a,'gg__ad__'+camp.name+'__'+a.name)));
 
     if (!shouldShowRow(camp.name)) return;
 
@@ -1260,16 +1464,16 @@ function buildGoogleTable(){
       rows+=`<tr class="row-camp">
         <td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span><span class="badge-pmax">PMAX</span></td>
         <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
-        <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+        <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
         <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
       return;
     }
     rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${camp.ads.length}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
-    camp.ads.forEach(ad=>{
+    applySortToAds(camp.ads).forEach(ad=>{
       const adHide=isC?'style="display:none"':'';
       const aKey='gg__ad__'+camp.name+'__'+ad.name;
 
@@ -1278,11 +1482,8 @@ function buildGoogleTable(){
       rows+=`<tr class="row-ad" data-camp="${cId}" ${adHide}>
         <td class="name-cell" style="padding-left:18px"><span title="${ad.name}">${shorten(ad.name,36)}</span></td>
         <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-        <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
-        <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
-        <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
-        <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
-        <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+        <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
+        ${directEl(ad,aKey)}
         <td>${memoEl(aKey)}</td></tr>`;
     });
   });
@@ -1296,29 +1497,30 @@ function buildTikTokTable(){
   Object.values(parsed.tiktok).forEach(camp=>{
     const cId=cid('tk_'+camp.name); const isC=collapsed.camps.has(cId);
     const cKey='tk__camp__'+camp.name;
-    const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads));
+    const ca=aggAds(Object.values(camp.groups).flatMap(g=>g.ads.map(a=>resolveAd(a,'tk__ad__'+camp.name+'__'+g.name+'__'+a.name))));
+    const cAdCnt=Object.values(camp.groups).reduce((s,g)=>s+g.ads.length,0);
 
     if (!shouldShowRow(camp.name)) return;
 
     rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span></td>
+      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>
       <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey)}</td>
+      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
       <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid('tk_'+camp.name,grp.name); const isG=collapsed.grps.has(gId);
       const grpHide=isC?'style="display:none"':'';
       const gKey='tk__grp__'+camp.name+'__'+grp.name;
-      const ga=aggAds(grp.ads);
+      const ga=aggAds(grp.ads.map(a=>resolveAd(a,'tk__ad__'+camp.name+'__'+grp.name+'__'+a.name)));
 
       if (!shouldShowRow(camp.name, grp.name)) return;
 
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
-        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span></td>
+        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>
         <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td><td>${ga.conv}개</td>
-        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey)}</td>
+        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
         <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
-      grp.ads.forEach(ad=>{
+      applySortToAds(grp.ads).forEach(ad=>{
         if(!ad.cost) return; // 비용 0 소재 숨김
         const adHide=(isC||isG)?'style="display:none"':'';
         const aKey='tk__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
@@ -1328,11 +1530,8 @@ function buildTikTokTable(){
         rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
           <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
           <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey)}</td>
-          <td>${ad.directCpa!=null?cpaBadge(ad.directCpa):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directRoas!=null?roasBadge(ad.directRoas):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>
-          <td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>
+          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
+          ${directEl(ad,aKey)}
           <td>${memoEl(aKey)}</td></tr>`;
       });
     });
@@ -1340,10 +1539,70 @@ function buildTikTokTable(){
   return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
 }
 
+// ── Manual Direct Entry ───────────────────────────────────────────────────────
+let _mDirectKey=null;
+function openManualDirect(key,label){
+  _mDirectKey=key;
+  document.getElementById('mdirect-label').textContent=label||key;
+  const a=actions[key]||{};
+  document.getElementById('mdirect-count').value=a.manualDirectCount!=null?a.manualDirectCount:'';
+  document.getElementById('mdirect-amount').value=a.manualDirectAmount!=null?a.manualDirectAmount:'';
+  document.getElementById('manual-direct-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('mdirect-count').focus(),60);
+}
+function saveManualDirect(){
+  if(!_mDirectKey) return;
+  if(!actions[_mDirectKey]) actions[_mDirectKey]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const cv=document.getElementById('mdirect-count').value;
+  const av=document.getElementById('mdirect-amount').value;
+  if(cv===''&&av===''){
+    delete actions[_mDirectKey].manualDirectCount;
+    delete actions[_mDirectKey].manualDirectAmount;
+  } else {
+    actions[_mDirectKey].manualDirectCount=cv!==''?parseFloat(cv):null;
+    actions[_mDirectKey].manualDirectAmount=av!==''?parseFloat(av):null;
+  }
+  document.getElementById('manual-direct-modal').classList.remove('show');
+  renderTable(activeTab); renderSummary(); triggerAutoSave();
+}
+function clearManualDirect(){
+  document.getElementById('mdirect-count').value='';
+  document.getElementById('mdirect-amount').value='';
+}
+// 광고 행 직접전환 셀 4개 생성 (수동입력 오버라이드 포함)
+function directEl(ad,key){
+  const manual=actions[key];
+  let dCpa=ad.directCpa,dRoas=ad.directRoas,dCount=ad.directCount,dAmount=ad.directAmount;
+  let isManual=false;
+  if(dAmount==null&&manual&&(manual.manualDirectAmount!=null||manual.manualDirectCount!=null)){
+    dAmount=manual.manualDirectAmount!=null?manual.manualDirectAmount:0;
+    dCount=manual.manualDirectCount!=null?manual.manualDirectCount:0;
+    dRoas=ad.cost>0&&dAmount>0?dAmount/ad.cost*100:0;
+    dCpa=dCount>0?ad.cost/dCount:null;
+    isManual=true;
+  }
+  const mi=isManual?'<span class="manual-badge">수동</span>':'';
+  const sk=key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const sn=(ad.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const eb=`<button class="manual-edit-btn" onclick="openManualDirect('${sk}','${sn}')" title="직접전환 수동 입력">✏</button>`;
+  return `<td>${dCpa!=null?cpaBadge(dCpa):'<span class="m-na">–</span>'}</td>`+
+    `<td>${dRoas!=null&&dRoas>0?roasBadge(dRoas):'<span class="m-na">–</span>'}</td>`+
+    `<td>${dCount!=null?fmtN(dCount)+mi:'<span class="m-na">–</span>'+mi}</td>`+
+    `<td>${dAmount!=null?fmtW(dAmount):'<span class="m-na">–</span>'}${mi}${eb}</td>`;
+}
+
 // ── UI Components ─────────────────────────────────────────────────────────────
-function actSel(key){
-  if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+function actSel(key, hasBudget=true){
+  if(!actions[key]) actions[key]={action:hasBudget?'유지':'',budgetFrom:'',budgetTo:'',memo:''};
   const v=actions[key].action;
+  if(!hasBudget){
+    // 예산 없는 ad행: 기본 빈칸, 끄기·지켜보기만 선택 가능
+    return `<select class="act-sel ${actCls(v)}" id="sel-${CSS.escape(key)}" onchange="setAction('${key}',this.value)">
+      <option value="" ${v===''||v==='유지'?'selected':''}>–</option>
+      <option value="끄기" ${v==='끄기'?'selected':''}>끄기</option>
+      <option value="지켜보기" ${v==='지켜보기'?'selected':''}>지켜보기</option>
+    </select>`;
+  }
   return `<select class="act-sel ${actCls(v)}" id="sel-${CSS.escape(key)}" onchange="setAction('${key}',this.value)">
     <option ${v==='유지'?'selected':''}>유지</option>
     <option ${v==='끄기'?'selected':''}>끄기</option>
@@ -1355,18 +1614,64 @@ function actSel(key){
 function budgetEl(key,current){
   const cur=fmtMan(current,true);
   if(!actions[key]) actions[key]={action:'유지',budgetFrom:cur,budgetTo:cur,memo:''};
+  else if(!actions[key].budgetFrom) actions[key].budgetFrom=cur;
+  const isOff=actions[key].action==='끄기';
+  const toVal=isOff?'0':(actions[key].budgetTo||cur);
+  const toStyle=isOff?'color:var(--red);opacity:0.7':'';
   return `<div class="budget-wrap">
     <input class="budget-in" value="${cur}" readonly title="현재예산(만원)" style="color:var(--muted)">
     <span class="budget-arrow">→</span>
-    <input class="budget-in" value="${actions[key].budgetTo||cur}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
+    <input class="budget-in" id="bto-${CSS.escape(key)}" value="${toVal}" ${isOff?'readonly':''} style="${toStyle}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
   </div>`;
 }
 function memoEl(key){
   if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
   return `<input class="memo-in" placeholder="메모…" value="${actions[key].memo||''}" onchange="setMemo('${key}',this.value)">`;
 }
-function setAction(key,val){if(!actions[key])actions[key]={};actions[key].action=val;const el=document.getElementById('sel-'+CSS.escape(key));if(el) el.className='act-sel '+actCls(val);triggerAutoSave();}
-function setBudget(key,cur,val){if(!actions[key])actions[key]={};actions[key].budgetFrom=fmtMan(cur,true);actions[key].budgetTo=val;renderSummary();triggerAutoSave();}
+function setAction(key,val){
+  if(!actions[key])actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const prev=actions[key].action;
+  actions[key].action=val;
+  // 끄기 선택 → budgetTo 자동 0
+  if(val==='끄기'){
+    actions[key]._savedBudgetTo=actions[key].budgetTo;
+    actions[key].budgetTo='0';
+  } else if(prev==='끄기'){
+    // 끄기 해제 → 이전 값 복원
+    actions[key].budgetTo=actions[key]._savedBudgetTo||actions[key].budgetFrom||'';
+    delete actions[key]._savedBudgetTo;
+  }
+  // 드롭다운 색상 업데이트
+  const el=document.getElementById('sel-'+CSS.escape(key));
+  if(el) el.className='act-sel '+actCls(val);
+  // 예산 TO 인풋 즉시 업데이트 (리렌더 없이)
+  const bto=document.getElementById('bto-'+CSS.escape(key));
+  if(bto){
+    bto.value=actions[key].budgetTo||'';
+    if(val==='끄기'){bto.setAttribute('readonly','');bto.style.color='var(--red)';bto.style.opacity='0.7';}
+    else{bto.removeAttribute('readonly');bto.style.color='';bto.style.opacity='';}
+  }
+  renderSummary();
+  triggerAutoSave();
+}
+function setBudget(key,cur,val){
+  if(!actions[key])actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const from=fmtMan(cur,true);
+  actions[key].budgetFrom=from;
+  actions[key].budgetTo=val;
+  // 숫자 비교로 액션 자동 변경 (끄기·지켜보기는 유지)
+  const curAct=actions[key].action;
+  if(curAct!=='끄기'&&curAct!=='지켜보기'){
+    const fromN=parseFloat(from)||0;
+    const toN=parseFloat(val)||0;
+    const newAct=toN>fromN?'증액':toN<fromN?'감액':'유지';
+    actions[key].action=newAct;
+    const sel=document.getElementById('sel-'+CSS.escape(key));
+    if(sel){sel.value=newAct;sel.className='act-sel '+actCls(newAct);}
+  }
+  renderSummary();
+  triggerAutoSave();
+}
 function setMemo(key,val){if(!actions[key])actions[key]={};actions[key].memo=val;triggerAutoSave();}
 function actCls(v){return v==='끄기'?'a-off':v==='증액'?'a-up':v==='감액'?'a-down':v==='지켜보기'?'a-watch':'';}
 
@@ -1402,9 +1707,14 @@ function downloadScreenshot() {
 
   const today = new Date().toISOString().slice(0, 10);
   const mediaList = [];
-  if (parsed.meta)   mediaList.push({ label:'META',   build: buildMetaTable,   filename:`액션리포트_메타_${today}.png` });
-  if (parsed.google) mediaList.push({ label:'GOOGLE', build: buildGoogleTable, filename:`액션리포트_구글_${today}.png` });
-  if (parsed.tiktok) mediaList.push({ label:'TIKTOK', build: buildTikTokTable, filename:`액션리포트_틱톡_${today}.png` });
+  if (parsed.meta)   mediaList.push({ label:'META',   build: buildMetaTable,   filename:`액션리포트_메타_${today}.jpg` });
+  if (parsed.google) mediaList.push({ label:'GOOGLE', build: buildGoogleTable, filename:`액션리포트_구글_${today}.jpg` });
+  if (parsed.tiktok) mediaList.push({ label:'TIKTOK', build: buildTikTokTable, filename:`액션리포트_틱톡_${today}.jpg` });
+
+  // 현재 스크롤 위치 저장 후 맨 위로 이동 (핵심: 스크롤 내려간 상태면 absolute top:0 div가 뷰포트 밖에 있어 잘림)
+  const savedScrollX = window.scrollX;
+  const savedScrollY = window.scrollY;
+  window.scrollTo(0, 0);
 
   // 캡처 중 오버레이
   const overlay = document.createElement('div');
@@ -1414,6 +1724,7 @@ function downloadScreenshot() {
 
   function restore() {
     if (document.body.contains(overlay)) document.body.removeChild(overlay);
+    window.scrollTo(savedScrollX, savedScrollY);
     btn.disabled = false;
     btn.textContent = originalText;
   }
@@ -1423,17 +1734,25 @@ function downloadScreenshot() {
     const m = mediaList[idx];
     document.getElementById('cap-msg').textContent = `이미지 생성 중… (${m.label})`;
 
-    // body 직접 자식 div 생성 (overflow 클립 없음)
     const capDiv = document.createElement('div');
-    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;';
-    capDiv.innerHTML = m.build();
+    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;padding:20px;';
+    const summaryBarEl = document.getElementById('summary-bar');
+    const summaryHTML = summaryBarEl
+      ? `<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">${summaryBarEl.innerHTML}</div>`
+      : '';
+    capDiv.innerHTML = summaryHTML + m.build();
+    // 캡처용: .table-wrap의 max-height 제한 해제 (이게 없으면 뷰포트 높이로 잘림)
+    capDiv.querySelectorAll('.table-wrap').forEach(el => {
+      el.style.maxHeight = 'none';
+      el.style.overflow = 'visible';
+    });
     document.body.appendChild(capDiv);
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const totalH = capDiv.scrollHeight;
       const totalW = capDiv.offsetWidth;
       const savedMinH = document.body.style.minHeight;
-      document.body.style.minHeight = totalH + 'px';
+      document.body.style.minHeight = (totalH + 100) + 'px';
 
       html2canvas(capDiv, {
         scale: 2, backgroundColor: '#0f1117',
@@ -1441,11 +1760,12 @@ function downloadScreenshot() {
         width: totalW, height: totalH,
         windowWidth: totalW, windowHeight: totalH,
         scrollX: 0, scrollY: 0,
+        ignoreElements: el => el === overlay, // 오버레이 제외
       }).then(canvas => {
         if (document.body.contains(capDiv)) document.body.removeChild(capDiv);
         document.body.style.minHeight = savedMinH;
         const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL('image/jpeg', 0.92);
         link.download = m.filename;
         document.body.appendChild(link);
         link.click();
@@ -1570,6 +1890,17 @@ function aggAds(ads){
   let cost=0,rev=0,conv=0,dAmount=0,dCount=0,clicks=0,impressions=0;
   ads.forEach(a=>{cost+=a.cost||0;rev+=a.rev||0;conv+=a.conv||0;dAmount+=a.directAmount||0;dCount+=a.directCount||0;clicks+=a.clicks||0;impressions+=a.impressions||0;});
   return{cost,rev,conv,roas:cost>0?rev/cost*100:0,cpa:conv>0?cost/conv:0,dAmount,dCount,dRoas:cost>0?dAmount/cost*100:0,dCpa:dCount>0?cost/dCount:0,clicks,impressions,ctr:impressions>0?clicks/impressions*100:0};
+}
+// 수동 입력값을 ad 객체에 반영 (aggAds 집계 전에 사용)
+function resolveAd(ad,key){
+  if(ad.directAmount!=null) return ad;
+  const m=actions[key];
+  if(m&&(m.manualDirectAmount!=null||m.manualDirectCount!=null)){
+    const dAmt=m.manualDirectAmount!=null?m.manualDirectAmount:0;
+    const dCnt=m.manualDirectCount!=null?m.manualDirectCount:0;
+    return Object.assign({},ad,{directAmount:dAmt,directCount:dCnt});
+  }
+  return ad;
 }
 function fmtW(v){if(!v||v===0)return '<span class="m-na">–</span>';return Math.round(v).toLocaleString('ko-KR')+'원';}
 function fmtWon(v){return Math.abs(Math.round(v)).toLocaleString('ko-KR')+'원';}
