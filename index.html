@@ -1439,6 +1439,21 @@ function find7Ad(media, campName, grpName, adName){
   if(!ads) return null;
   return ads.find(a=>a.name===adName) || null;
 }
+// 캠페인/광고세트의 7일 집계 (3·7일 2줄 비교용). grpName=null이면 캠페인 전체.
+function agg7(media, campName, grpName){
+  const root = parsed7 && parsed7[media];
+  if(!root) return null;
+  const c = root[campName]; if(!c) return null;
+  const pref = media==='meta'?'meta':(media==='google'?'gg':'tk');
+  if(media==='google'){
+    return aggAds((c.ads||[]).map(a=>resolveAd(a,'gg__ad__'+campName+'__'+a.name)));
+  }
+  if(grpName==null){
+    return aggAds(Object.values(c.groups||{}).flatMap(g=>(g.ads||[]).map(a=>resolveAd(a,pref+'__ad__'+campName+'__'+g.name+'__'+a.name))));
+  }
+  const g=(c.groups||{})[grpName]; if(!g) return null;
+  return aggAds((g.ads||[]).map(a=>resolveAd(a,pref+'__ad__'+campName+'__'+grpName+'__'+a.name)));
+}
 function dval(v, kind){
   if(v==null) return '<span class="m-na">–</span>';
   if(kind==='cpa')  return cpaBadge(v);
@@ -1449,6 +1464,33 @@ function dcell(v3, v7, kind){
   return `<td class="dual-cell">`+
     `<div class="dl dl3"><span class="dbadge db3">3일</span>${dval(v3,kind)}</div>`+
     `<div class="dl dl7"><span class="dbadge db7">7일</span>${dval(v7,kind)}</div></td>`;
+}
+// 캠페인/광고세트 요약 행의 지표 td들(이름칸 제외). dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3·7일 2줄로.
+// ctrTd/budgetTd/actionTd/memoTd는 행 종류별로 다르므로 완성된 <td>…</td> 문자열로 받음.
+function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
+  if(dualMode){
+    const h7 = a7!=null;
+    return dcell(a3.cpa,  h7?a7.cpa:null,  'cpa')
+      + dcell(a3.roas, h7?a7.roas:null, 'roas')
+      + ctrTd
+      + `<td>${a3.conv}개</td>`
+      + dcell(a3.cost, h7?a7.cost:null, 'won')
+      + dcell(a3.rev,  h7?a7.rev:null,  'won')
+      + budgetTd + actionTd
+      + dcell(a3.dCpa,  h7?a7.dCpa:null,  'cpa')
+      + dcell(a3.dRoas, h7?a7.dRoas:null, 'roas')
+      + `<td>${fmtN(a3.dCount)}</td>`
+      + `<td>${fmtW(a3.dAmount)}</td>`
+      + memoTd;
+  }
+  return `<td>${cpaBadge(a3.cpa)}</td><td>${roasBadge(a3.roas)}</td>`
+    + ctrTd
+    + `<td>${a3.conv}개</td>`
+    + `<td>${fmtW(a3.cost)}</td><td>${fmtW(a3.rev)}</td>`
+    + budgetTd + actionTd
+    + `<td>${cpaBadge(a3.dCpa)}</td><td>${roasBadge(a3.dRoas)}</td>`
+    + `<td>${fmtN(a3.dCount)}</td><td>${fmtW(a3.dAmount)}</td>`
+    + memoTd;
 }
 // 소재(광고) 행의 td들 생성. dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3일·7일 2줄로.
 function adRowCells(ad, ad7, aKey, nameStyle){
@@ -1489,11 +1531,9 @@ function buildMetaTable(){
 
     if (!shouldShowRow(camp.name)) return;
 
-    rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>
-      <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
-      <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
+      + summaryCells(ca, agg7('meta',camp.name,null), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
+      + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid(camp.name,grp.name); const isG=collapsed.grps.has(gId);
       const grpHide=isC?'style="display:none"':'';
@@ -1502,11 +1542,9 @@ function buildMetaTable(){
 
       if (!shouldShowRow(camp.name, grp.name)) return;
 
-      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
-        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>
-        <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td><span class="m-na">–</span></td><td>${ga.conv}개</td>
-        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
-        <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
+      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>`
+        + summaryCells(ga, agg7('meta',camp.name,grp.name), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
+        + `</tr>`;
       applySortToAds(grp.ads).forEach(ad=>{
         const adHide=(isC||isG)?'style="display:none"':'';
         const aKey='meta__ad__'+camp.name+'__'+grp.name+'__'+ad.name;
@@ -1532,18 +1570,14 @@ function buildGoogleTable(){
     if (!shouldShowRow(camp.name)) return;
 
     if(camp.isPmax){
-      rows+=`<tr class="row-camp">
-        <td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span><span class="badge-pmax">PMAX</span></td>
-        <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
-        <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
-        <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+      rows+=`<tr class="row-camp"><td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span><span class="badge-pmax">PMAX</span></td>`
+        + summaryCells(ca, agg7('google',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
+        + `</tr>`;
       return;
     }
-    rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${camp.ads.length}</span></td>
-      <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td><span class="m-na">–</span></td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
-      <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${camp.ads.length}</span></td>`
+      + summaryCells(ca, agg7('google',camp.name,null), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
+      + `</tr>`;
     applySortToAds(camp.ads).forEach(ad=>{
       const adHide=isC?'style="display:none"':'';
       const aKey='gg__ad__'+camp.name+'__'+ad.name;
@@ -1569,11 +1603,9 @@ function buildTikTokTable(){
 
     if (!shouldShowRow(camp.name)) return;
 
-    rows+=`<tr class="row-camp">
-      <td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>
-      <td>${cpaBadge(ca.cpa)}</td><td>${roasBadge(ca.roas)}</td><td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td><td>${ca.conv}개</td>
-      <td>${fmtW(ca.cost)}</td><td>${fmtW(ca.rev)}</td><td>${budgetEl(cKey,camp.budget)}</td><td>${actSel(cKey,camp.budget>0)}</td>
-      <td>${cpaBadge(ca.dCpa)}</td><td>${roasBadge(ca.dRoas)}</td><td>${fmtN(ca.dCount)}</td><td>${fmtW(ca.dAmount)}</td><td>${memoEl(cKey)}</td></tr>`;
+    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>`
+      + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
+      + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid('tk_'+camp.name,grp.name); const isG=collapsed.grps.has(gId);
       const grpHide=isC?'style="display:none"':'';
@@ -1582,11 +1614,9 @@ function buildTikTokTable(){
 
       if (!shouldShowRow(camp.name, grp.name)) return;
 
-      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}>
-        <td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>
-        <td>${cpaBadge(ga.cpa)}</td><td>${roasBadge(ga.roas)}</td><td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td><td>${ga.conv}개</td>
-        <td>${fmtW(ga.cost)}</td><td>${fmtW(ga.rev)}</td><td>${budgetEl(gKey,grp.budget)}</td><td>${actSel(gKey,grp.budget>0)}</td>
-        <td>${cpaBadge(ga.dCpa)}</td><td>${roasBadge(ga.dRoas)}</td><td>${fmtN(ga.dCount)}</td><td>${fmtW(ga.dAmount)}</td><td>${memoEl(gKey)}</td></tr>`;
+      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>`
+        + summaryCells(ga, agg7('tiktok',camp.name,grp.name), `<td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
+        + `</tr>`;
       applySortToAds(grp.ads).forEach(ad=>{
         if(!ad.cost) return; // 비용 0 소재 숨김
         const adHide=(isC||isG)?'style="display:none"':'';
