@@ -1312,40 +1312,49 @@ function switchTab(id){
   renderTable(id);
 }
 
-function renderSummary(){
-  let totalCost=0,totalRev=0,totalDirect=0;
-  let metaCost=0,metaDirect=0, ggCost=0,ggDirect=0, tkCost=0,tkDirect=0;
-  if(parsed.meta) Object.values(parsed.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
+// 요약 지표 집계 (parsed 또는 parsed7 동일 구조에 사용 → 3·7일 비교)
+function computeSummaryMetrics(root){
+  let totalCost=0,totalRev=0,totalDirect=0,metaCost=0,metaDirect=0,ggCost=0,ggDirect=0,tkCost=0,tkDirect=0;
+  const dir=(a,key)=>a.directAmount!=null?a.directAmount:((actions[key]&&actions[key].manualDirectAmount!=null)?actions[key].manualDirectAmount:0);
+  if(root&&root.meta) Object.values(root.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
     totalCost+=a.cost;totalRev+=a.rev||0;metaCost+=a.cost;
-    const aKey='meta__ad__'+c.name+'__'+g.name+'__'+a.name;
-    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
-    totalDirect+=d;metaDirect+=d;
+    const d=dir(a,'meta__ad__'+c.name+'__'+g.name+'__'+a.name);totalDirect+=d;metaDirect+=d;
   })));
-  if(parsed.google) Object.values(parsed.google).forEach(c=>c.ads.forEach(a=>{
+  if(root&&root.google) Object.values(root.google).forEach(c=>c.ads.forEach(a=>{
     totalCost+=a.cost;totalRev+=a.rev||0;ggCost+=a.cost;
-    const aKey='gg__ad__'+c.name+'__'+a.name;
-    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
-    totalDirect+=d;ggDirect+=d;
+    const d=dir(a,'gg__ad__'+c.name+'__'+a.name);totalDirect+=d;ggDirect+=d;
   }));
-  if(parsed.tiktok) Object.values(parsed.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
+  if(root&&root.tiktok) Object.values(root.tiktok).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
     totalCost+=a.cost;totalRev+=a.rev||0;tkCost+=a.cost;
-    const aKey='tk__ad__'+c.name+'__'+g.name+'__'+a.name;
-    const d=a.directAmount!=null?a.directAmount:((actions[aKey]&&actions[aKey].manualDirectAmount!=null)?actions[aKey].manualDirectAmount:0);
-    totalDirect+=d;tkDirect+=d;
+    const d=dir(a,'tk__ad__'+c.name+'__'+g.name+'__'+a.name);totalDirect+=d;tkDirect+=d;
   })));
+  return {totalCost,totalRev,totalDirect,metaCost,metaDirect,ggCost,ggDirect,tkCost,tkDirect,
+    roas:totalCost>0?totalRev/totalCost*100:0,
+    dRoas:totalCost>0?totalDirect/totalCost*100:0,
+    metaDRoas:metaCost>0?metaDirect/metaCost*100:0,
+    ggDRoas:ggCost>0?ggDirect/ggCost*100:0,
+    tkDRoas:tkCost>0?tkDirect/tkCost*100:0};
+}
+function renderSummary(){
+  const m3 = computeSummaryMetrics(parsed);
+  const m7 = (dualMode && parsed7) ? computeSummaryMetrics(parsed7) : null;
+  const {totalCost,totalRev,totalDirect,metaCost,ggCost,tkCost,roas,dRoas,metaDRoas,ggDRoas,tkDRoas} = m3;
 
-  const roas=totalCost>0?totalRev/totalCost*100:0;
-  const dRoas=totalCost>0?totalDirect/totalCost*100:0;
-  const metaDRoas=metaCost>0?metaDirect/metaCost*100:0;
-  const ggDRoas=ggCost>0?ggDirect/ggCost*100:0;
-  const tkDRoas=tkCost>0?tkDirect/tkCost*100:0;
-
-  function directRoasCard(label, dr, hasParsed) {
-    if (!hasParsed) return '';
-    return `<div class="s-card">
-      <div class="s-lbl">${label} 직접ROAS</div>
-      <div class="s-val ${mCls(dr)}" style="font-size:15px">${dr>0?dr.toFixed(0)+'%':'–'}</div>
-    </div>`;
+  // 요약 카드: dualMode면 3일/7일 값을 위아래 2줄로. kind: 'won'|'roas', accent: 강조색 여부
+  function sCard(label, key, kind, accent){
+    const fmt  = kind==='roas' ? (v=>v>0?v.toFixed(0)+'%':'–') : (v=>fmtW(v));
+    const vcls = kind==='roas' ? (v=>mCls(v)) : (()=> '');
+    const vstyle = accent ? 'color:var(--accent)' : '';
+    if(m7){
+      return `<div class="s-card"><div class="s-lbl">${label}</div>`+
+        `<div class="dl dl3" style="margin-top:3px"><span class="dbadge db3">3일</span><span class="s-val ${vcls(m3[key])}" style="font-size:14px;${vstyle}">${fmt(m3[key])}</span></div>`+
+        `<div class="dl dl7"><span class="dbadge db7">7일</span><span class="s-val ${vcls(m7[key])}" style="font-size:14px;${vstyle}">${fmt(m7[key])}</span></div></div>`;
+    }
+    return `<div class="s-card"><div class="s-lbl">${label}</div><div class="s-val ${vcls(m3[key])}" style="${vstyle}">${fmt(m3[key])}</div></div>`;
+  }
+  // 매체별 직접ROAS 카드 (해당 매체 데이터 있을 때만)
+  function directRoasCard(label, key, hasParsed){
+    return hasParsed ? sCard(label+' 직접ROAS', key, 'roas', false) : '';
   }
 
   const bs = calculateBudgetSummary();
@@ -1369,17 +1378,17 @@ function renderSummary(){
   </div>` : '';
 
   document.getElementById('summary-bar').innerHTML=`
-    <div class="s-card"><div class="s-lbl">총 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(totalCost)}</div></div>
-    <div class="s-card"><div class="s-lbl">총 매출 (매체)</div><div class="s-val">${fmtW(totalRev)}</div></div>
-    <div class="s-card"><div class="s-lbl">매체 ROAS</div><div class="s-val ${mCls(roas)}">${roas>0?roas.toFixed(0)+'%':'–'}</div></div>
-    <div class="s-card"><div class="s-lbl">직접 ROAS (전체)</div><div class="s-val ${mCls(dRoas)}">${dRoas>0?dRoas.toFixed(0)+'%':'–'}</div></div>
-    ${parsed.meta?`<div class="s-card"><div class="s-lbl">메타 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(metaCost)}</div></div>`:''}
-    ${parsed.google?`<div class="s-card"><div class="s-lbl">구글 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(ggCost)}</div></div>`:''}
-    ${parsed.tiktok?`<div class="s-card"><div class="s-lbl">틱톡 광고비</div><div class="s-val" style="color:var(--accent)">${fmtW(tkCost)}</div></div>`:''}
-    ${directRoasCard('메타', metaDRoas, !!parsed.meta)}
-    ${directRoasCard('구글', ggDRoas, !!parsed.google)}
-    ${directRoasCard('틱톡', tkDRoas, !!parsed.tiktok)}
-    <div class="s-card"><div class="s-lbl">직접 전환 매출</div><div class="s-val">${fmtW(totalDirect)}</div></div>
+    ${sCard('총 광고비','totalCost','won',true)}
+    ${sCard('총 매출 (매체)','totalRev','won',false)}
+    ${sCard('매체 ROAS','roas','roas',false)}
+    ${sCard('직접 ROAS (전체)','dRoas','roas',false)}
+    ${parsed.meta?sCard('메타 광고비','metaCost','won',true):''}
+    ${parsed.google?sCard('구글 광고비','ggCost','won',true):''}
+    ${parsed.tiktok?sCard('틱톡 광고비','tkCost','won',true):''}
+    ${directRoasCard('메타','metaDRoas',!!parsed.meta)}
+    ${directRoasCard('구글','ggDRoas',!!parsed.google)}
+    ${directRoasCard('틱톡','tkDRoas',!!parsed.tiktok)}
+    ${sCard('직접 전환 매출','totalDirect','won',false)}
     ${budgetCard('메타', bs.meta)}
     ${budgetCard('구글', bs.google)}
     ${budgetCard('틱톡', bs.tiktok)}
