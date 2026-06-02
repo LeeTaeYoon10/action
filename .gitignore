@@ -1,0 +1,32 @@
+# ===== 비밀정보 (절대 커밋 금지) =====
+# 로그인 세션 쿠키 파일
+**/auth/*.json
+*-auth.json
+*.auth.json
+# 환경변수 / 설정
+.env
+.env.*
+config.local.json
+secrets.json
+
+# ===== 자동화 의존성 =====
+node_modules/
+automation/node_modules/
+playwright-report/
+test-results/
+# 브라우저 영구 프로필
+**/chrome-profile/
+**/.pw-profile/
+
+# ===== 자동수집 산출물 (매출 데이터·캡처 — 공개 repo 금지) =====
+automation/out/
+automation/shots/
+automation/sniff-out/
+
+# ===== Claude Code 내부 (워크트리·세션) =====
+.claude/
+
+# ===== 기타 =====
+.DS_Store
+Thumbs.db
+*.log

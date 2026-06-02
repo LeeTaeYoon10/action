@@ -480,7 +480,9 @@
         <button class="filter-btn" data-filter="basetune">🎵 베이스튠</button>
       </div>
       <span class="history-count" id="history-count">0건</span>
-      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;margin-left:8px;" onclick="clearHistory()">전체 삭제</button>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;margin-left:8px;" onclick="document.getElementById('import-file').click()">📥 자동수집 불러오기</button>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;margin-left:6px;" onclick="clearHistory()">전체 삭제</button>
+      <input type="file" id="import-file" accept="application/json,.json" multiple style="display:none" onchange="importCollectedFiles(this.files)">
     </div>
     <div class="history-wrap">
       <table class="history-table">
@@ -632,7 +634,7 @@ function onDateChange() {
     if (rec?.snapshot) { restoreSnapshot(brand, rec.snapshot); loaded++; }
   }
   calc();
-  if (loaded > 0) showToast(`📂 ${fmtDateWithDay(date)} 저장 데이터를 불러왔습니다`);
+  if (loaded > 0 && !window.__importing) showToast(`📂 ${fmtDateWithDay(date)} 저장 데이터를 불러왔습니다`);
 }
 
 // 브랜드 입력 탭
@@ -866,6 +868,59 @@ function clearHistory() {
   localStorage.removeItem(HISTORY_KEY);
   renderHistory(); renderDetailTable(); renderChart();
   showToast('🗑️ 기록이 모두 삭제되었습니다');
+}
+
+// ── 자동수집 데이터 불러오기 ──
+// 스크래퍼가 만든 JSON { platform, brand, rows:[{date,sales,refund,count}] } 을
+// 날짜별로 대시보드 저장 로직(doAutoSave)에 태워 병합한다. (다른 플랫폼 값은 보존)
+const IMPORT_BRAND_MAP = { granny: 'granysalad', granysalad: 'granysalad', basetune: 'basetune' };
+
+async function importCollectedFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const savedDate = document.getElementById('date-input').value;
+  let totalDays = 0; const platforms = new Set(); const errors = [];
+  window.__importing = true;
+  try {
+    for (const file of files) {
+      let obj;
+      try { obj = JSON.parse(await file.text()); } catch { errors.push(`${file.name}: JSON 오류`); continue; }
+      const platform = obj.platform;
+      const brand = IMPORT_BRAND_MAP[obj.brand] || obj.brand;
+      const rows = obj.rows || [];
+      if (!platform || !brand || !rows.length) { errors.push(`${file.name}: 형식 오류`); continue; }
+      if (!BRANDS.includes(brand)) { errors.push(`${file.name}: 모르는 브랜드(${obj.brand})`); continue; }
+      importRows(platform, brand, rows);
+      totalDays += rows.length; platforms.add(platform);
+    }
+  } finally {
+    window.__importing = false;
+    document.getElementById('date-input').value = savedDate;
+    onDateChange();
+    renderHistory(); renderDetailTable(); renderChart();
+  }
+  document.getElementById('import-file').value = ''; // 같은 파일 재선택 가능하게
+  if (totalDays) showToast(`📥 불러오기 완료: ${[...platforms].join(', ')} ${totalDays}일치`);
+  if (errors.length) { showToast('⚠️ ' + errors.join(' / ')); }
+}
+
+function importRows(platform, brand, rows) {
+  const dateInput = document.getElementById('date-input');
+  for (const row of rows) {
+    if (!row.date) continue;
+    dateInput.value = row.date;
+    onDateChange(); // 그 날짜의 기존 데이터를 DOM에 로드 (다른 플랫폼/브랜드 값 보존)
+    setImportInput(brand, platform, 'sales', row.sales);
+    setImportInput(brand, platform, 'count', row.count);
+    setImportInput(brand, platform, 'refund', row.refund || 0);
+    if (row.refund_count !== undefined) setImportInput(brand, platform, 'refund_count', row.refund_count);
+    doAutoSave(); // 계산 + 저장 (해당 날짜)
+  }
+}
+
+function setImportInput(brand, platform, key, val) {
+  const el = document.querySelector(`input[data-brand="${brand}"][data-platform="${platform}"][data-key="${key}"]`);
+  if (el && (val === 0 || val)) el.value = val;
 }
 
 // ── 상세 테이블 ──
