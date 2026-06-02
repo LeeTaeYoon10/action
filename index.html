@@ -1859,6 +1859,7 @@ async function loadServerData(brand, period){
     collapsed.camps.clear(); collapsed.grps.clear();
     document.getElementById('empty-state').style.display='none';
     renderAll();
+    autoSave();   // 오늘 날짜로 "액션 기록"에도 저장 (날짜 기록 복원 가능하게)
   }catch(e){ console.warn('server data load 실패', e); }
 }
 
