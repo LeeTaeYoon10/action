@@ -280,6 +280,17 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
 .manual-badge { display:inline-block; background:rgba(245,158,11,0.15); color:var(--yellow); border-radius:3px; font-size:9px; font-weight:700; padding:1px 4px; margin-left:3px; vertical-align:middle; }
 .manual-edit-btn { background:none; border:none; color:var(--border); cursor:pointer; font-size:11px; padding:1px 3px; transition:color 0.15s; vertical-align:middle; line-height:1; }
 .manual-edit-btn:hover { color:var(--accent); }
+
+/* ── 3일/7일 2줄 비교 ─────────────── */
+.dual-cell { padding:4px 7px !important; vertical-align:middle; }
+.dl { display:flex; align-items:center; gap:5px; padding:2px 5px; border-radius:5px; white-space:nowrap; line-height:1.6; }
+.dl3 { background:rgba(79,127,255,0.12); margin-bottom:3px; }
+.dl7 { background:rgba(245,158,11,0.12); }
+.dbadge { font-size:8px; font-weight:800; padding:1px 4px; border-radius:3px; line-height:1; flex-shrink:0; }
+.db3 { background:rgba(79,127,255,0.30); color:#a9c2ff; }
+.db7 { background:rgba(245,158,11,0.30); color:#fcd34d; }
+tr.row-ad:hover td.dual-cell .dl3 { background:rgba(79,127,255,0.18); }
+tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
 </style>
 </head>
 <body>
@@ -354,6 +365,7 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
 <div class="main">
   <div id="server-bar" style="display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap">
     <span style="font-size:12px;font-weight:700;color:var(--accent)">📊 오늘 데이터</span>
+    <button class="btn btn-ghost" id="srv-cmp" style="font-size:12px" onclick="loadServerCombined(currentBrand)">3·7일 비교</button>
     <button class="btn btn-ghost" id="srv-3d" style="font-size:12px" onclick="loadServerData(currentBrand,'3d')">최근 3일</button>
     <button class="btn btn-ghost" id="srv-7d" style="font-size:12px" onclick="loadServerData(currentBrand,'7d')">최근 7일</button>
     <span id="srv-date" style="font-size:11px;color:var(--muted)"></span>
@@ -578,6 +590,7 @@ function selectBrand(brand) {
   // 브랜드 전환 시 이전 브랜드 액션/데이터 초기화 (예산 섞임 방지)
   Object.keys(actions).forEach(k => delete actions[k]);
   parsed.meta = null; parsed.google = null; parsed.tiktok = null; parsed.direct = null;
+  parsed7 = null; dualMode = false;
   Object.keys(files).forEach(k => delete files[k]);
   collapsed.camps.clear(); collapsed.grps.clear();
   document.getElementById('result').style.display = 'none';
@@ -640,6 +653,8 @@ function getThresh() {
 // ── State ─────────────────────────────────────────────────────────────────────
 const files   = { meta:null, google:null, pmax:null, tiktok:null, direct:null };
 const parsed  = { meta:null, google:null, tiktok:null, direct:null };
+let parsed7   = null;        // 7일 데이터 (3일/7일 2줄 비교용)
+let dualMode  = false;       // true면 소재 행을 3일/7일 2줄로 표시
 const actions = {};
 const collapsed = { camps: new Set(), grps: new Set() };
 let activeTab = 'meta';
@@ -689,6 +704,7 @@ function resetAll(){
 async function analyze(){
   const btn=document.getElementById('btn-analyze');
   btn.disabled=true; btn.textContent='분석 중…';
+  parsed7 = null; dualMode = false;        // 수동 업로드는 단일 기간
   try{
     if(files.direct) parsed.direct=await parseDirectCSV(files.direct);
     if(files.meta)   parsed.meta=await parseMetaXLSX(files.meta);
@@ -1412,6 +1428,55 @@ function buildTableHeader() {
   </tr>`;
 }
 
+// ── 3일/7일 2줄 비교 헬퍼 ───────────────────────────────────────────────────────
+function find7Ad(media, campName, grpName, adName){
+  const root = parsed7 && parsed7[media];
+  if(!root) return null;
+  const c = root[campName]; if(!c) return null;
+  let ads;
+  if(media==='google'){ ads = c.ads; }
+  else { const g = c.groups && c.groups[grpName]; ads = g && g.ads; }
+  if(!ads) return null;
+  return ads.find(a=>a.name===adName) || null;
+}
+function dval(v, kind){
+  if(v==null) return '<span class="m-na">–</span>';
+  if(kind==='cpa')  return cpaBadge(v);
+  if(kind==='roas') return roasBadge(v);
+  return fmtW(v);
+}
+function dcell(v3, v7, kind){
+  return `<td class="dual-cell">`+
+    `<div class="dl dl3"><span class="dbadge db3">3일</span>${dval(v3,kind)}</div>`+
+    `<div class="dl dl7"><span class="dbadge db7">7일</span>${dval(v7,kind)}</div></td>`;
+}
+// 소재(광고) 행의 td들 생성. dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3일·7일 2줄로.
+function adRowCells(ad, ad7, aKey, nameStyle){
+  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}><span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
+  if(dualMode){
+    const h7 = ad7!=null;
+    return nameTd
+      + dcell(ad.cpa,  h7?ad7.cpa:null,  'cpa')
+      + dcell(ad.roas, h7?ad7.roas:null, 'roas')
+      + `<td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td>`
+      + `<td>${ad.conv||0}개</td>`
+      + dcell(ad.cost, h7?ad7.cost:null, 'won')
+      + dcell(ad.rev,  h7?ad7.rev:null,  'won')
+      + `<td></td>`
+      + `<td>${actSel(aKey,false)}</td>`
+      + dcell(ad.directCpa,  h7?ad7.directCpa:null,  'cpa')
+      + dcell(ad.directRoas, h7?ad7.directRoas:null, 'roas')
+      + `<td>${ad.directCount!=null?fmtN(ad.directCount):'<span class="m-na">–</span>'}</td>`
+      + `<td>${ad.directAmount!=null?fmtW(ad.directAmount):'<span class="m-na">–</span>'}</td>`
+      + `<td>${memoEl(aKey)}</td>`;
+  }
+  return nameTd
+    + `<td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>`
+    + `<td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>`
+    + directEl(ad,aKey)
+    + `<td>${memoEl(aKey)}</td>`;
+}
+
 // ── Table: Meta ───────────────────────────────────────────────────────────────
 function buildMetaTable(){
   if(!parsed.meta) return '';
@@ -1448,12 +1513,8 @@ function buildMetaTable(){
 
         if (!shouldShowRow(camp.name, grp.name, ad.name)) return;
 
-        rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
-          <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
-          <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
-          ${directEl(ad,aKey)}
-          <td>${memoEl(aKey)}</td></tr>`;
+        const ad7=find7Ad('meta',camp.name,grp.name,ad.name);
+        rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>${adRowCells(ad,ad7,aKey,'')}</tr>`;
       });
     });
   });
@@ -1489,12 +1550,8 @@ function buildGoogleTable(){
 
       if (!shouldShowRow(camp.name, null, ad.name)) return;
 
-      rows+=`<tr class="row-ad" data-camp="${cId}" ${adHide}>
-        <td class="name-cell" style="padding-left:18px"><span title="${ad.name}">${shorten(ad.name,36)}</span></td>
-        <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-        <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
-        ${directEl(ad,aKey)}
-        <td>${memoEl(aKey)}</td></tr>`;
+      const ad7=find7Ad('google',camp.name,null,ad.name);
+      rows+=`<tr class="row-ad" data-camp="${cId}" ${adHide}>${adRowCells(ad,ad7,aKey,'style="padding-left:18px"')}</tr>`;
     });
   });
   return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
@@ -1537,12 +1594,8 @@ function buildTikTokTable(){
 
         if (!shouldShowRow(camp.name, grp.name, ad.name)) return;
 
-        rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>
-          <td class="name-cell"><span title="${ad.name}">${shorten(ad.name,34)}</span></td>
-          <td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>
-          <td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>
-          ${directEl(ad,aKey)}
-          <td>${memoEl(aKey)}</td></tr>`;
+        const ad7=find7Ad('tiktok',camp.name,grp.name,ad.name);
+        rows+=`<tr class="row-ad" data-camp="${cId}" data-grp="${gId}" ${adHide}>${adRowCells(ad,ad7,aKey,'')}</tr>`;
       });
     });
   });
@@ -1838,10 +1891,41 @@ async function initServerData(brand){
     document.getElementById('srv-date').textContent = serverManifest.date ? ('· '+serverManifest.date) : '';
     document.getElementById('srv-3d').style.display = combos.includes('3d')?'inline-block':'none';
     document.getElementById('srv-7d').style.display = combos.includes('7d')?'inline-block':'none';
+    const both = combos.includes('3d') && combos.includes('7d');
+    document.getElementById('srv-cmp').style.display = both?'inline-block':'none';
     bar.style.display='flex';
-    const def = combos.includes('3d') ? '3d' : combos[0];
-    await loadServerData(brand, def);
+    if(both){ await loadServerCombined(brand); }          // 기본: 3·7일 2줄 비교
+    else { await loadServerData(brand, combos.includes('3d')?'3d':combos[0]); }
   }catch(e){ console.warn('manifest load 실패', e); bar.style.display='none'; }
+}
+function _setSrvActive(which){
+  ['cmp','3d','7d'].forEach(p=>{ const b=document.getElementById('srv-'+p); if(b){ const on=(p===which); b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }});
+}
+// 3·7일 2줄 비교 (소재 행을 두 줄로)
+async function loadServerCombined(brand){
+  try{
+    const bust=Date.now();
+    const [r3,r7] = await Promise.all([
+      fetch(`./data/${brand}_3d.json?v=`+bust, {cache:'no-store'}),
+      fetch(`./data/${brand}_7d.json?v=`+bust, {cache:'no-store'})
+    ]);
+    if(!r3.ok){ alert('데이터를 불러오지 못했습니다: '+brand); return; }
+    const rec3 = await r3.json();
+    const rec7 = r7.ok ? await r7.json() : null;
+    parsed.meta=rec3.meta||null; parsed.google=rec3.google||null; parsed.tiktok=rec3.tiktok||null;
+    parsed7 = rec7 ? {meta:rec7.meta||null, google:rec7.google||null, tiktok:rec7.tiktok||null} : null;
+    dualMode = !!parsed7;
+    Object.keys(actions).forEach(k=>delete actions[k]);
+    Object.assign(actions, rec3.actions||{});
+    document.getElementById('action-date').value = rec3.actionDate||'';
+    document.getElementById('period-start').value = rec3.periodStart||'';
+    document.getElementById('period-end').value = rec3.periodEnd||'';
+    _setSrvActive('cmp');
+    sortState={column:null,direction:'asc'}; searchQuery=''; const si=document.getElementById('search-input'); if(si) si.value='';
+    collapsed.camps.clear(); collapsed.grps.clear();
+    document.getElementById('empty-state').style.display='none';
+    renderAll(); autoSave();
+  }catch(e){ console.warn('combined load 실패', e); }
 }
 async function loadServerData(brand, period){
   try{
@@ -1849,12 +1933,13 @@ async function loadServerData(brand, period){
     if(!res.ok){ alert('데이터를 불러오지 못했습니다: '+brand+' '+period); return; }
     const rec = await res.json();
     parsed.meta = rec.meta||null; parsed.google = rec.google||null; parsed.tiktok = rec.tiktok||null;
+    parsed7 = null; dualMode = false;        // 단일 기간 보기
     Object.keys(actions).forEach(k=>delete actions[k]);
     Object.assign(actions, rec.actions||{});
     document.getElementById('action-date').value = rec.actionDate||'';
     document.getElementById('period-start').value = rec.periodStart||'';
     document.getElementById('period-end').value = rec.periodEnd||'';
-    ['3d','7d'].forEach(p=>{ const b=document.getElementById('srv-'+p); if(b){ const on=(p===period); b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }});
+    _setSrvActive(period);
     sortState={column:null,direction:'asc'}; searchQuery=''; const si=document.getElementById('search-input'); if(si) si.value='';
     collapsed.camps.clear(); collapsed.grps.clear();
     document.getElementById('empty-state').style.display='none';
@@ -1905,6 +1990,7 @@ function loadHistoryDate(date){
   try{parsed.meta=rec.meta||null;}catch{parsed.meta=null;}
   try{parsed.google=rec.google||null;}catch{parsed.google=null;}
   try{parsed.tiktok=rec.tiktok||null;}catch{parsed.tiktok=null;}
+  parsed7=null; dualMode=false;
   Object.keys(actions).forEach(k=>delete actions[k]);
   Object.assign(actions,rec.actions||{});
   document.getElementById('action-date').value=rec.actionDate||date;
