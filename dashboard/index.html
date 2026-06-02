@@ -910,10 +910,11 @@ function importRows(platform, brand, rows) {
     if (!row.date) continue;
     dateInput.value = row.date;
     onDateChange(); // 그 날짜의 기존 데이터를 DOM에 로드 (다른 플랫폼/브랜드 값 보존)
-    setImportInput(brand, platform, 'sales', row.sales);
-    setImportInput(brand, platform, 'count', row.count);
-    setImportInput(brand, platform, 'refund', row.refund || 0);
-    if (row.refund_count !== undefined) setImportInput(brand, platform, 'refund_count', row.refund_count);
+    // 행에 들어있는 키(sales/count/refund/cost 등)를 해당 필드에 그대로 주입
+    Object.keys(row).forEach((key) => {
+      if (key === 'date') return;
+      setImportInput(brand, platform, key, row[key]);
+    });
     doAutoSave(); // 계산 + 저장 (해당 날짜)
   }
 }
