@@ -1092,23 +1092,24 @@ function parseTikTokXLSX(file){
         const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
         const campaigns={};
         rows.forEach(r=>{
-          const camp=String(r['캠페인 이름']||'').trim();
-          const grp=String(r['광고 그룹 이름']||r['광고그룹 이름']||'').trim();
-          const ad=String(r['광고 이름']||'').trim();
-          if(!camp||camp.startsWith('총')||!ad||ad==='-') return;
-          const campBudget=parseNum(r['캠페인 예산']||r['캠페인 예산 (KRW)']);
+          // 한글/영문 컬럼명 모두 지원 (틱톡 UI 언어에 따라 헤더가 달라짐)
+          const camp=String(r['캠페인 이름']||r['Campaign name']||'').trim();
+          const grp=String(r['광고 그룹 이름']||r['광고그룹 이름']||r['Ad group name']||'').trim();
+          const ad=String(r['광고 이름']||r['Ad name']||'').trim();
+          if(!camp||camp.startsWith('총')||camp.startsWith('Total')||!ad||ad==='-') return;
+          const campBudget=parseNum(r['캠페인 예산']||r['캠페인 예산 (KRW)']||r['Campaign Budget']);
           const grpBudgetRaw=String(r['Ad Group Budget']||r['광고 그룹 예산']||'').trim();
           const grpBudget=/^\d/.test(grpBudgetRaw)?parseNum(grpBudgetRaw):0;
-          const cost=parseNum(r['비용']||r['지출 금액']||r['소비 금액']);
-          const cpa=parseNum(r['전환당 비용']||r['결과당 비용']||r['전환 시간별 전환당 비용']||r['구매당 비용(웹사이트)']);
-          const conv=parseNum(r['구매 수(웹사이트)']||r['전환수']||r['결과']);
-          const rev=parseNum(r['구매 금액(웹사이트)']||r['전환 가치']||r['매출']);
-          const roasRaw=parseNum(r['결제 완료 ROAS(웹사이트)']||r['구매 ROAS(웹사이트)']||r['ROAS']);
+          const cost=parseNum(r['비용']||r['지출 금액']||r['소비 금액']||r['Cost']);
+          const cpa=parseNum(r['전환당 비용']||r['결과당 비용']||r['전환 시간별 전환당 비용']||r['구매당 비용(웹사이트)']||r['Cost per conversion by conversion time']);
+          const conv=parseNum(r['구매 수(웹사이트)']||r['전환수']||r['결과']||r['Purchases (website)']);
+          const rev=parseNum(r['구매 금액(웹사이트)']||r['전환 가치']||r['매출']||r['Purchase value (website)']);
+          const roasRaw=parseNum(r['결제 완료 ROAS(웹사이트)']||r['구매 ROAS(웹사이트)']||r['ROAS']||r['Payment completion ROAS (website)']);
           const roas=roasRaw>0?(roasRaw<50?roasRaw*100:roasRaw):(cost>0&&rev>0?rev/cost*100:0);
-          const ctr=parseFloat(String(r['CTR(목적지)']||r['CTR']||'').replace('%',''))||0;
-          const cpc=parseNum(r['CPC(목적지)']||r['CPC']);
-          const clicks=parseNum(r['클릭수(목적지)']||r['클릭수']);
-          const impressions=parseNum(r['노출수']);
+          const ctr=parseFloat(String(r['CTR(목적지)']||r['CTR']||r['CTR (destination)']||'').replace('%',''))||0;
+          const cpc=parseNum(r['CPC(목적지)']||r['CPC']||r['CPC (destination)']);
+          const clicks=parseNum(r['클릭수(목적지)']||r['클릭수']||r['Clicks (destination)']);
+          const impressions=parseNum(r['노출수']||r['Impressions']);
           const direct=getDirectData(ad,'tk');
           if(!campaigns[camp]) campaigns[camp]={name:camp,budget:campBudget,groups:{}};
           else if(campBudget>0&&campaigns[camp].budget===0) campaigns[camp].budget=campBudget;
