@@ -16,7 +16,7 @@ const fs = require('fs');
 // 브랜드별 카페24 몰 도메인 (새 브랜드는 여기에 추가)
 const MALLS = {
   basetune: 'basetune9000.cafe24.com',
-  // granny: '???.cafe24.com',  // 그래니샐러드 로그인 후 채움
+  granny: 'grannysalad.cafe24.com',
 };
 
 function ymd(d) {
