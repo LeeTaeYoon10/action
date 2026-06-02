@@ -352,6 +352,13 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
 
 <!-- ── Main ───────────────────────────────────────── -->
 <div class="main">
+  <div id="server-bar" style="display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:12px;font-weight:700;color:var(--accent)">📊 오늘 데이터</span>
+    <button class="btn btn-ghost" id="srv-3d" style="font-size:12px" onclick="loadServerData(currentBrand,'3d')">최근 3일</button>
+    <button class="btn btn-ghost" id="srv-7d" style="font-size:12px" onclick="loadServerData(currentBrand,'7d')">최근 7일</button>
+    <span id="srv-date" style="font-size:11px;color:var(--muted)"></span>
+    <span style="font-size:10px;color:var(--muted);margin-left:auto">자동 수집된 데이터입니다 · 직접 올리려면 아래에서 업로드</span>
+  </div>
   <div class="section-label" style="margin-bottom:10px">Raw 데이터 업로드</div>
   <div class="upload-grid">
     <div class="upload-card" id="card-meta" ondragover="onDrag(event,'meta')" ondragleave="offDrag('meta')" ondrop="onDrop(event,'meta')">
@@ -593,6 +600,7 @@ function selectBrand(brand) {
   document.getElementById('cpa-good').value    = saved.cpa_good;
 
   renderHistoryChips();
+  initServerData(brand);
 }
 
 function loadSettings() {
@@ -1813,6 +1821,44 @@ function renderHistoryChips(){
     const count=rec.actions?Object.values(rec.actions).filter(v=>v.action&&v.action!=='유지').length:0;
     return `<div class="hist-chip" onclick="loadHistoryDate('${d}')">📅 ${fmtDateKo(d)} <span style="color:var(--muted);font-size:10px">(${count}건)</span><button class="hist-del" onclick="deleteHistDate(event,'${d}')" title="삭제">✕</button></div>`;
   }).join('');
+}
+
+// ── Server data (호스팅 JSON 자동 로드) ───────────────────────────────────────
+let serverManifest = null;
+async function initServerData(brand){
+  const bar = document.getElementById('server-bar');
+  if(!bar) return;
+  try{
+    const res = await fetch('./data/manifest.json?v='+Date.now(), {cache:'no-store'});
+    if(!res.ok){ bar.style.display='none'; return; }
+    serverManifest = await res.json();
+    const combos = (serverManifest.combos && serverManifest.combos[brand]) || [];
+    if(!combos.length){ bar.style.display='none'; return; }
+    document.getElementById('srv-date').textContent = serverManifest.date ? ('· '+serverManifest.date) : '';
+    document.getElementById('srv-3d').style.display = combos.includes('3d')?'inline-block':'none';
+    document.getElementById('srv-7d').style.display = combos.includes('7d')?'inline-block':'none';
+    bar.style.display='flex';
+    const def = combos.includes('3d') ? '3d' : combos[0];
+    await loadServerData(brand, def);
+  }catch(e){ console.warn('manifest load 실패', e); bar.style.display='none'; }
+}
+async function loadServerData(brand, period){
+  try{
+    const res = await fetch(`./data/${brand}_${period}.json?v=`+Date.now(), {cache:'no-store'});
+    if(!res.ok){ alert('데이터를 불러오지 못했습니다: '+brand+' '+period); return; }
+    const rec = await res.json();
+    parsed.meta = rec.meta||null; parsed.google = rec.google||null; parsed.tiktok = rec.tiktok||null;
+    Object.keys(actions).forEach(k=>delete actions[k]);
+    Object.assign(actions, rec.actions||{});
+    document.getElementById('action-date').value = rec.actionDate||'';
+    document.getElementById('period-start').value = rec.periodStart||'';
+    document.getElementById('period-end').value = rec.periodEnd||'';
+    ['3d','7d'].forEach(p=>{ const b=document.getElementById('srv-'+p); if(b){ const on=(p===period); b.style.background=on?'var(--accent)':''; b.style.color=on?'#fff':''; b.style.borderColor=on?'var(--accent)':''; }});
+    sortState={column:null,direction:'asc'}; searchQuery=''; const si=document.getElementById('search-input'); if(si) si.value='';
+    collapsed.camps.clear(); collapsed.grps.clear();
+    document.getElementById('empty-state').style.display='none';
+    renderAll();
+  }catch(e){ console.warn('server data load 실패', e); }
 }
 
 function deleteHistDate(e,date){
