@@ -1477,6 +1477,7 @@ function dval(v, kind){
   if(v==null) return '<span class="m-na">–</span>';
   if(kind==='cpa')  return cpaBadge(v);
   if(kind==='roas') return roasBadge(v);
+  if(kind==='num')  return fmtN(v);
   return fmtW(v);
 }
 function dcell(v3, v7, kind){
@@ -1498,8 +1499,8 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
       + budgetTd + actionTd
       + dcell(a3.dCpa,  h7?a7.dCpa:null,  'cpa')
       + dcell(a3.dRoas, h7?a7.dRoas:null, 'roas')
-      + `<td>${fmtN(a3.dCount)}</td>`
-      + `<td>${fmtW(a3.dAmount)}</td>`
+      + dcell(a3.dCount,  h7?a7.dCount:null,  'num')
+      + dcell(a3.dAmount, h7?a7.dAmount:null, 'won')
       + memoTd;
   }
   return `<td>${cpaBadge(a3.cpa)}</td><td>${roasBadge(a3.roas)}</td>`
@@ -1517,8 +1518,15 @@ function adRowCells(ad, ad7, aKey, nameStyle){
   if(dualMode){
     const h7 = ad7!=null;
     const dd = resolveDirect(ad,aKey);
+    const dd7 = h7 ? resolveDirect(ad7,aKey) : null;
     const _mi = dd.isManual?'<span class="manual-badge">수동</span>':'';
+    const _mi7 = (dd7&&dd7.isManual)?'<span class="manual-badge">수동</span>':'';
     const _eb = directBtn(ad,aKey);
+    const _na = '<span class="m-na">–</span>';
+    const dAmtCell = `<td class="dual-cell">`
+      + `<div class="dl dl3"><span class="dbadge db3">3일</span>${dd.dAmount!=null?fmtW(dd.dAmount):_na}${_mi}</div>`
+      + `<div class="dl dl7"><span class="dbadge db7">7일</span>${(dd7&&dd7.dAmount!=null)?fmtW(dd7.dAmount):_na}${_mi7}</div>`
+      + `${_eb}</td>`;
     return nameTd
       + dcell(ad.cpa,  h7?ad7.cpa:null,  'cpa')
       + dcell(ad.roas, h7?ad7.roas:null, 'roas')
@@ -1528,10 +1536,10 @@ function adRowCells(ad, ad7, aKey, nameStyle){
       + dcell(ad.rev,  h7?ad7.rev:null,  'won')
       + `<td></td>`
       + `<td>${actSel(aKey,false)}</td>`
-      + dcell(dd.dCpa,  h7?ad7.directCpa:null,  'cpa')
-      + dcell(dd.dRoas, h7?ad7.directRoas:null, 'roas')
-      + `<td>${dd.dCount!=null?fmtN(dd.dCount)+_mi:'<span class="m-na">–</span>'+_mi}</td>`
-      + `<td>${dd.dAmount!=null?fmtW(dd.dAmount):'<span class="m-na">–</span>'}${_mi}${_eb}</td>`
+      + dcell(dd.dCpa,  dd7?dd7.dCpa:null,  'cpa')
+      + dcell(dd.dRoas, dd7?dd7.dRoas:null, 'roas')
+      + dcell(dd.dCount, dd7?dd7.dCount:null, 'num')
+      + dAmtCell
       + `<td>${memoEl(aKey)}</td>`;
   }
   return nameTd
