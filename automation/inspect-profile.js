@@ -16,7 +16,17 @@ const fs = require('fs');
   const shotsDir = path.join(__dirname, 'shots');
   if (!fs.existsSync(shotsDir)) fs.mkdirSync(shotsDir, { recursive: true });
 
-  const ctx = await chromium.launchPersistentContext(profileDir, { headless: !headful, locale: 'ko-KR', viewport: { width: 1480, height: 1000 } });
+  const useChrome = process.env.USE_CHROME === '1' || ['google', 'gfa'].includes(key);
+  const opts = {
+    headless: !headful, locale: 'ko-KR', viewport: { width: 1480, height: 1000 },
+    args: ['--disable-blink-features=AutomationControlled'],
+    ignoreDefaultArgs: ['--enable-automation'],
+  };
+  if (useChrome) opts.channel = 'chrome';
+  let ctx;
+  try { ctx = await chromium.launchPersistentContext(profileDir, opts); }
+  catch (e) { if (useChrome) { delete opts.channel; ctx = await chromium.launchPersistentContext(profileDir, opts); } else throw e; }
+  await ctx.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => undefined }); });
   const page = ctx.pages()[0] || (await ctx.newPage());
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => console.error('이동 경고:', e.message));
   await page.waitForTimeout(waitMs);

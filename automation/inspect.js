@@ -14,6 +14,8 @@ const { PLATFORMS } = require('./platforms');
   const brandArg = process.argv[3];
   const url = process.argv[4];
   const outName = process.argv[5] || 'shot';
+  const waitMs = parseInt(process.argv[6], 10) || 2500;
+  const headful = process.argv[7] === 'headful';
   const brand = (brandArg && brandArg !== '-') ? brandArg : null;
   const platform = PLATFORMS[key];
 
@@ -32,17 +34,17 @@ const { PLATFORMS } = require('./platforms');
   const shotsDir = path.join(__dirname, 'shots');
   if (!fs.existsSync(shotsDir)) fs.mkdirSync(shotsDir, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: !headful });
   const context = await browser.newContext({
     storageState: authFile,
     locale: 'ko-KR',
     viewport: { width: 1480, height: 1000 },
   });
   const page = await context.newPage();
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 }).catch((e) => {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => {
     console.error('이동 중 경고:', e.message);
   });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(waitMs);
 
   const shotPath = path.join(shotsDir, `${outName}.png`);
   await page.screenshot({ path: shotPath, fullPage: true }).catch(() => {});

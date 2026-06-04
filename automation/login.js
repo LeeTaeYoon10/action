@@ -21,9 +21,11 @@ const { PLATFORMS } = require('./platforms');
 const LOGIN_MARKERS = ['login', 'signin', 'nid.naver.com', 'eclogin', 'accounts.google.com', 'auth'];
 
 function looksLoggedIn(url, platform) {
-  const u = (url || '').toLowerCase();
-  // 1) 플랫폼별 성공 URL 조각이 포함되면 로그인 완료
-  if (platform.successUrlIncludes && platform.successUrlIncludes.some((s) => u.includes(s.toLowerCase()))) {
+  // host+pathname 만 비교 (쿼리스트링의 인코딩된 returnUrl 등에 오탐하지 않도록)
+  let hp;
+  try { const u = new URL(url); hp = (u.host + u.pathname).toLowerCase(); }
+  catch { hp = (url || '').toLowerCase(); }
+  if (platform.successUrlIncludes && platform.successUrlIncludes.some((s) => hp.includes(s.toLowerCase()))) {
     return true;
   }
   return false;
@@ -53,10 +55,28 @@ function looksLoggedIn(url, platform) {
   console.log('브라우저에서 로그인하세요. 로그인 성공이 감지되면 자동 저장됩니다.');
   console.log('(감지가 안 되면 브라우저 창을 닫으세요 — 그 시점 세션이 저장됩니다.)\n');
 
-  const browser = await chromium.launch({ headless: false });
+  // 봇 차단(Akamai 등) 사이트는 실제 Chrome + 사람처럼 보이는 지문으로 우회
+  const useChrome = process.env.USE_CHROME === '1' || ['coupang', 'smartstore', 'gfa'].includes(key);
+  const launchOpts = {
+    headless: false,
+    args: ['--disable-blink-features=AutomationControlled', '--start-maximized', '--disable-infobars'],
+    ignoreDefaultArgs: ['--enable-automation'],
+  };
+  if (useChrome) launchOpts.channel = 'chrome';
+  let browser;
+  try { browser = await chromium.launch(launchOpts); }
+  catch (e) { if (useChrome) { console.log('(실제 Chrome 실행 실패, 기본 브라우저로:', e.message + ')'); delete launchOpts.channel; browser = await chromium.launch(launchOpts); } else throw e; }
+
   const context = await browser.newContext({
     locale: 'ko-KR',
-    viewport: { width: 1380, height: 900 },
+    timezoneId: 'Asia/Seoul',
+    viewport: useChrome ? null : { width: 1380, height: 900 },
+    extraHTTPHeaders: { 'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7' },
+  });
+  // 자동화 흔적(navigator.webdriver) 숨기기
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    window.chrome = window.chrome || { runtime: {} };
   });
   const page = await context.newPage();
   await page.goto(platform.loginUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
@@ -74,30 +94,39 @@ function looksLoggedIn(url, platform) {
     }
   }
 
-  // 사용자가 브라우저를 닫으면 그 시점 세션 저장 (fallback)
   let closedByUser = false;
   browser.on('disconnected', () => { closedByUser = true; });
 
-  // 로그인 성공 감지 폴링
+  // 로그인 감지 + 주기적 저장(안전망)
+  // 브라우저가 열려있는 동안 3초마다 현재 쿠키를 파일에 저장 → 닫아도 직전 상태가 남음.
+  // 로그인 페이지의 쿠키를 저장해도 무방(로그인 후 덮어써짐). 감지되면 즉시 종료.
   const start = Date.now();
+  let periodicSaved = false;
   while (!saved && !closedByUser && Date.now() - start < timeoutMs) {
     let url = '';
     try { url = page.url(); } catch (_) { break; }
+    // 주기 저장
+    try { await context.storageState({ path: authFile }); periodicSaved = true; } catch (_) {}
     if (looksLoggedIn(url, platform)) {
       console.log(`\n🔓 로그인 감지됨: ${url}`);
-      await page.waitForTimeout(3000); // 쿠키 안정화 대기
+      await page.waitForTimeout(2500); // 쿠키 안정화
       await save('자동 감지');
       break;
     }
-    await page.waitForTimeout(1500).catch(() => {});
+    await page.waitForTimeout(3000).catch(() => {});
   }
 
-  if (!saved && !closedByUser) {
-    console.log('\n⏱  시간 초과 — 현재 시점 세션을 저장합니다.');
-    await save('시간 초과');
+  if (!saved) {
+    if (closedByUser && periodicSaved) {
+      console.log('\n💾 창이 닫혔습니다 — 직전에 주기 저장된 세션을 사용합니다:', authFile);
+      saved = true;
+    } else if (!closedByUser) {
+      console.log('\n⏱  시간 초과 — 현재 시점 세션을 저장합니다.');
+      await save('시간 초과');
+    }
   }
 
-  if (saved) {
+  if (saved && !closedByUser) {
     await browser.close().catch(() => {});
   }
   process.exit(saved ? 0 : 1);

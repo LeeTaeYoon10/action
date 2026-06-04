@@ -13,7 +13,8 @@ const PLATFORMS = {
   coupang: {
     label: '쿠팡 WING',
     loginUrl: 'https://wing.coupang.com/',
-    successUrlIncludes: ['/tenants', '/seller', '/dashboard', '/home'],
+    // 로그인 후 wing.coupang.com 도메인의 실제 화면에서만 감지 (xauth SSO URL 오탐 방지)
+    successUrlIncludes: ['wing.coupang.com/tenants', 'wing.coupang.com/dashboard', 'wing.coupang.com/home'],
   },
   smartstore: {
     label: '스마트스토어 (네이버 커머스)',

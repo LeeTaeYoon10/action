@@ -38,6 +38,9 @@ automation/google-datepicker.js
 automation/google-date.js
 automation/google-day.js
 automation/google-picker.js
+automation/cdp-probe.js
+automation/cdp-explore.js
+automation/cdp-search.js
 
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
