@@ -7,6 +7,39 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+// 액션 클라우드 저장 (wongo-studio Firebase 재사용) — 컬렉션 dailyActions/{brand__date}
+try{
+  firebase.initializeApp({
+    apiKey:"AIzaSyCMpJbIx21bf0GKY3ja2SgyEXT06WzBixA",
+    authDomain:"wongo-studio.firebaseapp.com",
+    projectId:"wongo-studio",
+    storageBucket:"wongo-studio.firebasestorage.app",
+    messagingSenderId:"1096743272954",
+    appId:"1:1096743272954:web:36f9469c42562ebcd66443"
+  });
+  window._db = firebase.firestore();
+}catch(e){ console.warn('firebase init 실패', e); window._db = null; }
+window.remoteSaveActions = async function(brand,date,actionsObj){
+  if(!window._db||!brand||!date) return false;
+  try{
+    await window._db.collection('dailyActions').doc(brand+'__'+date).set({
+      brand, date, actions: actionsObj||{},
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return true;
+  }catch(e){ console.warn('원격 액션 저장 실패', e); return false; }
+};
+window.remoteLoadActions = async function(brand,date){
+  if(!window._db||!brand||!date) return null;
+  try{
+    const d = await window._db.collection('dailyActions').doc(brand+'__'+date).get();
+    return d.exists ? (d.data().actions||{}) : null;
+  }catch(e){ console.warn('원격 액션 불러오기 실패', e); return null; }
+};
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1930,6 +1963,7 @@ function autoSave(){
   const _dual = !!(dualMode && parsed7);
   hist[actionDate]={schemaVersion:SCHEMA_VER,actionDate,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value,savedAt:new Date().toISOString(),meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,dualMode:_dual,meta7:_dual?parsed7.meta:null,google7:_dual?parsed7.google:null,tiktok7:_dual?parsed7.tiktok:null,actions:Object.assign({},actions)};
   localStorage.setItem(histKey(),JSON.stringify(hist));
+  if(window.remoteSaveActions) remoteSaveActions(currentBrand, actionDate, actions);  // 클라우드에도 저장(기기 간 공유)
   renderHistoryChips();
 }
 
@@ -1989,6 +2023,8 @@ async function loadServerCombined(brand){
     Object.assign(actions, rec3.actions||{});
     // 로컬에 저장된 그 날짜의 액션 기록을 복원(서버 데이터 로드로 사용자 입력이 사라지지 않게)
     try{ const _sh=loadHistoryData()[rec3.actionDate]; if(_sh&&_sh.actions) Object.assign(actions,_sh.actions); }catch(e){}
+    // 클라우드(Firestore)에 저장된 액션이 있으면 그것으로 복원(기기 간 공유, 원격 우선)
+    try{ const _ra=await remoteLoadActions(brand, rec3.actionDate); if(_ra){ Object.keys(actions).forEach(k=>delete actions[k]); Object.assign(actions,_ra); } }catch(e){}
     document.getElementById('action-date').value = rec3.actionDate||'';
     document.getElementById('period-start').value = rec3.periodStart||'';
     document.getElementById('period-end').value = rec3.periodEnd||'';
@@ -2010,6 +2046,8 @@ async function loadServerData(brand, period){
     Object.assign(actions, rec.actions||{});
     // 로컬에 저장된 그 날짜의 액션 기록을 복원(서버 데이터 로드로 사용자 입력이 사라지지 않게)
     try{ const _sh=loadHistoryData()[rec.actionDate]; if(_sh&&_sh.actions) Object.assign(actions,_sh.actions); }catch(e){}
+    // 클라우드(Firestore)에 저장된 액션이 있으면 그것으로 복원(기기 간 공유, 원격 우선)
+    try{ const _ra=await remoteLoadActions(brand, rec.actionDate); if(_ra){ Object.keys(actions).forEach(k=>delete actions[k]); Object.assign(actions,_ra); } }catch(e){}
     document.getElementById('action-date').value = rec.actionDate||'';
     document.getElementById('period-start').value = rec.periodStart||'';
     document.getElementById('period-end').value = rec.periodEnd||'';
