@@ -49,8 +49,13 @@ automation/cdp-sniff.js
 automation/cdp-parse-coupang.js
 automation/cdp-req-coupang.js
 automation/cdp-coupang-test.js
+automation/cdp-ss-sniff.js
+automation/cdp-ss-test.js
+automation/cdp-ss-req.js
+automation/cdp-ss-grab.js
 # CDP용 크롬 프로필(로그인 세션 — 절대 금지)
 automation/.cdp-chrome*/
+automation/.cdp-ss*/
 
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
