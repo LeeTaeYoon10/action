@@ -1907,7 +1907,8 @@ function autoSave(){
   const actionDate=document.getElementById('action-date').value;
   if(!actionDate||!currentBrand) return;
   const hist=loadHistoryData();
-  hist[actionDate]={schemaVersion:SCHEMA_VER,actionDate,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value,savedAt:new Date().toISOString(),meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,actions:Object.assign({},actions)};
+  const _dual = !!(dualMode && parsed7);
+  hist[actionDate]={schemaVersion:SCHEMA_VER,actionDate,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value,savedAt:new Date().toISOString(),meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,dualMode:_dual,meta7:_dual?parsed7.meta:null,google7:_dual?parsed7.google:null,tiktok7:_dual?parsed7.tiktok:null,actions:Object.assign({},actions)};
   localStorage.setItem(histKey(),JSON.stringify(hist));
   renderHistoryChips();
 }
@@ -2035,11 +2036,13 @@ function loadHistoryDate(date){
   let rec=hist[date];
   if(!rec) return;
   rec=migrateRecord(rec);
-  if(!currentSession){currentSession={meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,actions:Object.assign({},actions),actionDate:document.getElementById('action-date').value,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value};}
+  if(!currentSession){currentSession={meta:parsed.meta,google:parsed.google,tiktok:parsed.tiktok,parsed7:parsed7,dualMode:dualMode,actions:Object.assign({},actions),actionDate:document.getElementById('action-date').value,periodStart:document.getElementById('period-start').value,periodEnd:document.getElementById('period-end').value};}
   try{parsed.meta=rec.meta||null;}catch{parsed.meta=null;}
   try{parsed.google=rec.google||null;}catch{parsed.google=null;}
   try{parsed.tiktok=rec.tiktok||null;}catch{parsed.tiktok=null;}
-  parsed7=null; dualMode=false;
+  if(rec.dualMode && (rec.meta7||rec.google7||rec.tiktok7)){
+    parsed7={meta:rec.meta7||null,google:rec.google7||null,tiktok:rec.tiktok7||null}; dualMode=true;
+  } else { parsed7=null; dualMode=false; }
   Object.keys(actions).forEach(k=>delete actions[k]);
   Object.assign(actions,rec.actions||{});
   document.getElementById('action-date').value=rec.actionDate||date;
@@ -2055,6 +2058,7 @@ function loadHistoryDate(date){
 function returnToCurrentSession(){
   if(!currentSession) return;
   parsed.meta=currentSession.meta; parsed.google=currentSession.google; parsed.tiktok=currentSession.tiktok;
+  parsed7=currentSession.parsed7||null; dualMode=!!currentSession.dualMode;
   Object.keys(actions).forEach(k=>delete actions[k]);
   Object.assign(actions,currentSession.actions);
   document.getElementById('action-date').value=currentSession.actionDate;
