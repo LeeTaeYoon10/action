@@ -33,6 +33,11 @@ automation/tiktok-sniff.js
 automation/tiktok-parse.js
 automation/tiktok-spend.js
 automation/tiktok-req.js
+automation/google-explore.js
+automation/google-datepicker.js
+automation/google-date.js
+automation/google-day.js
+automation/google-picker.js
 
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
