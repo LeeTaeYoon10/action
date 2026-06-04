@@ -41,6 +41,16 @@ automation/google-picker.js
 automation/cdp-probe.js
 automation/cdp-explore.js
 automation/cdp-search.js
+automation/cdp-toggle.js
+automation/cdp-view.js
+automation/cdp-shot.js
+automation/cdp-grab.js
+automation/cdp-sniff.js
+automation/cdp-parse-coupang.js
+automation/cdp-req-coupang.js
+automation/cdp-coupang-test.js
+# CDP용 크롬 프로필(로그인 세션 — 절대 금지)
+automation/.cdp-chrome*/
 
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
