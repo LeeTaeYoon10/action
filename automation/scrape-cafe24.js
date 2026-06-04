@@ -13,11 +13,9 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
-// 브랜드별 카페24 몰 도메인 (새 브랜드는 여기에 추가)
-const MALLS = {
-  basetune: 'basetune9000.cafe24.com',
-  granny: 'grannysalad.cafe24.com',
-};
+// 브랜드별 카페24 몰 도메인 — config.local.json (gitignore)에서 로드
+const { loadConfig } = require('./load-config');
+const MALLS = loadConfig().cafe24 || {};
 
 function ymd(d) {
   const y = d.getFullYear();
@@ -31,7 +29,7 @@ function toNum(s) { return parseInt(String(s).replace(/[^\d-]/g, ''), 10) || 0; 
   const brand = process.argv[2] || 'basetune';
   const mall = MALLS[brand];
   if (!mall) {
-    console.error(`[오류] '${brand}' 몰 도메인이 등록되지 않았습니다. scrape-cafe24.js의 MALLS에 추가하세요.`);
+    console.error(`[오류] '${brand}' 몰 도메인이 config.local.json의 cafe24에 없습니다. (config.sample.json 참고)`);
     process.exit(1);
   }
 

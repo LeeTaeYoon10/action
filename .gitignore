@@ -23,6 +23,12 @@ automation/out/
 automation/shots/
 automation/sniff-out/
 
+# ===== 계정 식별자가 박힌 일회성 진단 스크립트 (공개 repo 금지) =====
+automation/meta-accounts.js
+automation/meta-accounts2.js
+automation/meta-topbar.js
+automation/meta-spend.js
+
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
 

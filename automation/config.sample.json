@@ -1,0 +1,9 @@
+{
+  "_설명": "이 파일을 config.local.json 으로 복사한 뒤 실제 값으로 채우세요. config.local.json은 git에 올라가지 않습니다.",
+  "cafe24": {
+    "basetune": "<몰ID>.cafe24.com"
+  },
+  "meta": {
+    "basetune": "<메타 광고계정 ID 숫자>"
+  }
+}
