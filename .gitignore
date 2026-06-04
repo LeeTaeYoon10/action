@@ -53,9 +53,11 @@ automation/cdp-ss-sniff.js
 automation/cdp-ss-test.js
 automation/cdp-ss-req.js
 automation/cdp-ss-grab.js
+automation/cdp-gfa-sniff.js
 # CDP용 크롬 프로필(로그인 세션 — 절대 금지)
 automation/.cdp-chrome*/
 automation/.cdp-ss*/
+automation/.cdp-gfa*/
 
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
