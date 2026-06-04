@@ -1987,6 +1987,8 @@ async function loadServerCombined(brand){
     dualMode = !!parsed7;
     Object.keys(actions).forEach(k=>delete actions[k]);
     Object.assign(actions, rec3.actions||{});
+    // 로컬에 저장된 그 날짜의 액션 기록을 복원(서버 데이터 로드로 사용자 입력이 사라지지 않게)
+    try{ const _sh=loadHistoryData()[rec3.actionDate]; if(_sh&&_sh.actions) Object.assign(actions,_sh.actions); }catch(e){}
     document.getElementById('action-date').value = rec3.actionDate||'';
     document.getElementById('period-start').value = rec3.periodStart||'';
     document.getElementById('period-end').value = rec3.periodEnd||'';
@@ -2006,6 +2008,8 @@ async function loadServerData(brand, period){
     parsed7 = null; dualMode = false;        // 단일 기간 보기
     Object.keys(actions).forEach(k=>delete actions[k]);
     Object.assign(actions, rec.actions||{});
+    // 로컬에 저장된 그 날짜의 액션 기록을 복원(서버 데이터 로드로 사용자 입력이 사라지지 않게)
+    try{ const _sh=loadHistoryData()[rec.actionDate]; if(_sh&&_sh.actions) Object.assign(actions,_sh.actions); }catch(e){}
     document.getElementById('action-date').value = rec.actionDate||'';
     document.getElementById('period-start').value = rec.periodStart||'';
     document.getElementById('period-end').value = rec.periodEnd||'';
