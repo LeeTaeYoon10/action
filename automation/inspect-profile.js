@@ -8,16 +8,18 @@ const fs = require('fs');
   const brandArg = process.argv[3];
   const url = process.argv[4];
   const outName = process.argv[5] || 'shot';
+  const waitMs = parseInt(process.argv[6], 10) || 4000;
+  const headful = process.argv[7] === 'headful';
   const brand = (brandArg && brandArg !== '-') ? brandArg : null;
   const profileDir = path.join(__dirname, '.pw-profile', brand ? `${key}-${brand}` : key);
 
   const shotsDir = path.join(__dirname, 'shots');
   if (!fs.existsSync(shotsDir)) fs.mkdirSync(shotsDir, { recursive: true });
 
-  const ctx = await chromium.launchPersistentContext(profileDir, { headless: true, locale: 'ko-KR', viewport: { width: 1480, height: 1000 } });
+  const ctx = await chromium.launchPersistentContext(profileDir, { headless: !headful, locale: 'ko-KR', viewport: { width: 1480, height: 1000 } });
   const page = ctx.pages()[0] || (await ctx.newPage());
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => console.error('이동 경고:', e.message));
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(waitMs);
 
   console.log('제목 :', await page.title().catch(() => ''));
   console.log('최종URL:', page.url());

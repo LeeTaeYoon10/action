@@ -28,6 +28,11 @@ automation/meta-accounts.js
 automation/meta-accounts2.js
 automation/meta-topbar.js
 automation/meta-spend.js
+automation/tiktok-probe.js
+automation/tiktok-sniff.js
+automation/tiktok-parse.js
+automation/tiktok-spend.js
+automation/tiktok-req.js
 
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
