@@ -8,6 +8,7 @@
 .env.*
 config.local.json
 secrets.json
+secrets.enc.json
 
 # ===== 자동화 의존성 =====
 node_modules/
@@ -54,6 +55,8 @@ automation/cdp-ss-test.js
 automation/cdp-ss-req.js
 automation/cdp-ss-grab.js
 automation/cdp-gfa-sniff.js
+automation/inspect-cafe24-login.js
+automation/inspect-coupang-login.js
 # CDP용 크롬 프로필(로그인 세션 — 절대 금지)
 automation/.cdp-chrome*/
 automation/.cdp-ss*/

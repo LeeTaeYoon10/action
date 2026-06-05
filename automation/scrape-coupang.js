@@ -38,17 +38,28 @@ function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
   }
 
   console.log(`[쿠팡 계정${acc}] ${date} 베이스튠 매출 수집 중... (포트 ${port})`);
+  // sales-analysis 페이지를 먼저 로드해 Akamai 센서/세션을 활성화 (로그인 직후 fetch 차단 방지)
+  await target.goto('https://wing.coupang.com/tenants/business-insight/sales-analysis', { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+  await target.waitForTimeout(7000);
+
   const result = await target.evaluate(async (date) => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const xsrf = decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) || [])[1] || '');
     async function fetchPage(pageNumber) {
-      const r = await fetch('https://wing.coupang.com/tenants/rfm-ss/api/business-insight/vi-detail-search', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'accept': 'application/json, text/plain, */*', 'x-xsrf-token': xsrf },
-        credentials: 'include',
-        body: JSON.stringify({ startDate: date, endDate: date, registrationTypes: ['NORMAL', 'RFM'], pageNumber, pageSize: 20, sortBy: 'GMV', sortOrder: 'DESC', vendorItemIds: [], includeSoldVICount: true }),
-      });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+      let lastErr;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          const r = await fetch('https://wing.coupang.com/tenants/rfm-ss/api/business-insight/vi-detail-search', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'accept': 'application/json, text/plain, */*', 'x-xsrf-token': xsrf },
+            credentials: 'include',
+            body: JSON.stringify({ startDate: date, endDate: date, registrationTypes: ['NORMAL', 'RFM'], pageNumber, pageSize: 20, sortBy: 'GMV', sortOrder: 'DESC', vendorItemIds: [], includeSoldVICount: true }),
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return await r.json();
+        } catch (e) { lastErr = e; await sleep(2500); }
+      }
+      throw lastErr;
     }
     const first = await fetchPage(0);
     const totalPages = first.paginationDetails?.totalPages || 1;
