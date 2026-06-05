@@ -42,18 +42,26 @@ function toNum(s) { return parseInt(String(s).replace(/[^\d-]/g, ''), 10) || 0; 
     start = end = ymd(y);
   }
 
+  // 프로필 방식(권장, 오래 유지). 없으면 구 storageState 폴백.
+  const profileDir = path.join(__dirname, '.pw-profile', `cafe24-${brand}`);
   const authFile = path.join(__dirname, 'auth', `cafe24-${brand}.json`);
-  if (!fs.existsSync(authFile)) {
-    console.error(`[오류] 세션 없음: ${authFile}\n먼저 로그인: node login.js cafe24 ${brand}`);
+  const useProfile = fs.existsSync(profileDir);
+  if (!useProfile && !fs.existsSync(authFile)) {
+    console.error(`[오류] 세션 없음.\n먼저 로그인: node login-profile.js cafe24 ${brand}  (자동로그인 체크 권장)`);
     process.exit(1);
   }
 
   const url = `https://${mall}/disp/admin/shop1/report/DailyList`;
-  console.log(`[카페24/${brand}] ${start} ~ ${end} 수집 중...`);
+  console.log(`[카페24/${brand}] ${start} ~ ${end} 수집 중...${useProfile ? ' (프로필)' : ' (storageState)'}`);
 
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ storageState: authFile, locale: 'ko-KR', viewport: { width: 1480, height: 1000 } });
-  const page = await context.newPage();
+  let browser, context;
+  if (useProfile) {
+    context = await chromium.launchPersistentContext(profileDir, { headless: true, locale: 'ko-KR', viewport: { width: 1480, height: 1000 } });
+  } else {
+    browser = await chromium.launch({ headless: true });
+    context = await browser.newContext({ storageState: authFile, locale: 'ko-KR', viewport: { width: 1480, height: 1000 } });
+  }
+  const page = context.pages()[0] || await context.newPage();
 
   // 기간을 10일 단위 청크로 분할 (리포트가 한 화면에 ~10행만 보여주므로)
   function chunkRanges(s, e) {
@@ -83,7 +91,7 @@ function toNum(s) { return parseInt(String(s).replace(/[^\d-]/g, ''), 10) || 0; 
 
       // 로그인 만료 체크
       if (/login/i.test(page.url())) {
-        throw new Error(`세션 만료됨 — 재로그인 필요: node login.js cafe24 ${brand}`);
+        throw new Error(`세션 만료됨 — 재로그인 필요: node login-profile.js cafe24 ${brand} (자동로그인 체크)`);
       }
 
       // 날짜 범위 설정 후 검색
@@ -109,10 +117,10 @@ function toNum(s) { return parseInt(String(s).replace(/[^\d-]/g, ''), 10) || 0; 
     }
   } catch (e) {
     console.error('[수집 오류]', e.message);
-    await browser.close().catch(() => {});
+    await (browser ? browser.close() : context.close()).catch(() => {});
     process.exit(1);
   }
-  await browser.close().catch(() => {});
+  await (browser ? browser.close() : context.close()).catch(() => {});
 
   // 정리: "2026-05-20(수)" → "2026-05-20", 날짜 기준 중복 제거
   //   대시보드 매핑: sales=결제합계, refund=환불합계, count=주문수 → (sales-refund)=순매출
