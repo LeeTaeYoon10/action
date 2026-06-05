@@ -1,0 +1,177 @@
+{
+  "updatedAt": "2026-06-05T10:10:54.513Z",
+  "files": [
+    {
+      "platform": "cafe24",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-05-26",
+          "sales": 34431417,
+          "refund": 4472200,
+          "count": 345
+        },
+        {
+          "date": "2026-05-27",
+          "sales": 37629374,
+          "refund": 5760000,
+          "count": 391
+        },
+        {
+          "date": "2026-05-28",
+          "sales": 38401031,
+          "refund": 5376800,
+          "count": 394
+        },
+        {
+          "date": "2026-05-29",
+          "sales": 36554490,
+          "refund": 3497600,
+          "count": 371
+        },
+        {
+          "date": "2026-05-30",
+          "sales": 33020273,
+          "refund": 255600,
+          "count": 336
+        },
+        {
+          "date": "2026-05-31",
+          "sales": 32099975,
+          "refund": 3151400,
+          "count": 330
+        },
+        {
+          "date": "2026-06-01",
+          "sales": 39500556,
+          "refund": 4873400,
+          "count": 406
+        },
+        {
+          "date": "2026-06-03",
+          "sales": 42940799,
+          "refund": 1661400,
+          "count": 436
+        },
+        {
+          "date": "2026-06-04",
+          "sales": 44859733,
+          "refund": 4130400,
+          "count": 452
+        }
+      ]
+    },
+    {
+      "platform": "coupang",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-06-03",
+          "sales": 8896260,
+          "count": 101
+        },
+        {
+          "date": "2026-06-04",
+          "sales": 5463200,
+          "count": 63
+        }
+      ]
+    },
+    {
+      "platform": "smartstore",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-06-03",
+          "sales": 3358800,
+          "count": 38,
+          "refund": 344800
+        }
+      ]
+    },
+    {
+      "platform": "meta",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-05-30",
+          "cost": 10764080
+        },
+        {
+          "date": "2026-05-31",
+          "cost": 13627204
+        },
+        {
+          "date": "2026-06-01",
+          "cost": 10945328
+        },
+        {
+          "date": "2026-06-02",
+          "cost": 10118604
+        },
+        {
+          "date": "2026-06-03",
+          "cost": 10313406
+        },
+        {
+          "date": "2026-06-04",
+          "cost": 8573842
+        }
+      ]
+    },
+    {
+      "platform": "tiktok",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-05-30",
+          "cost": 1391864
+        },
+        {
+          "date": "2026-05-31",
+          "cost": 1514599
+        },
+        {
+          "date": "2026-06-01",
+          "cost": 1764073
+        },
+        {
+          "date": "2026-06-02",
+          "cost": 1441244
+        },
+        {
+          "date": "2026-06-03",
+          "cost": 1932401
+        },
+        {
+          "date": "2026-06-04",
+          "cost": 1741030
+        }
+      ]
+    },
+    {
+      "platform": "google",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-06-03",
+          "cost": 9421388
+        },
+        {
+          "date": "2026-06-04",
+          "cost": 10031644
+        }
+      ]
+    },
+    {
+      "platform": "gfa",
+      "brand": "basetune",
+      "rows": [
+        {
+          "date": "2026-06-03",
+          "cost": 1135711
+        }
+      ]
+    }
+  ]
+}

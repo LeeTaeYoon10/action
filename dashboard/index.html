@@ -904,6 +904,41 @@ async function importCollectedFiles(fileList) {
   if (errors.length) { showToast('⚠️ ' + errors.join(' / ')); }
 }
 
+// 페이지 로드시 수집 데이터 자동 반영 (build-dashboard-data.js가 만든 data/auto-basetune.json)
+async function autoLoadCollected() {
+  let data;
+  try {
+    const res = await fetch('../data/auto-basetune.json?t=' + Date.now());
+    if (!res.ok) return;
+    data = await res.json();
+  } catch { return; }
+  const files = (data && data.files) || [];
+  if (!files.length) return;
+  const savedDate = document.getElementById('date-input').value;
+  let totalDays = 0; const platforms = new Set();
+  window.__importing = true;
+  try {
+    for (const obj of files) {
+      const platform = obj.platform;
+      const brand = IMPORT_BRAND_MAP[obj.brand] || obj.brand;
+      const rows = obj.rows || [];
+      if (!platform || !brand || !rows.length) continue;
+      if (!BRANDS.includes(brand)) continue;
+      importRows(platform, brand, rows);
+      totalDays += rows.length; platforms.add(platform);
+    }
+  } finally {
+    window.__importing = false;
+    document.getElementById('date-input').value = savedDate;
+    onDateChange();
+    renderHistory(); renderDetailTable(); renderChart();
+  }
+  if (totalDays) {
+    const when = data.updatedAt ? new Date(data.updatedAt).toLocaleString('ko-KR') : '';
+    showToast(`🔄 자동수집 반영 완료: ${[...platforms].join(', ')}${when ? ' · ' + when : ''}`);
+  }
+}
+
 function importRows(platform, brand, rows) {
   const dateInput = document.getElementById('date-input');
   for (const row of rows) {
@@ -1107,6 +1142,7 @@ renderHistory();
 renderDetailTable();
 renderChart();
 onDateChange(); // 페이지 열자마자 저장 데이터 자동 로드
+autoLoadCollected(); // 수집서버 데이터(data/auto-basetune.json) 자동 반영
 </script>
 </body>
 </html>
