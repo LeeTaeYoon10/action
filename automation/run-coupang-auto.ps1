@@ -21,7 +21,9 @@ foreach ($i in 1, 2, 3, 4) {
   $env:COUPANG_PW = Dec $e.pw
   node autologin-coupang.js $port
   if ($LASTEXITCODE -ne 0) { Write-Output "  -> 로그인 실패, 수집 건너뜀"; continue }
-  if ($Date) { node scrape-coupang.js $i $Date $port } else { node scrape-coupang.js $i "" $port }
+  # PowerShell은 네이티브 명령에 빈 문자열 인자("")를 누락시켜 위치가 밀린다 → 날짜를 항상 계산해 전달
+  $useDate = if ($Date) { $Date } else { (Get-Date).AddDays(-1).ToString('yyyy-MM-dd') }
+  node scrape-coupang.js $i $useDate $port
 }
 Write-Output "===== 합산 ====="
 node combine-coupang.js
