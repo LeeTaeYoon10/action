@@ -570,16 +570,28 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
     <button class="modal-close" onclick="document.getElementById('manual-direct-modal').classList.remove('show')">✕</button>
     <h2 style="margin-bottom:4px">직접전환 수동 입력</h2>
     <div id="mdirect-label" style="font-size:11px;color:var(--muted);margin-bottom:18px;word-break:break-all;max-height:36px;overflow:hidden"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;color:var(--muted);width:68px">전환 건수</span>
-        <input id="mdirect-count" type="number" min="0" class="settings-input" placeholder="건" style="width:100px">
-        <span style="font-size:10px;color:var(--muted)">건</span>
+    <div style="display:flex;gap:14px;margin-bottom:20px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent)">3일</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--muted);width:32px">건수</span>
+          <input id="mdirect-count3" type="number" min="0" class="settings-input" placeholder="건" style="width:84px">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--muted);width:32px">매출</span>
+          <input id="mdirect-amount3" type="number" min="0" class="settings-input" placeholder="원" style="width:84px">
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;color:var(--muted);width:68px">전환 매출</span>
-        <input id="mdirect-amount" type="number" min="0" class="settings-input" placeholder="원 단위" style="width:100px">
-        <span style="font-size:10px;color:var(--muted)">원</span>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px;border-left:1px solid var(--border);padding-left:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted)">7일</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--muted);width:32px">건수</span>
+          <input id="mdirect-count7" type="number" min="0" class="settings-input" placeholder="건" style="width:84px">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--muted);width:32px">매출</span>
+          <input id="mdirect-amount7" type="number" min="0" class="settings-input" placeholder="원" style="width:84px">
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -688,6 +700,7 @@ const files   = { meta:null, google:null, pmax:null, tiktok:null, direct:null };
 const parsed  = { meta:null, google:null, tiktok:null, direct:null };
 let parsed7   = null;        // 7일 데이터 (3일/7일 2줄 비교용)
 let dualMode  = false;       // true면 소재 행을 3일/7일 2줄로 표시
+let srvPeriod = '3';         // 단일모드에서 현재 보는 기간('3'|'7') — 수동입력 적용 기간
 const actions = {};
 const collapsed = { camps: new Set(), grps: new Set() };
 let activeTab = 'meta';
@@ -1382,9 +1395,9 @@ function switchTab(id){
 }
 
 // 요약 지표 집계 (parsed 또는 parsed7 동일 구조에 사용 → 3·7일 비교)
-function computeSummaryMetrics(root){
+function computeSummaryMetrics(root,period){
   let totalCost=0,totalRev=0,totalDirect=0,metaCost=0,metaDirect=0,ggCost=0,ggDirect=0,tkCost=0,tkDirect=0;
-  const dir=(a,key)=>a.directAmount!=null?a.directAmount:((actions[key]&&actions[key].manualDirectAmount!=null)?actions[key].manualDirectAmount:0);
+  const dir=(a,key)=>{if(a.directAmount!=null) return a.directAmount; const m=manualDirect(key,period||'3'); return m?m.amount:0;};
   if(root&&root.meta) Object.values(root.meta).forEach(c=>Object.values(c.groups).forEach(g=>g.ads.forEach(a=>{
     totalCost+=a.cost;totalRev+=a.rev||0;metaCost+=a.cost;
     const d=dir(a,'meta__ad__'+c.name+'__'+g.name+'__'+a.name);totalDirect+=d;metaDirect+=d;
@@ -1405,8 +1418,8 @@ function computeSummaryMetrics(root){
     tkDRoas:tkCost>0?tkDirect/tkCost*100:0};
 }
 function renderSummary(){
-  const m3 = computeSummaryMetrics(parsed);
-  const m7 = (dualMode && parsed7) ? computeSummaryMetrics(parsed7) : null;
+  const m3 = computeSummaryMetrics(parsed, dualMode?'3':srvPeriod);
+  const m7 = (dualMode && parsed7) ? computeSummaryMetrics(parsed7,'7') : null;
   const {totalCost,totalRev,totalDirect,metaCost,ggCost,tkCost,roas,dRoas,metaDRoas,ggDRoas,tkDRoas} = m3;
 
   // 요약 카드: dualMode면 3일/7일 값을 위아래 2줄로. kind: 'won'|'roas', accent: 강조색 여부
@@ -1524,13 +1537,13 @@ function agg7(media, campName, grpName){
   const c = root[campName]; if(!c) return null;
   const pref = media==='meta'?'meta':(media==='google'?'gg':'tk');
   if(media==='google'){
-    return aggAds((c.ads||[]).map(a=>resolveAd(a,'gg__ad__'+campName+'__'+a.name)));
+    return aggAds((c.ads||[]).map(a=>resolveAd(a,'gg__ad__'+campName+'__'+a.name,'7')));
   }
   if(grpName==null){
-    return aggAds(Object.values(c.groups||{}).flatMap(g=>(g.ads||[]).map(a=>resolveAd(a,pref+'__ad__'+campName+'__'+g.name+'__'+a.name))));
+    return aggAds(Object.values(c.groups||{}).flatMap(g=>(g.ads||[]).map(a=>resolveAd(a,pref+'__ad__'+campName+'__'+g.name+'__'+a.name,'7'))));
   }
   const g=(c.groups||{})[grpName]; if(!g) return null;
-  return aggAds((g.ads||[]).map(a=>resolveAd(a,pref+'__ad__'+campName+'__'+grpName+'__'+a.name)));
+  return aggAds((g.ads||[]).map(a=>resolveAd(a,pref+'__ad__'+campName+'__'+grpName+'__'+a.name,'7')));
 }
 function dval(v, kind){
   if(v==null) return '<span class="m-na">–</span>';
@@ -1576,8 +1589,8 @@ function adRowCells(ad, ad7, aKey, nameStyle){
   const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}><span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
   if(dualMode){
     const h7 = ad7!=null;
-    const dd = resolveDirect(ad,aKey);
-    const dd7 = h7 ? resolveDirect(ad7,aKey) : null;
+    const dd = resolveDirect(ad,aKey,'3');
+    const dd7 = h7 ? resolveDirect(ad7,aKey,'7') : null;
     const _mi = dd.isManual?'<span class="manual-badge">수동</span>':'';
     const _mi7 = (dd7&&dd7.isManual)?'<span class="manual-badge">수동</span>':'';
     const _eb = directBtn(ad,aKey);
@@ -1731,43 +1744,52 @@ function buildTikTokTable(){
 
 // ── Manual Direct Entry ───────────────────────────────────────────────────────
 let _mDirectKey=null;
+// 수동입력 직접전환 값 조회 (기간별 3/7, 없으면 레거시 단일값 폴백)
+function manualDirect(key,period){
+  const a=actions[key]; if(!a) return null;
+  const amt=a['manualDirectAmount'+period], cnt=a['manualDirectCount'+period];
+  const A=amt!=null?amt:(a.manualDirectAmount!=null?a.manualDirectAmount:null);
+  const C=cnt!=null?cnt:(a.manualDirectCount!=null?a.manualDirectCount:null);
+  if(A==null&&C==null) return null;
+  return {amount:A!=null?A:0, count:C!=null?C:0};
+}
 function openManualDirect(key,label){
   _mDirectKey=key;
   document.getElementById('mdirect-label').textContent=label||key;
   const a=actions[key]||{};
-  document.getElementById('mdirect-count').value=a.manualDirectCount!=null?a.manualDirectCount:'';
-  document.getElementById('mdirect-amount').value=a.manualDirectAmount!=null?a.manualDirectAmount:'';
+  const g=(suf)=>{const v=a['manualDirect'+suf]; const leg=a['manualDirect'+suf.replace(/[37]$/,'')]; return v!=null?v:(leg!=null?leg:'');};
+  document.getElementById('mdirect-count3').value=g('Count3');
+  document.getElementById('mdirect-amount3').value=g('Amount3');
+  document.getElementById('mdirect-count7').value=g('Count7');
+  document.getElementById('mdirect-amount7').value=g('Amount7');
   document.getElementById('manual-direct-modal').classList.add('show');
-  setTimeout(()=>document.getElementById('mdirect-count').focus(),60);
+  setTimeout(()=>document.getElementById('mdirect-count3').focus(),60);
 }
 function saveManualDirect(){
   if(!_mDirectKey) return;
   if(!actions[_mDirectKey]) actions[_mDirectKey]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
-  const cv=document.getElementById('mdirect-count').value;
-  const av=document.getElementById('mdirect-amount').value;
-  if(cv===''&&av===''){
-    delete actions[_mDirectKey].manualDirectCount;
-    delete actions[_mDirectKey].manualDirectAmount;
-  } else {
-    actions[_mDirectKey].manualDirectCount=cv!==''?parseFloat(cv):null;
-    actions[_mDirectKey].manualDirectAmount=av!==''?parseFloat(av):null;
-  }
+  const A=actions[_mDirectKey];
+  const gv=id=>{const v=document.getElementById(id).value;return v!==''?parseFloat(v):null;};
+  const c3=gv('mdirect-count3'),a3=gv('mdirect-amount3'),c7=gv('mdirect-count7'),a7=gv('mdirect-amount7');
+  // 기간별 값 저장 + 레거시 단일키 제거(완전 이행)
+  A.manualDirectCount3=c3; A.manualDirectAmount3=a3; A.manualDirectCount7=c7; A.manualDirectAmount7=a7;
+  delete A.manualDirectCount; delete A.manualDirectAmount;
+  [['manualDirectCount3',c3],['manualDirectAmount3',a3],['manualDirectCount7',c7],['manualDirectAmount7',a7]].forEach(([k,v])=>{if(v==null) delete A[k];});
   document.getElementById('manual-direct-modal').classList.remove('show');
   renderTable(activeTab); renderSummary(); triggerAutoSave();
 }
 function clearManualDirect(){
-  document.getElementById('mdirect-count').value='';
-  document.getElementById('mdirect-amount').value='';
+  ['mdirect-count3','mdirect-amount3','mdirect-count7','mdirect-amount7'].forEach(id=>document.getElementById(id).value='');
 }
 // 광고 행 직접전환 셀 4개 생성 (수동입력 오버라이드 포함)
 // 직접전환 값 해석(수동입력 반영) — directEl / 2줄비교 분기 공용
-function resolveDirect(ad,key){
-  const manual=actions[key];
+function resolveDirect(ad,key,period){
+  const manual=manualDirect(key,period||'3');
   let dCpa=ad.directCpa,dRoas=ad.directRoas,dCount=ad.directCount,dAmount=ad.directAmount;
   let isManual=false;
-  if(dAmount==null&&manual&&(manual.manualDirectAmount!=null||manual.manualDirectCount!=null)){
-    dAmount=manual.manualDirectAmount!=null?manual.manualDirectAmount:0;
-    dCount=manual.manualDirectCount!=null?manual.manualDirectCount:0;
+  if(dAmount==null&&manual){
+    dAmount=manual.amount;
+    dCount=manual.count;
     dRoas=ad.cost>0&&dAmount>0?dAmount/ad.cost*100:0;
     dCpa=dCount>0?ad.cost/dCount:null;
     isManual=true;
@@ -1781,7 +1803,7 @@ function directBtn(ad,key){
   return `<button class="manual-edit-btn" onclick="openManualDirect('${sk}','${sn}')" title="직접전환 수동 입력">✏</button>`;
 }
 function directEl(ad,key){
-  const {dCpa,dRoas,dCount,dAmount,isManual}=resolveDirect(ad,key);
+  const {dCpa,dRoas,dCount,dAmount,isManual}=resolveDirect(ad,key,srvPeriod);
   const mi=isManual?'<span class="manual-badge">수동</span>':'';
   const eb=directBtn(ad,key);
   return `<td>${dCpa!=null?cpaBadge(dCpa):'<span class="m-na">–</span>'}</td>`+
@@ -2117,6 +2139,7 @@ async function loadServerData(brand, period){
     const rec = await res.json();
     parsed.meta = rec.meta||null; parsed.google = rec.google||null; parsed.tiktok = rec.tiktok||null;
     parsed7 = null; dualMode = false;        // 단일 기간 보기
+    srvPeriod = (period==='7d')?'7':'3';      // 단일모드 수동입력 적용 기간
     Object.keys(actions).forEach(k=>delete actions[k]);
     Object.assign(actions, rec.actions||{});
     // 로컬에 저장된 그 날짜의 액션 기록을 복원(서버 데이터 로드로 사용자 입력이 사라지지 않게)
@@ -2217,13 +2240,11 @@ function aggAds(ads){
   return{cost,rev,conv,roas:cost>0?rev/cost*100:0,cpa:conv>0?cost/conv:0,dAmount,dCount,dRoas:cost>0?dAmount/cost*100:0,dCpa:dCount>0?cost/dCount:0,clicks,impressions,ctr:impressions>0?clicks/impressions*100:0};
 }
 // 수동 입력값을 ad 객체에 반영 (aggAds 집계 전에 사용)
-function resolveAd(ad,key){
+function resolveAd(ad,key,period){
   if(ad.directAmount!=null) return ad;
-  const m=actions[key];
-  if(m&&(m.manualDirectAmount!=null||m.manualDirectCount!=null)){
-    const dAmt=m.manualDirectAmount!=null?m.manualDirectAmount:0;
-    const dCnt=m.manualDirectCount!=null?m.manualDirectCount:0;
-    return Object.assign({},ad,{directAmount:dAmt,directCount:dCnt});
+  const m=manualDirect(key,period||'3');
+  if(m){
+    return Object.assign({},ad,{directAmount:m.amount,directCount:m.count});
   }
   return ad;
 }
