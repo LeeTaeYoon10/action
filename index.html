@@ -778,6 +778,25 @@ function normKeyFull(k){
 }
 function termSuffix(term){ const m=term.match(/\)_(.+)$/); if(m) return normKey(m[1].trim()); const i=term.indexOf('_'); return i>=0?normKey(term.slice(i+1).trim()):normKey(term.trim()); }
 function adSuffix(name){ const i=name.indexOf('_'); return i>=0?normKey(name.slice(i+1).trim()):normKey(name.trim()); }
+// 구글 UTM 정확 매칭용: URL에서 utm_* 추출 + term 정규화(앞 언더스코어 제거·소문자)
+function utmParam(url,key){ const m=String(url).match(new RegExp('utm_'+key+'=([^&\\s]+)','i')); if(!m) return ''; try{return decodeURIComponent(m[1]);}catch(e){return m[1];} }
+function normUtmTerm(t){ return String(t).normalize('NFC').trim().replace(/^_+/,'').toLowerCase(); }
+// 구글 직접전환 매칭: cafe24 UTM(medium|campaign|term)으로 정확 매칭 → 같은 번호(vid 08 등)라도
+// 캠페인(dmg_001 vs dmg_003)별로 분리. 폴백은 풀네임(dmg) 소재에만 허용(번호형은 병합 폴백 금지=중복 방지).
+function getDirectGoogle(ad, url){
+  if(url){
+    const term=utmParam(url,'term');
+    if(term){
+      const med=utmParam(url,'medium').toLowerCase();
+      const camp=utmParam(url,'campaign').toLowerCase();
+      const k='__ggu__'+med+'|'+camp+'|'+normUtmTerm(term);
+      const r=parsed.direct&&parsed.direct[k];
+      if(r) return r;
+      if(/^\d{1,3}$/.test(term.trim())) return null; // 번호형 term: 캠페인 일치 실패 시 매칭 없음(중복 방지)
+    }
+  }
+  return getDirectData(ad,'gg');
+}
 // 편집거리(Levenshtein) – 빠른 근사 매칭용
 function editDist(a,b){
   if(Math.abs(a.length-b.length)>3) return 99;
@@ -886,6 +905,12 @@ function parseDirectCSV(file){
                   if(chKey){
                     if(!map[chKey]) map[chKey]={order_amount:0,order_count:0};
                     map[chKey].order_amount+=amt; map[chKey].order_count+=cnt;
+                  }
+                  // 구글 UTM 복합키(medium|campaign|term): vid 번호 중복·풀네임 어긋남 모두 정확 매칭
+                  if(ch==='gg'||ch==='google'){
+                    const uk='__ggu__'+medium+'|'+(row.campaign||'').trim().toLowerCase()+'|'+normUtmTerm(term);
+                    if(!map[uk]) map[uk]={order_amount:0,order_count:0};
+                    map[uk].order_amount+=amt; map[uk].order_count+=cnt;
                   }
                   if(ch==='gg'&&medium==='pmax'){
                     const pmaxNum=(row.campaign||'').match(/pmax[_\s]*(\d+)/i);
@@ -1027,6 +1052,7 @@ function parseGoogleCSV(file){
               const iAdSt    = col('광고 상태');
               const iCampSt  = col('캠페인 상태');
               const iAd      = col('광고 이름');
+              const iUrl     = col('최종 URL');
               const iCost    = col('비용');
               const iConvVal = col('전환 가치');
               const iCpa     = col('전환당비용');
@@ -1062,7 +1088,7 @@ function parseGoogleCSV(file){
                 const roas    = cost>0?(convVal/cost*100):0;
                 const conv    = (cost>0&&cpa>0)?Math.round(cost/cpa):0;
 
-                const direct=getDirectData(ad,'gg');
+                const direct=getDirectGoogle(ad, iUrl>=0?String(row[iUrl]||''):'');
                 campaigns[camp].ads.push({
                   name:ad,cost,roas,cpa,conv,rev:convVal,ctr,cpc,
                   directAmount:direct?direct.order_amount:null,
