@@ -1997,7 +1997,7 @@ function downloadScreenshot() {
     document.getElementById('cap-msg').textContent = `이미지 생성 중… (${m.label})`;
 
     const capDiv = document.createElement('div');
-    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;padding:20px;';
+    capDiv.style.cssText = 'position:absolute;top:0;left:0;width:max-content;min-width:1200px;z-index:1;background:#0f1117;font-family:\'Pretendard\',\'Apple SD Gothic Neo\',sans-serif;font-size:13px;color:#e2e8f0;box-sizing:border-box;padding:20px;';
     const summaryBarEl = document.getElementById('summary-bar');
     const summaryHTML = summaryBarEl
       ? `<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">${summaryBarEl.innerHTML}</div>`
@@ -2012,7 +2012,7 @@ function downloadScreenshot() {
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const totalH = capDiv.scrollHeight;
-      const totalW = capDiv.offsetWidth;
+      const totalW = Math.max(capDiv.scrollWidth, capDiv.offsetWidth);
       const savedMinH = document.body.style.minHeight;
       document.body.style.minHeight = (totalH + 100) + 'px';
 
