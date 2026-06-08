@@ -1596,7 +1596,7 @@ function buildMetaTable(){
 
     const mGrpBudgetSum=Object.values(camp.groups).reduce((s,g)=>s+(g.budget||0),0);
     const mIsABO=(camp.budget||0)===0 && mGrpBudgetSum>0;
-    const mBudgetTd=mIsABO?`<td>${aboBudgetEl(mGrpBudgetSum)}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
+    const mBudgetTd=mIsABO?`<td>${aboBudgetEl(cKey,camp,'meta__grp__')}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
     const mActTd=mIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
     rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
       + summaryCells(ca, agg7('meta',camp.name,null), '<td><span class="m-na">–</span></td>', mBudgetTd, mActTd, `<td>${memoEl(cKey)}</td>`)
@@ -1672,7 +1672,7 @@ function buildTikTokTable(){
 
     const tGrpBudgetSum=Object.values(camp.groups).reduce((s,g)=>s+(g.budget||0),0);
     const tIsABO=(camp.budget||0)===0 && tGrpBudgetSum>0;
-    const tBudgetTd=tIsABO?`<td>${aboBudgetEl(tGrpBudgetSum)}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
+    const tBudgetTd=tIsABO?`<td>${aboBudgetEl(cKey,camp,'tk__grp__')}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
     const tActTd=tIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
     rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>`
       + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, tBudgetTd, tActTd, `<td>${memoEl(cKey)}</td>`)
@@ -1797,13 +1797,44 @@ function budgetEl(key,current){
     <input class="budget-in" id="bto-${CSS.escape(key)}" value="${toVal}" ${isOff?'readonly':''} style="${toStyle}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
   </div>`;
 }
-// ABO 캠페인(캠페인 예산=0, 광고세트에 예산)의 캠페인 행: 광고세트 예산 합계를 읽기전용 표시.
-// 실제 증감은 광고세트 행에서 입력 → 요약 카드는 광고세트 예산을 합산하므로 여기선 표시만(중복합산 없음).
-function aboBudgetEl(sum){
+// ABO 캠페인(캠페인 예산=0, 광고세트에 예산)의 캠페인 행: 광고세트 예산 합계를 "현재→변경"으로 표시.
+// 실제 증감은 광고세트 행에서 입력 → 변경합계는 세트들의 budgetTo 합으로 실시간 갱신(updateAboRollups).
+// 요약 카드는 광고세트 예산을 합산하므로 여기선 표시만(중복합산 없음).
+function aboToSum(camp, gkPrefix){
+  let s=0;
+  Object.values(camp.groups).forEach(grp=>{
+    const gk=gkPrefix+camp.name+'__'+grp.name;
+    const a=actions[gk];
+    if(a&&a.action==='끄기') return; // 끄기 세트는 0
+    s+=(a&&a.budgetTo!==''&&a.budgetTo!=null)?parseNum(a.budgetTo)*10000:(grp.budget||0);
+  });
+  return s;
+}
+function aboBudgetEl(cKey, camp, gkPrefix){
+  const curSum=Object.values(camp.groups).reduce((s,g)=>s+(g.budget||0),0);
+  const toSum=aboToSum(camp, gkPrefix);
+  const col=toSum>curSum?'color:var(--green)':toSum<curSum?'color:var(--red)':'color:var(--muted)';
   return `<div class="budget-wrap" title="ABO 캠페인 — 광고세트 예산 합계(증감은 광고세트 행에서 입력)">
-    <input class="budget-in" value="${fmtMan(sum,true)}" readonly style="color:var(--muted)">
+    <input class="budget-in" value="${fmtMan(curSum,true)}" readonly style="color:var(--muted)">
+    <span class="budget-arrow">→</span>
+    <input class="budget-in" id="abosum-${CSS.escape(cKey)}" value="${fmtMan(toSum,true)}" readonly style="${col}">
     <span class="badge-obj" style="background:rgba(99,102,241,0.15);color:#6366f1;border-color:rgba(99,102,241,0.35);margin-left:2px">ABO</span>
   </div>`;
+}
+// 광고세트 예산 변경 시 ABO 캠페인 행의 변경합계를 실시간 갱신
+function updateAboRollups(){
+  [['meta','meta__camp__','meta__grp__'],['tiktok','tk__camp__','tk__grp__']].forEach(([media,ckPre,gkPre])=>{
+    const p=parsed[media]; if(!p) return;
+    Object.values(p).forEach(camp=>{
+      const curSum=Object.values(camp.groups||{}).reduce((s,g)=>s+(g.budget||0),0);
+      if((camp.budget||0)!==0||curSum<=0) return; // ABO만
+      const el=document.getElementById('abosum-'+CSS.escape(ckPre+camp.name));
+      if(!el) return;
+      const toSum=aboToSum(camp, gkPre);
+      el.value=fmtMan(toSum,true);
+      el.style.color=toSum>curSum?'var(--green)':toSum<curSum?'var(--red)':'var(--muted)';
+    });
+  });
 }
 function memoEl(key){
   if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
@@ -1832,6 +1863,7 @@ function setAction(key,val){
     if(val==='끄기'){bto.setAttribute('readonly','');bto.style.color='var(--red)';bto.style.opacity='0.7';}
     else{bto.removeAttribute('readonly');bto.style.color='';bto.style.opacity='';}
   }
+  updateAboRollups();
   renderSummary();
   triggerAutoSave();
 }
@@ -1850,6 +1882,7 @@ function setBudget(key,cur,val){
     const sel=document.getElementById('sel-'+CSS.escape(key));
     if(sel){sel.value=newAct;sel.className='act-sel '+actCls(newAct);}
   }
+  updateAboRollups();
   renderSummary();
   triggerAutoSave();
 }
