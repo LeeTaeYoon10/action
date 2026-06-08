@@ -1594,8 +1594,12 @@ function buildMetaTable(){
 
     if (!shouldShowRow(camp.name)) return;
 
+    const mGrpBudgetSum=Object.values(camp.groups).reduce((s,g)=>s+(g.budget||0),0);
+    const mIsABO=(camp.budget||0)===0 && mGrpBudgetSum>0;
+    const mBudgetTd=mIsABO?`<td>${aboBudgetEl(mGrpBudgetSum)}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
+    const mActTd=mIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
     rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
-      + summaryCells(ca, agg7('meta',camp.name,null), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
+      + summaryCells(ca, agg7('meta',camp.name,null), '<td><span class="m-na">–</span></td>', mBudgetTd, mActTd, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid(camp.name,grp.name); const isG=collapsed.grps.has(gId);
@@ -1666,8 +1670,12 @@ function buildTikTokTable(){
 
     if (!shouldShowRow(camp.name)) return;
 
+    const tGrpBudgetSum=Object.values(camp.groups).reduce((s,g)=>s+(g.budget||0),0);
+    const tIsABO=(camp.budget||0)===0 && tGrpBudgetSum>0;
+    const tBudgetTd=tIsABO?`<td>${aboBudgetEl(tGrpBudgetSum)}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
+    const tActTd=tIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
     rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>`
-      + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
+      + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, tBudgetTd, tActTd, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid('tk_'+camp.name,grp.name); const isG=collapsed.grps.has(gId);
@@ -1787,6 +1795,14 @@ function budgetEl(key,current){
     <input class="budget-in" value="${cur}" readonly title="현재예산(만원)" style="color:var(--muted)">
     <span class="budget-arrow">→</span>
     <input class="budget-in" id="bto-${CSS.escape(key)}" value="${toVal}" ${isOff?'readonly':''} style="${toStyle}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
+  </div>`;
+}
+// ABO 캠페인(캠페인 예산=0, 광고세트에 예산)의 캠페인 행: 광고세트 예산 합계를 읽기전용 표시.
+// 실제 증감은 광고세트 행에서 입력 → 요약 카드는 광고세트 예산을 합산하므로 여기선 표시만(중복합산 없음).
+function aboBudgetEl(sum){
+  return `<div class="budget-wrap" title="ABO 캠페인 — 광고세트 예산 합계(증감은 광고세트 행에서 입력)">
+    <input class="budget-in" value="${fmtMan(sum,true)}" readonly style="color:var(--muted)">
+    <span class="badge-obj" style="background:rgba(99,102,241,0.15);color:#6366f1;border-color:rgba(99,102,241,0.35);margin-left:2px">ABO</span>
   </div>`;
 }
 function memoEl(key){
