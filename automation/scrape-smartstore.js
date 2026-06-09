@@ -22,7 +22,7 @@ function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
   try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`); }
   catch (e) { console.error(`[오류] 포트 ${port} 연결 실패 — 스마트스토어 디버그 Chrome 확인. (${e.message})`); process.exit(1); }
   const ctx = browser.contexts()[0];
-  const page = ctx.pages().find((p) => /smartstore\.naver\.com/.test(p.url())) || ctx.pages()[0];
+  const page = ctx.pages().find((p) => /^https?:\/\/sell\.smartstore\.naver\.com/.test(p.url())) || ctx.pages()[0];
   if (!page) { console.error('[오류] 스마트스토어 탭 없음'); process.exit(1); }
 
   // 라이브 report 요청에서 Bearer 토큰 + siteId 가로채기

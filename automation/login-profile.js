@@ -29,11 +29,31 @@ const { PLATFORMS } = require('./platforms');
   console.log(`브라우저를 엽니다: ${platform.loginUrl}`);
   console.log('로그인을 끝까지 마친 뒤 → 브라우저 창을 그냥 닫으세요. (자동 저장)\n');
 
-  const ctx = await chromium.launchPersistentContext(profileDir, {
+  // 구글 등은 자동화 브라우저를 차단 → 실제 Chrome + 자동화 흔적 숨김(stealth)
+  const useChrome = process.env.USE_CHROME === '1' || ['google', 'gfa'].includes(key);
+  const launchOpts = {
     headless: false,
     locale: 'ko-KR',
     viewport: null,
-    args: ['--start-maximized'],
+    args: ['--start-maximized', '--disable-blink-features=AutomationControlled'],
+    ignoreDefaultArgs: ['--enable-automation'],
+  };
+  if (useChrome) launchOpts.channel = 'chrome';
+
+  let ctx;
+  try {
+    ctx = await chromium.launchPersistentContext(profileDir, launchOpts);
+  } catch (e) {
+    if (useChrome) { // Chrome 미설치 등 → 기본 브라우저로 폴백
+      console.log('(실제 Chrome 실행 실패, 기본 브라우저로 시도:', e.message + ')');
+      delete launchOpts.channel;
+      ctx = await chromium.launchPersistentContext(profileDir, launchOpts);
+    } else { throw e; }
+  }
+
+  // navigator.webdriver 숨기기
+  await ctx.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
   });
 
   let closed = false;
