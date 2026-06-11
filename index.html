@@ -1536,7 +1536,7 @@ function buildTableHeader() {
     <th onclick="sortColumn('전환')">전환${getSortIndicator('전환')}</th>
     <th onclick="sortColumn('비용')">비용${getSortIndicator('비용')}</th>
     <th onclick="sortColumn('매출')">매출${getSortIndicator('매출')}</th>
-    <th>예산(만원)</th>
+    <th title="캠페인/그룹=예산, 소재=자동 제안">예산/제안</th>
     <th style="min-width:84px">액션</th>
     <th>직접CPA</th><th>직접ROAS</th><th>직접전환수</th><th>직접전환값</th>
     <th style="min-width:110px">메모</th>
@@ -1609,6 +1609,28 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
     + memoTd;
 }
 // 소재(광고) 행의 td들 생성. dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3일·7일 2줄로.
+// 소재별 인라인 액션 제안 칩 (증액 %/종료/감액 %) — ROAS 기준은 내 설정값 사용
+function adSuggestChip(ad, aKey){
+  try{
+    const s=getSettings();
+    const RD=s.roas_danger||100, RW=s.roas_warn||150;
+    const cost=ad.cost||0;
+    const isG=aKey.indexOf('gg__')===0;          // 구글은 직접전환 ROAS로 판단
+    let roas;
+    if(isG){ let dr=null; try{const dd=resolveDirect(ad,aKey,'3'); if(dd&&dd.dRoas!=null) dr=dd.dRoas;}catch(e){} roas=(dr!=null)?dr:(cost?((ad.directAmount||0)/cost*100):0); }
+    else { roas=ad.roas||0; }
+    const conv=(ad.conv||0)+(ad.directCount||0);
+    if(cost<5000) return '';                       // 비용 미미하면 제안 생략
+    let txt,col;
+    if(cost>=20000 && (conv===0 || roas<RD*0.5)){ txt='■ 종료'; col='var(--red)'; }
+    else if(roas<RD){ txt='▼ 감액 -50%'; col='var(--yellow)'; }
+    else if(roas<RW){ txt='▼ 감액 -30%'; col='var(--yellow)'; }
+    else if(roas>=RW*2){ txt='▲ 증액 +50%'; col='var(--green)'; }
+    else if(roas>=RW+100){ txt='▲ 증액 +30%'; col='var(--green)'; }
+    else { txt='유지'; col='var(--muted)'; }
+    return `<span title="ROAS ${Math.round(roas)}% 기준 제안" style="display:inline-block;white-space:nowrap;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;border:1px solid ${col};color:${col}">${txt}</span>`;
+  }catch(e){ return ''; }
+}
 function adRowCells(ad, ad7, aKey, nameStyle){
   const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}><span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
   if(dualMode){
@@ -1630,7 +1652,7 @@ function adRowCells(ad, ad7, aKey, nameStyle){
       + `<td>${ad.conv||0}개</td>`
       + dcell(ad.cost, h7?ad7.cost:null, 'won')
       + dcell(ad.rev,  h7?ad7.rev:null,  'won')
-      + `<td></td>`
+      + `<td>${adSuggestChip(ad,aKey)}</td>`
       + `<td>${actSel(aKey,false)}</td>`
       + dcell(dd.dCpa,  dd7?dd7.dCpa:null,  'cpa')
       + dcell(dd.dRoas, dd7?dd7.dRoas:null, 'roas')
@@ -1640,7 +1662,7 @@ function adRowCells(ad, ad7, aKey, nameStyle){
   }
   return nameTd
     + `<td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>`
-    + `<td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>`
+    + `<td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td>${adSuggestChip(ad,aKey)}</td><td>${actSel(aKey,false)}</td>`
     + directEl(ad,aKey)
     + `<td>${memoEl(aKey)}</td>`;
 }
