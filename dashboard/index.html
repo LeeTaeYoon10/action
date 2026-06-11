@@ -181,8 +181,51 @@
     @media (max-width: 600px) { .input-grid-3, .search-grid { grid-template-columns: repeat(2,1fr); } .container { padding: 14px; } }
     @media (max-width: 420px) { .input-grid-3, .input-grid-4, .search-grid { grid-template-columns: 1fr; } }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script>
+  // 로그인 + 보호 데이터 (메인 툴과 동일 Firebase/계정 → 한 번 로그인하면 둘 다 열람)
+  try{
+    firebase.initializeApp({
+      apiKey:"AIzaSyCMpJbIx21bf0GKY3ja2SgyEXT06WzBixA",
+      authDomain:"wongo-studio.firebaseapp.com",
+      projectId:"wongo-studio",
+      storageBucket:"wongo-studio.firebasestorage.app",
+      messagingSenderId:"1096743272954",
+      appId:"1:1096743272954:web:36f9469c42562ebcd66443"
+    });
+    window._db = firebase.firestore(); window._auth = firebase.auth();
+  }catch(e){ console.warn('firebase init 실패', e); window._db=null; window._auth=null; }
+  window.idToEmail = function(id){ id=(id||'').trim(); return id.indexOf('@')>=0?id:id+'@dailyaction.local'; };
+  window.appLogin = function(id,pw){ return window._auth.signInWithEmailAndPassword(window.idToEmail(id),pw); };
+  window.appLogout = function(){ if(window._auth) window._auth.signOut(); };
+  // 보호 대시보드 데이터 로드 (dailyData/auto-basetune, json 문자열 필드)
+  window.remoteLoadDashboard = async function(){
+    if(!window._db) return null;
+    try{ const d=await window._db.collection('dailyData').doc('auto-basetune').get();
+         return d.exists ? JSON.parse(d.data().json||'null') : null; }
+    catch(e){ console.warn('대시보드 데이터 로드 실패', e); return null; }
+  };
+  </script>
 </head>
 <body>
+
+<!-- ── 로그인 게이트 ───────────────────────────────── -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:99999;background:#1F2937;display:flex;align-items:center;justify-content:center;font-family:sans-serif">
+  <div style="width:320px;max-width:90vw;background:#fff;border-radius:14px;padding:28px 26px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+    <div style="font-size:18px;font-weight:700;color:#1F2937;margin-bottom:4px">광고 데이터 대시보드</div>
+    <div style="font-size:12px;color:#6B7280;margin-bottom:20px">로그인이 필요합니다</div>
+    <input id="login-id" type="text" placeholder="아이디" autocomplete="username"
+      style="width:100%;margin-bottom:10px;padding:10px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:14px;outline:none">
+    <input id="login-pw" type="password" placeholder="비밀번호" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()"
+      style="width:100%;margin-bottom:14px;padding:10px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:14px;outline:none">
+    <button onclick="doLogin()" id="login-btn"
+      style="width:100%;padding:11px;border:none;border-radius:8px;background:#4F46E5;color:#fff;font-size:14px;font-weight:700;cursor:pointer">로그인</button>
+    <div id="login-err" style="display:none;margin-top:12px;font-size:12px;color:#EF4444"></div>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-left">
@@ -908,9 +951,8 @@ async function importCollectedFiles(fileList) {
 async function autoLoadCollected() {
   let data;
   try {
-    const res = await fetch('../data/auto-basetune.json?t=' + Date.now());
-    if (!res.ok) return;
-    data = await res.json();
+    data = await remoteLoadDashboard();   // 보호 Firestore에서 로드(로그인 필요)
+    if (!data) return;
   } catch { return; }
   const files = (data && data.files) || [];
   if (!files.length) return;
@@ -1137,12 +1179,32 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 3500);
 }
 
-// 초기 렌더
-renderHistory();
-renderDetailTable();
-renderChart();
-onDateChange(); // 페이지 열자마자 저장 데이터 자동 로드
-autoLoadCollected(); // 수집서버 데이터(data/auto-basetune.json) 자동 반영
+// ── 로그인 처리 ──
+function doLogin(){
+  const id=document.getElementById('login-id').value;
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err'); const btn=document.getElementById('login-btn');
+  err.style.display='none'; btn.disabled=true; btn.textContent='로그인 중…';
+  appLogin(id,pw).catch(e=>{ btn.disabled=false; btn.textContent='로그인';
+    err.textContent='아이디 또는 비밀번호가 올바르지 않습니다.'; err.style.display='block'; console.warn('login fail',e&&e.code); });
+}
+let _booted=false;
+function initDashboard(){
+  if(_booted) return; _booted=true;
+  renderHistory(); renderDetailTable(); renderChart();
+  onDateChange();        // 저장 데이터 자동 로드
+  autoLoadCollected();   // 보호 Firestore 수집 데이터 반영
+}
+if(window._auth){
+  window._auth.onAuthStateChanged(function(user){
+    const gate=document.getElementById('login-gate');
+    if(user){ if(gate) gate.style.display='none'; initDashboard(); }
+    else { _booted=false; if(gate) gate.style.display='flex'; }
+  });
+} else {
+  const gate=document.getElementById('login-gate'); if(gate) gate.style.display='none';
+  initDashboard();
+}
 </script>
 </body>
 </html>

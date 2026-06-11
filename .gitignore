@@ -72,6 +72,7 @@ data/granny_7d.json
 data/basetune_3d.json
 data/basetune_7d.json
 data/manifest.json
+data/auto-basetune.json
 
 # ===== 기타 =====
 .DS_Store
