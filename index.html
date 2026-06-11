@@ -489,6 +489,7 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
       <div class="tabs" id="tabs" style="margin-bottom:0;border-bottom:none"></div>
       <div style="display:flex;gap:8px">
         <input class="search-input" id="search-input" type="text" placeholder="캠페인/광고명 검색…" onkeyup="filterAndRender()">
+        <button class="btn btn-ghost" onclick="showActionSuggest()" title="현재 데이터로 증액·감액·점검 후보를 자동 제안">💡 액션 제안</button>
         <button class="btn btn-ghost" onclick="showReport()">액션 리포트 보기</button>
         <button class="btn btn-ghost" onclick="downloadScreenshot()">📷 이미지 다운로드</button>
       </div>
@@ -624,6 +625,16 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">
       분석을 완료하면 해당 날짜에 자동 저장됩니다.
     </div>
+  </div>
+</div>
+
+<!-- 💡 액션 제안 모달 -->
+<div class="modal-bg" id="suggest-modal">
+  <div class="modal" style="width:640px;max-height:82vh;overflow:auto">
+    <button class="modal-close" onclick="document.getElementById('suggest-modal').classList.remove('show')">✕</button>
+    <h2 style="margin-bottom:6px">💡 액션 제안 <span id="suggest-period" style="font-size:12px;color:var(--muted);font-weight:400"></span></h2>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:16px">현재 화면 데이터 + 내 ROAS 기준으로 자동 산출한 제안입니다. 최종 판단은 직접. (구글 매출=직접전환 기준)</div>
+    <div id="suggest-content"></div>
   </div>
 </div>
 
@@ -2212,6 +2223,59 @@ function deleteHistDate(e,date){
   renderHistoryChips(); renderDateList();
 }
 
+// ── 💡 액션 제안 (현재 데이터 + ROAS 기준으로 자동 분류) ──────────────────────
+function _suggestRows(data){
+  const rows=[];
+  ['meta','google','tiktok'].forEach(ch=>{
+    const root=data&&data[ch]; if(!root) return;
+    Object.values(root).forEach(c=>{
+      const groups=c.groups||{};
+      Object.values(groups).forEach(g=>{
+        (g.ads||[]).forEach(a=>{
+          const cost=a.cost||0;
+          const eff=(ch==='google')?(a.directAmount||0):(a.rev||0);   // 구글은 직접전환이 실매출
+          const roas=cost?eff/cost*100:0;
+          const conv=(a.conv||0)+(a.directCount||0);
+          rows.push({ch,name:a.name||'',cost,eff,roas,conv});
+        });
+      });
+    });
+  });
+  return rows;
+}
+function showActionSuggest(){
+  if(!parsed||(!parsed.meta&&!parsed.google&&!parsed.tiktok)){ alert('먼저 데이터를 불러오세요.'); return; }
+  const s=getSettings();
+  const RD=s.roas_danger||100;          // 이 ROAS 미만이면 감액·중단 후보
+  const SCALE=Math.max(250,(s.roas_warn||150)+100); // 증액 기준(여유롭게)
+  const MINCUT=30000, MINZERO=20000, MINUP=20000;   // 최소 비용 필터
+  const rows=_suggestRows(parsed);
+  const won=n=>Number(n||0).toLocaleString('ko-KR');
+  const cut=rows.filter(x=>x.cost>=MINCUT&&x.roas<RD).sort((a,b)=>b.cost-a.cost);
+  const zero=rows.filter(x=>x.cost>=MINZERO&&x.conv===0).sort((a,b)=>b.cost-a.cost);
+  const up=rows.filter(x=>x.cost>=MINUP&&x.roas>=SCALE).sort((a,b)=>b.roas-a.roas);
+  const chTag=ch=>({meta:'메타',google:'구글',tiktok:'틱톡'}[ch]||ch);
+  const period=document.getElementById('period-start').value+'~'+document.getElementById('period-end').value;
+  document.getElementById('suggest-period').textContent='('+period+')';
+  const line=(x,extra)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span><span style="color:var(--muted);font-size:10px">[${chTag(x.ch)}]</span> ${x.name.slice(0,42)}</span>
+      <span style="white-space:nowrap;color:var(--muted)">${extra}</span></div>`;
+  const sec=(title,color,items,fn,empty)=>`<div style="margin-bottom:18px">
+      <div style="font-weight:700;color:${color};margin-bottom:6px">${title} <span style="color:var(--muted);font-weight:400;font-size:11px">${items.length}건</span></div>
+      ${items.length?items.slice(0,15).map(fn).join(''):'<div style="font-size:11px;color:var(--muted)">'+empty+'</div>'}
+      ${items.length>15?'<div style="font-size:10px;color:var(--muted);margin-top:4px">…외 '+(items.length-15)+'건</div>':''}</div>`;
+  let html='';
+  html+=sec('🔴 감액·중단 후보 (ROAS &lt;'+RD+'%, 비용 3만+)','var(--red)',cut,
+    x=>line(x,`비용 ${won(x.cost)} · 매출 ${won(x.eff)} · ROAS ${x.roas.toFixed(0)}%`),'해당 없음 (양호)');
+  html+=sec('⚠️ 전환 0 + 비용 2만+ (즉시 점검)','var(--yellow)',zero,
+    x=>line(x,`비용 ${won(x.cost)} · 전환 0`),'해당 없음');
+  html+=sec('🟢 증액 후보 (ROAS ≥'+SCALE+'%, 비용 2만+)','var(--green)',up,
+    x=>line(x,`비용 ${won(x.cost)} · 매출 ${won(x.eff)} · ROAS ${x.roas.toFixed(0)}%`),'해당 없음');
+  const totC=rows.reduce((s,x)=>s+x.cost,0), totR=rows.reduce((s,x)=>s+x.eff,0);
+  html+=`<div style="font-size:11px;color:var(--muted);padding-top:10px;border-top:1px solid var(--border)">소재 ${rows.length}개 · 총비용 ${won(totC)} · 총매출 ${won(totR)} · 통합 ROAS ${totC?(totR/totC*100).toFixed(0):0}%</div>`;
+  document.getElementById('suggest-content').innerHTML=html;
+  document.getElementById('suggest-modal').classList.add('show');
+}
 function showReport(){renderDateList();document.getElementById('modal').classList.add('show');}
 function closeReport(){document.getElementById('modal').classList.remove('show');}
 function showVersionHistory(){document.getElementById('version-modal').classList.add('show');}
