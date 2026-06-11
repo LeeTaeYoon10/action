@@ -8,9 +8,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
-// 액션 클라우드 저장 (wongo-studio Firebase 재사용) — 컬렉션 dailyActions/{brand__date}
+// 클라우드 저장 + 로그인 (wongo-studio Firebase 재사용)
+//  - 데이터/액션 모두 인증 필요한 보호 컬렉션(dailyData/secureActions)에 저장 → 로그인해야 열람 가능
 try{
   firebase.initializeApp({
     apiKey:"AIzaSyCMpJbIx21bf0GKY3ja2SgyEXT06WzBixA",
@@ -21,11 +23,38 @@ try{
     appId:"1:1096743272954:web:36f9469c42562ebcd66443"
   });
   window._db = firebase.firestore();
-}catch(e){ console.warn('firebase init 실패', e); window._db = null; }
+  window._auth = firebase.auth();
+}catch(e){ console.warn('firebase init 실패', e); window._db = null; window._auth = null; }
+
+// 아이디 → 이메일 매핑 (사용자는 'cheddar'만 입력)
+window.AUTH_DOMAIN_SUFFIX = '@dailyaction.local';
+window.idToEmail = function(id){ id=(id||'').trim(); return id.indexOf('@')>=0 ? id : id+window.AUTH_DOMAIN_SUFFIX; };
+// 로그인 (publish 자동화도 이 함수로 통과)
+window.appLogin = async function(id,pw){
+  if(!window._auth) throw new Error('auth 미초기화');
+  return window._auth.signInWithEmailAndPassword(window.idToEmail(id), pw);
+};
+window.appLogout = function(){ if(window._auth) window._auth.signOut(); };
+
+// ── 보호 데이터(dailyData) 로딩 ─ 문자열(json) 필드에 통째 저장 ──
+window.remoteLoadManifest = async function(){
+  if(!window._db) return null;
+  try{ const d=await window._db.collection('dailyData').doc('manifest').get();
+       return d.exists ? JSON.parse(d.data().json||'{}') : null; }
+  catch(e){ console.warn('manifest 로드 실패', e); return null; }
+};
+window.remoteLoadData = async function(brand,period){
+  if(!window._db||!brand||!period) return null;
+  try{ const d=await window._db.collection('dailyData').doc(brand+'_'+period).get();
+       return d.exists ? JSON.parse(d.data().json||'null') : null; }
+  catch(e){ console.warn('데이터 로드 실패', e); return null; }
+};
+
+// ── 보호 액션(secureActions) 저장/로드/실시간 ──
 window.remoteSaveActions = async function(brand,date,actionsObj){
   if(!window._db||!brand||!date) return false;
   try{
-    await window._db.collection('dailyActions').doc(brand+'__'+date).set({
+    await window._db.collection('secureActions').doc(brand+'__'+date).set({
       brand, date, actions: actionsObj||{},
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -35,16 +64,14 @@ window.remoteSaveActions = async function(brand,date,actionsObj){
 window.remoteLoadActions = async function(brand,date){
   if(!window._db||!brand||!date) return null;
   try{
-    const d = await window._db.collection('dailyActions').doc(brand+'__'+date).get();
+    const d = await window._db.collection('secureActions').doc(brand+'__'+date).get();
     return d.exists ? (d.data().actions||{}) : null;
   }catch(e){ console.warn('원격 액션 불러오기 실패', e); return null; }
 };
-// 실시간 구독: 다른 사람이 액션을 저장하면 즉시 콜백 (onSnapshot)
-// 반환값은 구독 해제 함수(unsubscribe). 내 저장이 메아리치는 snapshot(hasPendingWrites)은 무시.
 window.remoteSubscribeActions = function(brand,date,cb){
   if(!window._db||!brand||!date) return null;
   try{
-    return window._db.collection('dailyActions').doc(brand+'__'+date)
+    return window._db.collection('secureActions').doc(brand+'__'+date)
       .onSnapshot(function(doc){
         if(doc.metadata && doc.metadata.hasPendingWrites) return;   // 내가 방금 쓴 것 → 무시
         cb(doc.exists ? (doc.data().actions||{}) : {});
@@ -339,6 +366,22 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
 </style>
 </head>
 <body>
+
+<!-- ── 로그인 게이트 (로그인 전엔 화면 차단) ─────────────── -->
+<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:var(--bg,#0f1117);display:flex;align-items:center;justify-content:center">
+  <div style="width:320px;max-width:90vw;background:var(--surface,#1a1d27);border:1px solid var(--border,#2e3348);border-radius:14px;padding:28px 26px">
+    <div style="font-size:18px;font-weight:700;color:var(--text,#e2e8f0);margin-bottom:4px">마케팅 액션 툴</div>
+    <div style="font-size:12px;color:var(--muted,#8892a4);margin-bottom:20px">로그인이 필요합니다</div>
+    <input id="login-id" type="text" placeholder="아이디" autocomplete="username"
+      style="width:100%;margin-bottom:10px;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#2e3348);background:var(--surface2,#22263a);color:var(--text,#e2e8f0);font-size:14px;outline:none">
+    <input id="login-pw" type="password" placeholder="비밀번호" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()"
+      style="width:100%;margin-bottom:14px;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#2e3348);background:var(--surface2,#22263a);color:var(--text,#e2e8f0);font-size:14px;outline:none">
+    <button onclick="doLogin()" id="login-btn"
+      style="width:100%;padding:11px;border:none;border-radius:8px;background:var(--accent,#4f7fff);color:#fff;font-size:14px;font-weight:700;cursor:pointer">로그인</button>
+    <div id="login-err" style="display:none;margin-top:12px;font-size:12px;color:var(--red,#ef4444)"></div>
+  </div>
+</div>
 
 <!-- ── Brand Selector ─────────────────────────────── -->
 <div class="brand-selector-wrap" id="brand-selector">
@@ -2154,15 +2197,14 @@ function renderHistoryChips(){
   }).join('');
 }
 
-// ── Server data (호스팅 JSON 자동 로드) ───────────────────────────────────────
+// ── Server data (Firestore 보호 데이터 자동 로드) ─────────────────────────────
 let serverManifest = null;
 async function initServerData(brand){
   const bar = document.getElementById('server-bar');
   if(!bar) return;
   try{
-    const res = await fetch('./data/manifest.json?v='+Date.now(), {cache:'no-store'});
-    if(!res.ok){ bar.style.display='none'; return; }
-    serverManifest = await res.json();
+    serverManifest = await remoteLoadManifest();
+    if(!serverManifest){ bar.style.display='none'; return; }
     const combos = (serverManifest.combos && serverManifest.combos[brand]) || [];
     if(!combos.length){ bar.style.display='none'; return; }
     document.getElementById('srv-date').textContent = serverManifest.date ? ('· '+serverManifest.date) : '';
@@ -2181,14 +2223,11 @@ function _setSrvActive(which){
 // 3·7일 2줄 비교 (소재 행을 두 줄로)
 async function loadServerCombined(brand){
   try{
-    const bust=Date.now();
-    const [r3,r7] = await Promise.all([
-      fetch(`./data/${brand}_3d.json?v=`+bust, {cache:'no-store'}),
-      fetch(`./data/${brand}_7d.json?v=`+bust, {cache:'no-store'})
+    const [rec3,rec7] = await Promise.all([
+      remoteLoadData(brand,'3d'),
+      remoteLoadData(brand,'7d')
     ]);
-    if(!r3.ok){ alert('데이터를 불러오지 못했습니다: '+brand); return; }
-    const rec3 = await r3.json();
-    const rec7 = r7.ok ? await r7.json() : null;
+    if(!rec3){ alert('데이터를 불러오지 못했습니다: '+brand); return; }
     parsed.meta=rec3.meta||null; parsed.google=rec3.google||null; parsed.tiktok=rec3.tiktok||null;
     parsed7 = rec7 ? {meta:rec7.meta||null, google:rec7.google||null, tiktok:rec7.tiktok||null} : null;
     dualMode = !!parsed7;
@@ -2211,9 +2250,8 @@ async function loadServerCombined(brand){
 }
 async function loadServerData(brand, period){
   try{
-    const res = await fetch(`./data/${brand}_${period}.json?v=`+Date.now(), {cache:'no-store'});
-    if(!res.ok){ alert('데이터를 불러오지 못했습니다: '+brand+' '+period); return; }
-    const rec = await res.json();
+    const rec = await remoteLoadData(brand,period);
+    if(!rec){ alert('데이터를 불러오지 못했습니다: '+brand+' '+period); return; }
     parsed.meta = rec.meta||null; parsed.google = rec.google||null; parsed.tiktok = rec.tiktok||null;
     parsed7 = null; dualMode = false;        // 단일 기간 보기
     srvPeriod = (period==='7d')?'7':'3';      // 단일모드 수동입력 적용 기간
@@ -2400,18 +2438,43 @@ function cpaBadge(v){
   return `<span class="${cls}">${Math.round(v).toLocaleString('ko-KR')}원</span>`;
 }
 
-// ── 페이지 로드 시: 호스팅 데이터가 있으면 브랜드 자동 선택 (열면 바로 데이터 표시) ──
-(async function autoInit(){
+// ── 로그인 처리 ────────────────────────────────────────────────────────────
+function doLogin(){
+  const id=document.getElementById('login-id').value;
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err');
+  const btn=document.getElementById('login-btn');
+  err.style.display='none'; btn.disabled=true; btn.textContent='로그인 중…';
+  appLogin(id,pw).catch(e=>{
+    btn.disabled=false; btn.textContent='로그인';
+    err.textContent='아이디 또는 비밀번호가 올바르지 않습니다.';
+    err.style.display='block';
+    console.warn('login fail', e&&e.code);
+  });
+}
+// 로그인 후 자동 부팅 (보호 데이터가 있으면 브랜드 자동 선택)
+let _booted=false;
+async function bootApp(){
+  if(_booted) return; _booted=true;
   try{
-    const res = await fetch('./data/manifest.json?v='+Date.now(), {cache:'no-store'});
-    if(!res.ok) return;                       // 데이터 없으면 브랜드 선택 화면 유지
-    const m = await res.json();
+    const m = await remoteLoadManifest();
     if(!m || !m.combos || !Object.keys(m.combos).length) return;
     let brand = localStorage.getItem('last_brand');
     if(!brand || !m.combos[brand]) brand = Object.keys(m.combos)[0];
-    selectBrand(brand);                       // 오버레이 숨기고 데이터 자동 로드
-  }catch(e){ /* 오프라인/데이터없음 → 수동 업로드 모드 유지 */ }
-})();
+    selectBrand(brand);
+  }catch(e){ /* 데이터 없음 → 브랜드 선택/수동 업로드 모드 */ }
+}
+// 인증 상태에 따라 게이트 표시/숨김
+if(window._auth){
+  window._auth.onAuthStateChanged(function(user){
+    const gate=document.getElementById('login-gate');
+    if(user){ if(gate) gate.style.display='none'; bootApp(); }
+    else { _booted=false; if(gate){ gate.style.display='flex'; } }
+  });
+} else {
+  // auth 미초기화(오프라인 등) → 게이트 숨기고 기존 동작
+  const gate=document.getElementById('login-gate'); if(gate) gate.style.display='none';
+}
 </script>
 </body>
 </html>

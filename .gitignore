@@ -65,6 +65,14 @@ automation/.cdp-gfa*/
 # ===== Claude Code 내부 (워크트리·세션) =====
 .claude/
 
+# ===== 데일리 액션 데이터 (보호 Firestore로 이전 — 공개 repo 금지) =====
+# 로그인해야 보이도록 Firestore(dailyData)에 저장. 로컬 파일은 fb_upload가 읽어 업로드만.
+data/granny_3d.json
+data/granny_7d.json
+data/basetune_3d.json
+data/basetune_7d.json
+data/manifest.json
+
 # ===== 기타 =====
 .DS_Store
 Thumbs.db
