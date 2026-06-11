@@ -39,6 +39,18 @@ window.remoteLoadActions = async function(brand,date){
     return d.exists ? (d.data().actions||{}) : null;
   }catch(e){ console.warn('원격 액션 불러오기 실패', e); return null; }
 };
+// 실시간 구독: 다른 사람이 액션을 저장하면 즉시 콜백 (onSnapshot)
+// 반환값은 구독 해제 함수(unsubscribe). 내 저장이 메아리치는 snapshot(hasPendingWrites)은 무시.
+window.remoteSubscribeActions = function(brand,date,cb){
+  if(!window._db||!brand||!date) return null;
+  try{
+    return window._db.collection('dailyActions').doc(brand+'__'+date)
+      .onSnapshot(function(doc){
+        if(doc.metadata && doc.metadata.hasPendingWrites) return;   // 내가 방금 쓴 것 → 무시
+        cb(doc.exists ? (doc.data().actions||{}) : {});
+      }, function(err){ console.warn('원격 액션 구독 실패', err); });
+  }catch(e){ console.warn('원격 액션 구독 예외', e); return null; }
+};
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -402,6 +414,7 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
     <button class="btn btn-ghost" id="srv-3d" style="font-size:12px" onclick="loadServerData(currentBrand,'3d')">최근 3일</button>
     <button class="btn btn-ghost" id="srv-7d" style="font-size:12px" onclick="loadServerData(currentBrand,'7d')">최근 7일</button>
     <span id="srv-date" style="font-size:11px;color:var(--muted)"></span>
+    <span id="srv-live" style="display:none;font-size:11px;color:var(--green);font-weight:700" title="다른 사람의 액션 입력이 실시간으로 반영됩니다">🟢 실시간 공유 중</span>
     <span style="font-size:10px;color:var(--muted);margin-left:auto">자동 수집된 데이터입니다 · 직접 올리려면 아래에서 업로드</span>
   </div>
   <div class="section-label" style="margin-bottom:10px">Raw 데이터 업로드</div>
@@ -2066,6 +2079,36 @@ function autoSave(){
 
 function triggerAutoSave(){if(autoSaveTimer) clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(autoSave,800);}
 
+// ── 실시간 액션 공유 (Firestore onSnapshot) ────────────────────────────────
+// 다른 사람이 액션을 저장하면 새로고침 없이 즉시 화면에 반영.
+let _actionsUnsub = null;   // 현재 구독 해제 함수
+let _pendingRemote = null;  // 입력 중이라 보류된 원격 갱신
+function _applyRemoteActions(remoteActions){
+  Object.keys(actions).forEach(k=>delete actions[k]);
+  Object.assign(actions, remoteActions||{});
+  try{ // 로컬 기록에도 동기화(재방문 시 일관성)
+    const hist=loadHistoryData(); const d=document.getElementById('action-date').value;
+    if(d&&hist[d]){ hist[d].actions=Object.assign({},actions); localStorage.setItem(histKey(),JSON.stringify(hist)); }
+  }catch(e){}
+  renderAll(); renderHistoryChips();
+}
+function subscribeLiveActions(brand, date){
+  if(_actionsUnsub){ try{_actionsUnsub();}catch(e){} _actionsUnsub=null; }
+  const live=document.getElementById('srv-live'); if(live) live.style.display='none';
+  if(!window.remoteSubscribeActions || !brand || !date) return;
+  _actionsUnsub = window.remoteSubscribeActions(brand, date, function(remoteActions){
+    const ae=document.activeElement;
+    const editing = ae && (ae.tagName==='INPUT'||ae.tagName==='SELECT'||ae.tagName==='TEXTAREA');
+    if(editing){ _pendingRemote=remoteActions; return; }  // 입력 중이면 보류(포커스 보호)
+    _applyRemoteActions(remoteActions);
+  });
+  if(_actionsUnsub && live) live.style.display='inline';
+}
+// 입력 끝나면 보류된 원격 갱신을 반영
+document.addEventListener('focusout', function(){
+  if(_pendingRemote!=null){ const r=_pendingRemote; _pendingRemote=null; setTimeout(function(){ if(document.activeElement&&['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return; _applyRemoteActions(r); }, 100); }
+});
+
 function renderHistoryChips(){
   const hist=loadHistoryData();
   const el=document.getElementById('hist-chips');
@@ -2122,6 +2165,7 @@ async function loadServerCombined(brand){
     try{ const _sh=loadHistoryData()[rec3.actionDate]; if(_sh&&_sh.actions) Object.assign(actions,_sh.actions); }catch(e){}
     // 클라우드(Firestore)에 저장된 액션이 있으면 그것으로 복원(기기 간 공유, 원격 우선)
     try{ const _ra=await remoteLoadActions(brand, rec3.actionDate); if(_ra){ Object.keys(actions).forEach(k=>delete actions[k]); Object.assign(actions,_ra); } }catch(e){}
+    subscribeLiveActions(brand, rec3.actionDate);   // 실시간 공유 구독
     document.getElementById('action-date').value = rec3.actionDate||'';
     document.getElementById('period-start').value = rec3.periodStart||'';
     document.getElementById('period-end').value = rec3.periodEnd||'';
@@ -2146,6 +2190,7 @@ async function loadServerData(brand, period){
     try{ const _sh=loadHistoryData()[rec.actionDate]; if(_sh&&_sh.actions) Object.assign(actions,_sh.actions); }catch(e){}
     // 클라우드(Firestore)에 저장된 액션이 있으면 그것으로 복원(기기 간 공유, 원격 우선)
     try{ const _ra=await remoteLoadActions(brand, rec.actionDate); if(_ra){ Object.keys(actions).forEach(k=>delete actions[k]); Object.assign(actions,_ra); } }catch(e){}
+    subscribeLiveActions(brand, rec.actionDate);   // 실시간 공유 구독
     document.getElementById('action-date').value = rec.actionDate||'';
     document.getElementById('period-start').value = rec.periodStart||'';
     document.getElementById('period-end').value = rec.periodEnd||'';
