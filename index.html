@@ -1665,7 +1665,7 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
 // 금액은 해당 소재의 기간 지출(cost) 대비 비율로 환산(천원 단위).
 function adSuggestChip(ad, aKey){
   try{
-    const s=getSettings();
+    const s=loadSettings();
     const RD=s.roas_danger||100, RW=s.roas_warn||150;
     const cost=ad.cost||0;
     const isG=aKey.indexOf('gg__')===0;          // 구글은 직접전환 ROAS로 판단
@@ -2320,7 +2320,7 @@ function _suggestRows(data){
 }
 function showActionSuggest(){
   if(!parsed||(!parsed.meta&&!parsed.google&&!parsed.tiktok)){ alert('먼저 데이터를 불러오세요.'); return; }
-  const s=getSettings();
+  const s=loadSettings();
   const RD=s.roas_danger||100;          // 이 ROAS 미만이면 감액·중단 후보
   const SCALE=Math.max(250,(s.roas_warn||150)+100); // 증액 기준(여유롭게)
   const MINCUT=30000, MINZERO=20000, MINUP=20000;   // 최소 비용 필터
