@@ -171,6 +171,11 @@
     .detail-tab-row { display: flex; gap: 6px; margin-bottom: 14px; }
     .detail-tab { padding: 8px 18px; border: 1.5px solid var(--gray-200); border-radius: 8px; background: white; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--gray-500); transition: all 0.15s; }
     .detail-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
+    /* 보고용 탭 */
+    .report-brand-btn { padding: 7px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px; background: white; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--gray-500); transition: all 0.15s; }
+    .report-brand-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .report-brand-btn:hover:not(.active) { background: var(--gray-100); }
+    #report-text { background: #0F172A; color: #E2E8F0; padding: 18px 22px; border-radius: 10px; font-size: 14px; line-height: 1.75; white-space: pre-wrap; font-family: 'Malgun Gothic','맑은 고딕',monospace; margin: 0; }
     .detail-panel { display: none; } .detail-panel.active { display: block; }
 
     /* Toast */
@@ -520,6 +525,20 @@
     </div>
   </div>
 
+  <!-- ══ 보고용 (복붙) ══ -->
+  <div class="section" id="report-section">
+    <div class="section-header">
+      <div class="section-icon summary-icon">📋</div>
+      <span class="section-title">보고용 (복붙)</span>
+      <div class="filter-row" style="margin-left:12px;">
+        <button class="report-brand-btn" data-report-brand="granysalad">🥗 그래니 샐러드</button>
+        <button class="report-brand-btn active" data-report-brand="basetune">🎵 베이스튠</button>
+      </div>
+      <button class="btn btn-success" style="padding:7px 14px;font-size:13px;margin-left:auto;" onclick="copyReport()">📋 복사</button>
+    </div>
+    <pre id="report-text">-</pre>
+  </div>
+
   <!-- ══ 날짜별 기록 ══ -->
   <div class="section">
     <div class="section-header">
@@ -839,10 +858,68 @@ function calc() {
     }
   }
 
+  // 보고용 텍스트 실시간 갱신
+  renderReport();
+
   // 자동저장 (1초 디바운스)
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(doAutoSave, 1000);
 }
+
+// ── 보고용 텍스트 (양식 그대로, 실시간) ──
+let reportBrand = 'basetune';
+function renderReport() {
+  const pre = document.getElementById('report-text');
+  if (!pre) return;
+  const date  = document.getElementById('date-input').value || '';
+  const brand = reportBrand;
+  const d = calcBrand(brand);
+  let head = '';
+  if (date) {
+    const p = date.split('-');
+    const wd = DAYS[new Date(+p[0], +p[1] - 1, +p[2]).getDay()];
+    head = `${p[1]}/${p[2]} (${wd}) 최종`;
+  }
+  if (!d.totalCost && !d.totalSales) {
+    pre.textContent = (head ? head + '\n\n' : '') + '(데이터 없음)';
+    return;
+  }
+  const self  = d.totalCount > 0 ? (d.c24n / d.totalCount * 100) : 0;
+  const selfS = self.toFixed(1);
+  const otherS = (100 - self).toFixed(1);
+  const svEl = document.getElementById(`sv-${brand}-0`);
+  const sv = svEl ? svEl.value.trim() : '';
+  const svLabel = (svEl && svEl.closest('.search-group')?.querySelector('.search-label')?.textContent) || BRAND_NAMES[brand];
+  const L = [];
+  if (head) { L.push(head); L.push(''); }
+  L.push(`광고비 ${fmt(d.totalCost)}`);
+  L.push(`메타 ${fmt(d.meta)}`);
+  L.push(`틱톡 ${fmt(d.tiktok)}`);
+  L.push(`구글 ${fmt(d.google)}`);
+  L.push(`GFA ${fmt(d.gfa)}`);
+  L.push('');
+  L.push(`매출 ${fmt(d.totalSales)} / ${fmt(d.totalCount)}`);
+  L.push(`자사몰 ${fmt(d.c24s)} / ${fmt(d.c24n)}`);
+  L.push(`쿠팡 ${fmt(d.cpgs)} / ${fmt(d.cpgn)}`);
+  L.push(`스마트스토어 ${fmt(d.sss)} / ${fmt(d.ssn)}`);
+  L.push('');
+  L.push(`ROAS : ${d.roas ?? 0}% CPA : ${fmt(d.cpa || 0)}원 객단가 : ${fmt(d.avg || 0)}원`);
+  L.push(`결제비율 (자사몰 ${selfS}% / 외 ${otherS}%)`);
+  if (sv) L.push(`검색량 (${svLabel} ${sv})`);
+  pre.textContent = L.join('\n');
+}
+function copyReport() {
+  const t = document.getElementById('report-text')?.textContent || '';
+  if (!t || t === '-') return;
+  navigator.clipboard.writeText(t).then(() => showToast('📋 보고용 텍스트를 복사했습니다'));
+}
+document.querySelectorAll('[data-report-brand]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-report-brand]').forEach(b => b.classList.toggle('active', b === btn));
+    reportBrand = btn.dataset.reportBrand;
+    renderReport();
+  });
+});
 
 function doAutoSave() {
   const date = document.getElementById('date-input').value;
