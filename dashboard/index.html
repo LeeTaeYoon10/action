@@ -224,7 +224,15 @@
     <button onclick="doLogin()" id="login-btn"
       style="width:100%;padding:11px;border:none;border-radius:8px;background:#4F46E5;color:#fff;font-size:14px;font-weight:700;cursor:pointer">로그인</button>
     <div id="login-err" style="display:none;margin-top:12px;font-size:12px;color:#EF4444"></div>
+    <div style="margin-top:14px;font-size:10px;color:#9CA3AF;text-align:center">build 2026-06-12</div>
   </div>
+</div>
+
+<!-- 로그아웃 + 버전 (로그인 후 우상단) -->
+<div style="position:fixed;top:10px;right:12px;z-index:9000;display:flex;align-items:center;gap:8px">
+  <span style="font-size:10px;color:#9CA3AF">build 06-12</span>
+  <button onclick="appLogout&&appLogout()" title="로그아웃"
+    style="padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;color:#6B7280;font-size:12px;cursor:pointer">로그아웃</button>
 </div>
 
 <div class="header">
