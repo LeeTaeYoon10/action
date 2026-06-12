@@ -2473,7 +2473,8 @@ async function bootApp(){
     let brand = localStorage.getItem('last_brand');
     if(!brand || !m.combos[brand]) brand = Object.keys(m.combos)[0];
     selectBrand(brand);
-    setDiag('데이터 '+(m.date||'OK'));
+    setDiag('데이터 '+(m.date||'OK')+'…');
+    setTimeout(function(){ try{ var n=document.querySelectorAll('tr.row-ad').length; setDiag('데이터 '+(m.date||'OK')+' · '+n+'행'); }catch(_){} }, 2200);
   }catch(e){ setDiag('데이터 로드오류: '+((e&&e.message)||e)); _booted=false; }
 }
 // 인증 상태에 따라 게이트 표시/숨김
