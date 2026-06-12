@@ -1655,27 +1655,34 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
     + memoTd;
 }
 // 소재(광고) 행의 td들 생성. dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3일·7일 2줄로.
-// 소재별 액션 제안 (소재명 위 표시). 유지는 숨기고 증액/감액/종료만. 증액·감액은 %와 금액(₩)도 제안.
-// 금액은 해당 소재의 기간 지출(cost) 대비 비율로 환산(천원 단위).
-function adSuggestChip(ad, aKey){
+// 소재별 액션 제안 (소재명 위). 유지는 숨김. 증액/감액/종료만 + %·금액.
+// ★학습 반영(과거 데이터 분석): 하루 반짝 ROAS는 다음날 평균회귀(되돌아감) — 150%+ 유지 소재 다음날 평균 -40%p,
+//   낮은 건 오히려 회복. 그래서 "3일·7일이 함께 양호/부진"일 때만(지속적) 강한 제안. 단발 급등/급락은 제안 안 함.
+function adSuggestChip(ad, ad7, aKey){
   try{
     const s=loadSettings();
     const RD=s.roas_danger||100, RW=s.roas_warn||150;
     const cost=ad.cost||0;
-    const isG=aKey.indexOf('gg__')===0;          // 구글은 직접전환 ROAS로 판단
-    let roas;
-    if(isG){ let dr=null; try{const dd=resolveDirect(ad,aKey,'3'); if(dd&&dd.dRoas!=null) dr=dd.dRoas;}catch(e){} roas=(dr!=null)?dr:(cost?((ad.directAmount||0)/cost*100):0); }
-    else { roas=ad.roas||0; }
+    if(cost<5000) return '';                        // 비용 미미하면 제안 생략
+    const isG=aKey.indexOf('gg__')===0;             // 구글은 직접전환 ROAS로 판단
+    const roasOf=(a,per)=>{ if(!a) return null;
+      if(isG){ let dr=null; try{const dd=resolveDirect(a,aKey,per); if(dd&&dd.dRoas!=null) dr=dd.dRoas;}catch(e){} return (dr!=null)?dr:(a.cost?((a.directAmount||0)/a.cost*100):0); }
+      return a.roas||0; };
+    const roas3=roasOf(ad,'3');
+    const roas7=ad7?roasOf(ad7,'7'):null;           // 7일(지속성 확인). 없으면 3일만으로 판단.
     const conv=(ad.conv||0)+(ad.directCount||0);
-    if(cost<5000) return '';                       // 비용 미미하면 제안 생략
-    const wrap=(txt,col)=>`<span title="ROAS ${Math.round(roas)}% 기준 제안" style="display:inline-block;white-space:nowrap;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:${col};color:#fff;margin-bottom:3px">${txt}</span>`;
-    if(cost>=20000 && (conv===0 || roas<RD*0.5)) return wrap('■ 종료','var(--red)');
+    const sustainedLow=(roas7==null)||(roas7<RD);   // 7일도 부진 → 지속 부진(되돌림 아님)
+    const sustainedWin=(roas7==null)||(roas7>=RW);  // 7일도 양호 → 지속 우수(반짝 아님)
+    const tip=`3일 ROAS ${Math.round(roas3)}%`+(roas7!=null?` / 7일 ${Math.round(roas7)}%`:'')+` · 학습(평균회귀) 반영: 3·7일 지속 시에만 제안`;
+    const wrap=(txt,col)=>`<span title="${tip}" style="display:inline-block;white-space:nowrap;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:${col};color:#fff;margin-bottom:3px">${txt}</span>`;
+    // 종료: 비용 있고 (전환0 또는 3일 매우낮음) + 7일도 부진(지속)
+    if(cost>=20000 && (conv===0 || roas3<RD*0.5) && sustainedLow) return wrap('■ 종료','var(--red)');
     let dir,pct,col,arrow;
-    if(roas<RD){ dir='감액'; pct=50; col='var(--red)'; arrow='▼'; }
-    else if(roas<RW){ dir='감액'; pct=30; col='var(--yellow)'; arrow='▼'; }
-    else if(roas>=RW*2){ dir='증액'; pct=50; col='var(--green)'; arrow='▲'; }
-    else if(roas>=RW+100){ dir='증액'; pct=30; col='var(--green)'; arrow='▲'; }
-    else return '';                                 // 유지 → 표시 안 함
+    if(roas3<RD && sustainedLow){ dir='감액'; pct=50; col='var(--red)'; arrow='▼'; }
+    else if(roas3<RW && (roas7==null||roas7<RW)){ dir='감액'; pct=30; col='var(--yellow)'; arrow='▼'; }
+    else if(roas3>=RW*2 && sustainedWin){ dir='증액'; pct=50; col='var(--green)'; arrow='▲'; }
+    else if(roas3>=RW+100 && sustainedWin){ dir='증액'; pct=30; col='var(--green)'; arrow='▲'; }
+    else return '';                                 // 유지/단발변동 → 표시 안 함(되돌림 가능)
     const sign=dir==='증액'?'+':'-';
     const won=Math.round(cost*pct/100/1000)*1000;   // 천원 단위
     const wonTxt=won>0?` ${sign}${won.toLocaleString('ko-KR')}원`:'';
@@ -1683,7 +1690,7 @@ function adSuggestChip(ad, aKey){
   }catch(e){ return ''; }
 }
 function adRowCells(ad, ad7, aKey, nameStyle){
-  const _sug = adSuggestChip(ad, aKey);   // 제안을 소재명 위에 표시
+  const _sug = adSuggestChip(ad, ad7, aKey);   // 제안을 소재명 위에 표시(3·7일 함께 판단)
   const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
   if(dualMode){
     const h7 = ad7!=null;
