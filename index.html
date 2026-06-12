@@ -49,6 +49,16 @@ window.remoteLoadData = async function(brand,period){
        return d.exists ? JSON.parse(d.data().json||'null') : null; }
   catch(e){ console.warn('데이터 로드 실패', e); return null; }
 };
+// 일자별 전체기록(dailyHistory) 로딩 → {date: rec}. 브라우저 localStorage 기록의 손상/유실을 클라우드로 복원.
+window.remoteLoadHistory = async function(brand){
+  if(!window._db||!brand) return null;
+  try{
+    const snap = await window._db.collection('dailyHistory').where('brand','==',brand).get();
+    const out={};
+    snap.forEach(function(doc){ try{ const d=doc.data(); if(d&&d.date) out[d.date]=JSON.parse(d.json); }catch(e){} });
+    return out;
+  }catch(e){ console.warn('history 로드 실패', e); return null; }
+};
 
 // ── 보호 액션(secureActions) 저장/로드/실시간 ──
 window.remoteSaveActions = async function(brand,date,actionsObj){
@@ -2212,6 +2222,27 @@ function renderHistoryChips(){
     return `<div class="hist-chip" onclick="loadHistoryDate('${d}')">📅 ${fmtDateKo(d)} <span style="color:var(--muted);font-size:10px">(${count}건)</span><button class="hist-del" onclick="deleteHistDate(event,'${d}')" title="삭제">✕</button></div>`;
   }).join('');
 }
+// 클라우드 일자별 기록(dailyHistory)을 localStorage로 동기화 → 손상/유실된 일자 기록을 진짜 데이터로 복원.
+// 액션은 보존: 로컬 액션 + secureActions 병합(성과 부분만 클라우드로 덮어씀).
+let _histSynced=null;
+async function syncHistoryFromCloud(brand){
+  if(!window.remoteLoadHistory || _histSynced===brand) return;
+  _histSynced=brand;
+  try{
+    const cloud = await remoteLoadHistory(brand);
+    if(!cloud || !Object.keys(cloud).length) return;
+    const hist = loadHistoryData(); let changed=false;
+    for(const date of Object.keys(cloud)){
+      const rec = cloud[date]; if(!rec) continue;
+      const localAct = (hist[date] && hist[date].actions) ? hist[date].actions : {};
+      let act = Object.assign({}, localAct);
+      try{ const ra = await remoteLoadActions(brand, date); if(ra) act = Object.assign(act, ra); }catch(e){}
+      hist[date] = Object.assign({}, rec, {actions: act});   // 성과=클라우드(정확), 액션=보존
+      changed=true;
+    }
+    if(changed){ localStorage.setItem(histKey(), JSON.stringify(hist)); renderHistoryChips(); }
+  }catch(e){ console.warn('history sync 실패', e); }
+}
 
 // ── Server data (Firestore 보호 데이터 자동 로드) ─────────────────────────────
 let serverManifest = null;
@@ -2231,6 +2262,7 @@ async function initServerData(brand){
     bar.style.display='flex';
     if(both){ await loadServerCombined(brand); }          // 기본: 3·7일 2줄 비교
     else { await loadServerData(brand, combos.includes('3d')?'3d':combos[0]); }
+    syncHistoryFromCloud(brand);                           // 일자별 기록을 클라우드로 복원(손상/유실 방지)
   }catch(e){ console.warn('manifest load 실패', e); bar.style.display='none'; }
 }
 function _setSrvActive(which){
