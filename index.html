@@ -384,8 +384,9 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
   </div>
 </div>
 
-<!-- 로그아웃 + 버전 (로그인 후 우상단) -->
+<!-- 로그아웃 + 버전 + 진단 (로그인 후 우상단) -->
 <div style="position:fixed;top:10px;right:12px;z-index:9000;display:flex;align-items:center;gap:8px">
+  <span id="diag" style="font-size:10px;color:var(--yellow)"></span>
   <span style="font-size:10px;color:var(--muted)">build 06-12</span>
   <button onclick="appLogout&&appLogout()" title="로그아웃"
     style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font-size:12px;cursor:pointer">로그아웃</button>
@@ -1587,7 +1588,7 @@ function buildTableHeader() {
     <th onclick="sortColumn('전환')">전환${getSortIndicator('전환')}</th>
     <th onclick="sortColumn('비용')">비용${getSortIndicator('비용')}</th>
     <th onclick="sortColumn('매출')">매출${getSortIndicator('매출')}</th>
-    <th title="캠페인/그룹=예산, 소재=자동 제안">예산/제안</th>
+    <th>예산(만원)</th>
     <th style="min-width:84px">액션</th>
     <th>직접CPA</th><th>직접ROAS</th><th>직접전환수</th><th>직접전환값</th>
     <th style="min-width:110px">메모</th>
@@ -1660,7 +1661,8 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
     + memoTd;
 }
 // 소재(광고) 행의 td들 생성. dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3일·7일 2줄로.
-// 소재별 인라인 액션 제안 칩 (증액 %/종료/감액 %) — ROAS 기준은 내 설정값 사용
+// 소재별 액션 제안 (소재명 위 표시). 유지는 숨기고 증액/감액/종료만. 증액·감액은 %와 금액(₩)도 제안.
+// 금액은 해당 소재의 기간 지출(cost) 대비 비율로 환산(천원 단위).
 function adSuggestChip(ad, aKey){
   try{
     const s=getSettings();
@@ -1672,18 +1674,23 @@ function adSuggestChip(ad, aKey){
     else { roas=ad.roas||0; }
     const conv=(ad.conv||0)+(ad.directCount||0);
     if(cost<5000) return '';                       // 비용 미미하면 제안 생략
-    let txt,col;
-    if(cost>=20000 && (conv===0 || roas<RD*0.5)){ txt='■ 종료'; col='var(--red)'; }
-    else if(roas<RD){ txt='▼ 감액 -50%'; col='var(--yellow)'; }
-    else if(roas<RW){ txt='▼ 감액 -30%'; col='var(--yellow)'; }
-    else if(roas>=RW*2){ txt='▲ 증액 +50%'; col='var(--green)'; }
-    else if(roas>=RW+100){ txt='▲ 증액 +30%'; col='var(--green)'; }
-    else { txt='유지'; col='var(--muted)'; }
-    return `<span title="ROAS ${Math.round(roas)}% 기준 제안" style="display:inline-block;white-space:nowrap;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;border:1px solid ${col};color:${col}">${txt}</span>`;
+    const wrap=(txt,col)=>`<span title="ROAS ${Math.round(roas)}% 기준 제안" style="display:inline-block;white-space:nowrap;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;background:${col};color:#fff;margin-bottom:3px">${txt}</span>`;
+    if(cost>=20000 && (conv===0 || roas<RD*0.5)) return wrap('■ 종료','var(--red)');
+    let dir,pct,col,arrow;
+    if(roas<RD){ dir='감액'; pct=50; col='var(--red)'; arrow='▼'; }
+    else if(roas<RW){ dir='감액'; pct=30; col='var(--yellow)'; arrow='▼'; }
+    else if(roas>=RW*2){ dir='증액'; pct=50; col='var(--green)'; arrow='▲'; }
+    else if(roas>=RW+100){ dir='증액'; pct=30; col='var(--green)'; arrow='▲'; }
+    else return '';                                 // 유지 → 표시 안 함
+    const sign=dir==='증액'?'+':'-';
+    const won=Math.round(cost*pct/100/1000)*1000;   // 천원 단위
+    const wonTxt=won>0?` ${sign}${won.toLocaleString('ko-KR')}원`:'';
+    return wrap(`${arrow} ${dir} ${sign}${pct}%${wonTxt}`, col);
   }catch(e){ return ''; }
 }
 function adRowCells(ad, ad7, aKey, nameStyle){
-  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}><span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
+  const _sug = adSuggestChip(ad, aKey);   // 제안을 소재명 위에 표시
+  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
   if(dualMode){
     const h7 = ad7!=null;
     const dd = resolveDirect(ad,aKey,'3');
@@ -1703,7 +1710,7 @@ function adRowCells(ad, ad7, aKey, nameStyle){
       + `<td>${ad.conv||0}개</td>`
       + dcell(ad.cost, h7?ad7.cost:null, 'won')
       + dcell(ad.rev,  h7?ad7.rev:null,  'won')
-      + `<td>${adSuggestChip(ad,aKey)}</td>`
+      + `<td></td>`
       + `<td>${actSel(aKey,false)}</td>`
       + dcell(dd.dCpa,  dd7?dd7.dCpa:null,  'cpa')
       + dcell(dd.dRoas, dd7?dd7.dRoas:null, 'roas')
@@ -1713,7 +1720,7 @@ function adRowCells(ad, ad7, aKey, nameStyle){
   }
   return nameTd
     + `<td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>`
-    + `<td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td>${adSuggestChip(ad,aKey)}</td><td>${actSel(aKey,false)}</td>`
+    + `<td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>`
     + directEl(ad,aKey)
     + `<td>${memoEl(aKey)}</td>`;
 }
@@ -2460,28 +2467,34 @@ function doLogin(){
     console.warn('login fail', e&&e.code);
   });
 }
+// 진단 표시(우상단) — 어디서 막히는지 화면에 보여줌
+function setDiag(s){ var e=document.getElementById('diag'); if(e) e.textContent=s; try{console.log('[diag]',s);}catch(_){} }
 // 로그인 후 자동 부팅 (보호 데이터가 있으면 브랜드 자동 선택)
 let _booted=false;
 async function bootApp(){
   if(_booted) return; _booted=true;
   try{
     const m = await remoteLoadManifest();
-    if(!m || !m.combos || !Object.keys(m.combos).length) return;
+    if(!m || !m.combos || !Object.keys(m.combos).length){ setDiag('로그인됨·데이터없음'); return; }
     let brand = localStorage.getItem('last_brand');
     if(!brand || !m.combos[brand]) brand = Object.keys(m.combos)[0];
     selectBrand(brand);
-  }catch(e){ /* 데이터 없음 → 브랜드 선택/수동 업로드 모드 */ }
+    setDiag('데이터 '+(m.date||'OK'));
+  }catch(e){ setDiag('데이터 로드오류: '+((e&&e.message)||e)); _booted=false; }
 }
 // 인증 상태에 따라 게이트 표시/숨김
-if(window._auth){
+if(window._auth && window._db){
+  setDiag('로그인 대기');
   window._auth.onAuthStateChanged(function(user){
     const gate=document.getElementById('login-gate');
-    if(user){ if(gate) gate.style.display='none'; bootApp(); }
-    else { _booted=false; if(gate){ gate.style.display='flex'; } }
+    if(user){ if(gate) gate.style.display='none'; setDiag('로그인됨·데이터 로딩…'); bootApp(); }
+    else { _booted=false; if(gate){ gate.style.display='flex'; } setDiag('로그아웃 상태'); }
   });
 } else {
-  // auth 미초기화(오프라인 등) → 게이트 숨기고 기존 동작
-  const gate=document.getElementById('login-gate'); if(gate) gate.style.display='none';
+  // ⚠️ Firebase 로드 실패(광고차단/네트워크) → 게이트 우회 금지. 명확히 에러 표시.
+  setDiag('Firebase 로드실패');
+  var gate=document.getElementById('login-gate'); if(gate) gate.style.display='flex';
+  var ge=document.getElementById('login-err'); if(ge){ ge.textContent='로그인 시스템을 불러오지 못했습니다. 광고차단 확장프로그램을 끄거나 다른 네트워크/브라우저(시크릿창)로 시도하세요.'; ge.style.display='block'; }
 }
 </script>
 </body>
