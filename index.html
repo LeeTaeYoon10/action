@@ -545,7 +545,7 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
       <div class="tabs" id="tabs" style="margin-bottom:0;border-bottom:none"></div>
       <div style="display:flex;gap:8px">
         <input class="search-input" id="search-input" type="text" placeholder="캠페인/광고명 검색…" onkeyup="filterAndRender()">
-        <button class="btn btn-ghost" onclick="showActionSuggest()" title="현재 데이터로 증액·감액·점검 후보를 자동 제안">💡 액션 제안</button>
+        <button class="btn btn-ghost" id="suggest-toggle" onclick="toggleSuggest()" title="소재 이름 위에 AI 제안(증액/감액/종료) 표시 켜기/끄기">💡 AI 제안 켜기</button>
         <button class="btn btn-ghost" onclick="showReport()">액션 리포트 보기</button>
         <button class="btn btn-ghost" onclick="downloadScreenshot()">📷 이미지 다운로드</button>
       </div>
@@ -1670,6 +1670,7 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
 //   낮은 건 오히려 회복. 그래서 "3일·7일이 함께 양호/부진"일 때만(지속적) 강한 제안. 단발 급등/급락은 제안 안 함.
 function adSuggestChip(ad, ad7, aKey){
   try{
+    if(!window.suggestOn) return '';                // 기본 꺼짐 — '💡 AI 제안' 버튼으로 켜야 표시
     const s=loadSettings();
     const RD=s.roas_danger||100, RW=s.roas_warn||150;
     const cost=ad.cost||0;
@@ -2331,6 +2332,16 @@ function deleteHistDate(e,date){
   renderHistoryChips(); renderDateList();
 }
 
+// 💡 AI 제안 인라인 표시 토글 (기본 꺼짐 → 버튼 클릭 시 소재명 위 표시)
+window.suggestOn = false;
+function toggleSuggest(){
+  window.suggestOn = !window.suggestOn;
+  const b=document.getElementById('suggest-toggle');
+  if(b){ b.textContent = window.suggestOn ? '💡 AI 제안 끄기' : '💡 AI 제안 켜기';
+         b.style.background = window.suggestOn ? 'var(--accent)' : '';
+         b.style.color = window.suggestOn ? '#fff' : ''; }
+  renderAll();
+}
 // ── 💡 액션 제안 (현재 데이터 + ROAS 기준으로 자동 분류) ──────────────────────
 function _suggestRows(data){
   const rows=[];
