@@ -1457,9 +1457,12 @@ function renderAll(){
   if(parsed.google&&Object.keys(parsed.google).length) tabs.push({id:'google',label:'구글', count:Object.keys(parsed.google).length});
   if(parsed.tiktok&&Object.keys(parsed.tiktok).length) tabs.push({id:'tiktok',label:'틱톡', count:Object.keys(parsed.tiktok).length});
   if(!tabs.length){document.getElementById('empty-state').style.display='block';return;}
+  // 다시 그릴 때 스크롤 위치 보존(엔터/클릭 시 실시간 동기화 리렌더로 맨 위로 튀던 버그 방지)
+  const _sx=window.scrollX, _sy=window.scrollY;
   activeTab=tabs[0].id;
   renderTabs(tabs); renderSummary(); renderTable(activeTab);
   document.getElementById('result').style.display='block';
+  if(_sx||_sy){ window.scrollTo(_sx,_sy); requestAnimationFrame(()=>window.scrollTo(_sx,_sy)); }
 }
 
 function renderTabs(tabs){
