@@ -2197,7 +2197,15 @@ function triggerAutoSave(){if(autoSaveTimer) clearTimeout(autoSaveTimer);autoSav
 // 다른 사람이 액션을 저장하면 새로고침 없이 즉시 화면에 반영.
 let _actionsUnsub = null;   // 현재 구독 해제 함수
 let _pendingRemote = null;  // 입력 중이라 보류된 원격 갱신
+// 키 순서 무관 안정 비교 — 내 저장이 서버에서 그대로 돌아온 에코를 식별(불필요한 리렌더 방지)
+function _stableStr(o){
+  if(o===null||typeof o!=='object') return JSON.stringify(o);
+  if(Array.isArray(o)) return '['+o.map(_stableStr).join(',')+']';
+  return '{'+Object.keys(o).sort().map(k=>JSON.stringify(k)+':'+_stableStr(o[k])).join(',')+'}';
+}
+function _actionsEqual(a,b){ return _stableStr(a||{})===_stableStr(b||{}); }
 function _applyRemoteActions(remoteActions){
+  if(_actionsEqual(remoteActions, actions)) return;  // 내용 동일(내 저장 에코) → 리렌더 안 함(스크롤 튐 방지)
   Object.keys(actions).forEach(k=>delete actions[k]);
   Object.assign(actions, remoteActions||{});
   try{ // 로컬 기록에도 동기화(재방문 시 일관성)
@@ -2211,6 +2219,7 @@ function subscribeLiveActions(brand, date){
   const live=document.getElementById('srv-live'); if(live) live.style.display='none';
   if(!window.remoteSubscribeActions || !brand || !date) return;
   _actionsUnsub = window.remoteSubscribeActions(brand, date, function(remoteActions){
+    if(_actionsEqual(remoteActions, actions)){ _pendingRemote=null; return; }  // 내 저장 에코 → 무시(보류도 안 함)
     const ae=document.activeElement;
     const editing = ae && (ae.tagName==='INPUT'||ae.tagName==='SELECT'||ae.tagName==='TEXTAREA');
     if(editing){ _pendingRemote=remoteActions; return; }  // 입력 중이면 보류(포커스 보호)
