@@ -315,6 +315,9 @@ tr.row-camp td:nth-child(6), tr.row-camp td:nth-child(13) { background: rgba(139
 .badge-pmax { display: inline-block; background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
 .badge-obj { display: inline-block; border: 1px solid; border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 5px; vertical-align: middle; }
 .ad-count { display: inline-block; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 10px; font-weight: 600; padding: 1px 6px; margin-left: 5px; vertical-align: middle; }
+.copy-name-btn { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 10px; line-height: 1; padding: 1px 5px; margin-left: 5px; border-radius: 5px; vertical-align: middle; transition: all 0.15s; }
+.copy-name-btn:hover { color: #c5d8ff; border-color: #4a6cff; background: rgba(74,108,255,0.12); }
+.copy-name-btn.copied { color: #fff; border-color: var(--green); background: var(--green); }
 
 /* ── Session banner ───────────────── */
 .session-banner { display: none; align-items: center; gap: 12px; background: rgba(79,127,255,0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px; }
@@ -1705,7 +1708,7 @@ function adSuggestChip(ad, ad7, aKey){
 }
 function adRowCells(ad, ad7, aKey, nameStyle){
   const _sug = adSuggestChip(ad, ad7, aKey);   // 제안을 소재명 위에 표시(3·7일 함께 판단)
-  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span></td>`;
+  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span>${copyBtn(ad.name)}</td>`;
   if(dualMode){
     const h7 = ad7!=null;
     const dd = resolveDirect(ad,aKey,'3');
@@ -1756,7 +1759,7 @@ function buildMetaTable(){
     const mIsABO=(camp.budget||0)===0 && mGrpBudgetSum>0;
     const mBudgetTd=mIsABO?`<td>${aboBudgetEl(cKey,camp,'meta__grp__')}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
     const mActTd=mIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
-    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
+    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${copyBtn(camp.name)}${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
       + summaryCells(ca, agg7('meta',camp.name,null), '<td><span class="m-na">–</span></td>', mBudgetTd, mActTd, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
@@ -1767,7 +1770,7 @@ function buildMetaTable(){
 
       if (!shouldShowRow(camp.name, grp.name)) return;
 
-      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>`
+      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span>${copyBtn(grp.name)}<span class="ad-count">${grp.ads.length}</span></td>`
         + summaryCells(ga, agg7('meta',camp.name,grp.name), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
         + `</tr>`;
       applySortToAds(grp.ads).forEach(ad=>{
@@ -1795,12 +1798,12 @@ function buildGoogleTable(){
     if (!shouldShowRow(camp.name)) return;
 
     if(camp.isPmax){
-      rows+=`<tr class="row-camp"><td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span><span class="badge-pmax">PMAX</span></td>`
+      rows+=`<tr class="row-camp"><td class="name-cell"><span title="${camp.name}">${shorten(camp.name)}</span>${copyBtn(camp.name)}<span class="badge-pmax">PMAX</span></td>`
         + summaryCells(ca, agg7('google',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
         + `</tr>`;
       return;
     }
-    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${camp.ads.length}</span></td>`
+    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${copyBtn(camp.name)}<span class="ad-count">${camp.ads.length}</span></td>`
       + summaryCells(ca, agg7('google',camp.name,null), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(cKey,camp.budget)}</td>`, `<td>${actSel(cKey,camp.budget>0)}</td>`, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     applySortToAds(camp.ads).forEach(ad=>{
@@ -1832,7 +1835,7 @@ function buildTikTokTable(){
     const tIsABO=(camp.budget||0)===0 && tGrpBudgetSum>0;
     const tBudgetTd=tIsABO?`<td>${aboBudgetEl(cKey,camp,'tk__grp__')}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
     const tActTd=tIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
-    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span><span class="ad-count">${cAdCnt}</span></td>`
+    rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${copyBtn(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
       + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, tBudgetTd, tActTd, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
@@ -1843,7 +1846,7 @@ function buildTikTokTable(){
 
       if (!shouldShowRow(camp.name, grp.name)) return;
 
-      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span><span class="ad-count">${grp.ads.length}</span></td>`
+      rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span>${copyBtn(grp.name)}<span class="ad-count">${grp.ads.length}</span></td>`
         + summaryCells(ga, agg7('tiktok',camp.name,grp.name), `<td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
         + `</tr>`;
       applySortToAds(grp.ads).forEach(ad=>{
@@ -2484,6 +2487,29 @@ function fmtWon(v){return Math.abs(Math.round(v)).toLocaleString('ko-KR')+'원';
 function fmtN(v){if(!v||v===0)return '<span class="m-na">–</span>';return Math.round(v).toLocaleString('ko-KR')+'건';}
 function fmtMan(v,raw=false){const n=parseNum(v);const m=Math.round(n/10000);return raw?String(m):(m>0?m+'만':'–');}
 function shorten(n,len=28){return n&&n.length>len?n.slice(0,len)+'…':(n||'');}
+
+// 이름 복사: 괄호( ( 또는 （ ) 앞부분까지만 복사. 다른 곳에 바로 붙여넣기용.
+function nameBeforeParen(s){
+  if(!s) return '';
+  s=String(s);
+  let i=s.length;
+  ['(','（'].forEach(p=>{const k=s.indexOf(p); if(k>=0&&k<i) i=k;});
+  return s.slice(0,i).trim();
+}
+function attrEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function copyBtn(name){
+  return `<button class="copy-name-btn" data-copy="${attrEsc(name)}" onclick="copyName(event,this)" title="이름 복사 (괄호 앞까지)">복사</button>`;
+}
+async function copyName(ev, btn){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  const txt=nameBeforeParen(btn.dataset.copy||'');
+  try{
+    if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(txt); }
+    else{ const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+    const old=btn.textContent; btn.textContent='✓'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent=old; btn.classList.remove('copied'); }, 900);
+  }catch(e){ console.warn('copy fail', e); alert('복사 실패: '+txt); }
+}
 
 function mCls(v){
   const t=getThresh();
