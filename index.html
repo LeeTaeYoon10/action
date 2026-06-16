@@ -1565,9 +1565,14 @@ function renderSummary(){
 
 function renderTable(tab){
   const el=document.getElementById('tab-content');
+  // 표는 .table-wrap(overflow:auto) 안에서 스크롤됨 → innerHTML 교체 시 scrollTop이 0으로 리셋.
+  // 다시 그리기 전 내부 스크롤 위치를 저장했다가 새 .table-wrap에 복원(맨 위로 튀던 버그 방지).
+  const oldWrap=el.querySelector('.table-wrap');
+  const st=oldWrap?oldWrap.scrollTop:0, sl=oldWrap?oldWrap.scrollLeft:0;
   if(tab==='meta')   el.innerHTML=buildMetaTable();
   if(tab==='google') el.innerHTML=buildGoogleTable();
   if(tab==='tiktok') el.innerHTML=buildTikTokTable();
+  if(st||sl){ const nw=el.querySelector('.table-wrap'); if(nw){ nw.scrollTop=st; nw.scrollLeft=sl; } }
 }
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
@@ -1708,7 +1713,7 @@ function adSuggestChip(ad, ad7, aKey){
 }
 function adRowCells(ad, ad7, aKey, nameStyle){
   const _sug = adSuggestChip(ad, ad7, aKey);   // 제안을 소재명 위에 표시(3·7일 함께 판단)
-  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span>${copyBtn(ad.name)}</td>`;
+  const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span>${copyBtn(ad.name,'ad')}</td>`;
   if(dualMode){
     const h7 = ad7!=null;
     const dd = resolveDirect(ad,aKey,'3');
@@ -2496,13 +2501,22 @@ function nameBeforeParen(s){
   ['(','（'].forEach(p=>{const k=s.indexOf(p); if(k>=0&&k<i) i=k;});
   return s.slice(0,i).trim();
 }
+// 소재명 전용: 앞쪽 숫자 세그먼트(번호_날짜)를 떼고 첫 비숫자 세그먼트부터(예 001_260303_hy_… → hy_…)
+function stripNumPrefix(s){
+  const parts=String(s||'').split('_');
+  let i=0;
+  while(i<parts.length-1 && /^\d+$/.test(parts[i])) i++;
+  return parts.slice(i).join('_');
+}
 function attrEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function copyBtn(name){
-  return `<button class="copy-name-btn" data-copy="${attrEsc(name)}" onclick="copyName(event,this)" title="이름 복사 (괄호 앞까지)">복사</button>`;
+function copyBtn(name, mode){
+  const t = mode==='ad' ? '소재 이름 복사 (번호·날짜 제외, 괄호 앞까지)' : '이름 복사 (괄호 앞까지)';
+  return `<button class="copy-name-btn" data-copy="${attrEsc(name)}"${mode?` data-mode="${mode}"`:''} onclick="copyName(event,this)" title="${t}">복사</button>`;
 }
 async function copyName(ev, btn){
   if(ev){ ev.stopPropagation(); ev.preventDefault(); }
-  const txt=nameBeforeParen(btn.dataset.copy||'');
+  let txt=nameBeforeParen(btn.dataset.copy||'');
+  if(btn.dataset.mode==='ad') txt=stripNumPrefix(txt);   // 소재는 번호·날짜도 제거
   try{
     if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(txt); }
     else{ const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
