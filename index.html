@@ -1169,14 +1169,20 @@ function parseGoogleCSV(file){
               // 2차: 활성 광고만 캠페인에 추가
               for(let i=headerIdx+1;i<r.data.length;i++){
                 const row=r.data[i];
-                const adSt=String(row[iAdSt]||'').trim();
-                if(adSt!=='사용중') continue;
-
                 const camp=String(row[iCamp]||'').trim();
                 if(!camp||!campaigns[camp]) continue;
 
                 const ad=iAd>=0?String(row[iAd]||'').trim():(String(row[col('긴 광고 제목 1')]||'').trim());
                 const cost    = parseNum(row[iCost]);
+
+                // 라이브(게재중) 소재만 포함.
+                // 정상: '광고 상태'가 '사용중'인 것만.
+                // 폴백: 구글 export가 '광고 상태'를 빈 값으로 내보내는 경우(2026-06-18 사고)
+                //       상태로 못 거르므로 비용>0인 소재만 포함(라이브 근사).
+                const adSt=String(row[iAdSt]||'').trim();
+                if(adSt){ if(adSt!=='사용중') continue; }
+                else { if(!(cost>0)) continue; }
+
                 const convVal = parseNum(row[iConvVal]);
                 const cpa     = parseNum(row[iCpa]);
                 const ctr     = parseFloat(String(row[iCtr]||'').replace('%',''))||0;
@@ -2519,13 +2525,17 @@ function stripNumPrefix(s){
 }
 function attrEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function copyBtn(name, mode){
-  const t = mode==='ad' ? '소재 이름 복사 (번호·날짜 제외, 괄호 앞까지)' : '이름 복사 (괄호 앞까지)';
+  const t = mode==='ad' ? '소재 이름 복사 (번호·날짜 제외, 괄호 포함)' : '이름 복사 (괄호 앞까지)';
   return `<button class="copy-name-btn" data-copy="${attrEsc(name)}"${mode?` data-mode="${mode}"`:''} onclick="copyName(event,this)" title="${t}">복사</button>`;
 }
 async function copyName(ev, btn){
   if(ev){ ev.stopPropagation(); ev.preventDefault(); }
-  let txt=nameBeforeParen(btn.dataset.copy||'');
-  if(btn.dataset.mode==='ad') txt=stripNumPrefix(txt);   // 소재는 번호·날짜도 제거
+  let txt;
+  if(btn.dataset.mode==='ad'){
+    txt=stripNumPrefix(String(btn.dataset.copy||'').trim());   // 소재는 번호·날짜만 제거, 괄호는 그대로 포함
+  }else{
+    txt=nameBeforeParen(btn.dataset.copy||'');   // 캠페인·그룹은 괄호 앞까지만
+  }
   try{
     if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(txt); }
     else{ const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
