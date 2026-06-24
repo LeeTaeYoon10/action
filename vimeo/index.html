@@ -29,6 +29,7 @@
   th .arrow{ font-size:11px; opacity:.8; }
   td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
   .pill{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#3a2a2a; color:#f0a; }
+  .teamtag{ display:inline-block; padding:1px 7px; border-radius:6px; font-size:12px; background:#222733; color:var(--sub); margin-left:6px; }
   .sec{ margin-top:28px; }
   .sec h2{ font-size:15px; margin-bottom:12px; font-weight:600; }
   canvas{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
@@ -39,6 +40,12 @@
   input:focus,select:focus{ border-color:var(--accent); }
   #search{ flex:1; min-width:160px; }
   .count{ font-size:12px; color:var(--sub); }
+  .tabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .tab{ padding:8px 16px; border:1px solid var(--line); border-radius:10px; background:var(--card);
+        color:var(--sub); cursor:pointer; font-size:14px; }
+  .tab.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .split{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+  @media(max-width:760px){ .split{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -67,20 +74,29 @@
   </div>
 
   <div class="sec">
-    <h2>브랜드별 대역폭</h2>
-    <div class="card">
-      <div class="toolbar">
-        <select id="weekSel" title="주차 선택"></select>
-        <input id="search" placeholder="브랜드 검색…" autocomplete="off">
-        <span class="count" id="rowCount"></span>
+    <div class="tabs">
+      <div class="tab active" id="tabBrand">브랜드별</div>
+      <div class="tab" id="tabTeam">팀별</div>
+    </div>
+    <div class="toolbar">
+      <select id="weekSel" title="주차 선택"></select>
+      <input id="search" placeholder="검색…" autocomplete="off">
+      <span class="count" id="rowCount"></span>
+    </div>
+    <div class="split">
+      <div class="card">
+        <table id="mainTable">
+          <thead><tr>
+            <th id="thName" class="sortable">브랜드 <span class="arrow" id="arName"></span></th>
+            <th id="thGB" class="sortable num">대역폭 (GB) <span class="arrow" id="arGB">▼</span></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <table id="brandTable">
-        <thead><tr>
-          <th id="thBrand" class="sortable">브랜드 <span class="arrow" id="arBrand"></span></th>
-          <th id="thGB" class="sortable num">대역폭 (GB) <span class="arrow" id="arGB">▼</span></th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="card">
+        <div class="muted" id="pieTitle" style="margin-bottom:8px">브랜드별 비중</div>
+        <canvas id="pie" height="240"></canvas>
+      </div>
     </div>
   </div>
 
@@ -91,88 +107,149 @@
 
   <div class="sec muted" style="margin-top:32px">
     연간 운영 목표 한도 1,000TB · 매주 금요일 전주(월~일) 자동 집계 ·
-    Vimeo 콘텐츠 폴더(팀/브랜드)별 대역폭 · 리칼지메디는 Vimeo 미사용으로 제외
+    Vimeo 콘텐츠 폴더별 대역폭 · 리칼지메디 미사용·mudit·onexia 제외
   </div>
 
 <script>
 const fmt = n => n==null ? "–" : n.toLocaleString("ko-KR",{maximumFractionDigits:1});
-let DATA=null, weekIdx=0, q="", sortKey="gb", sortDir="desc";
-
+const PALETTE=["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#14b8a6","#ec4899","#84cc16",
+               "#06b6d4","#f97316","#6366f1","#10b981","#eab308","#f43f5e","#8b5cf6","#0ea5e9"];
 const $ = id => document.getElementById(id);
+let DATA=null, TEAM={}, weekIdx=0, q="", sortKey="gb", sortDir="desc", tab="brand";
+let pieChart=null, trendChart=null;
+
+function curWeek(){ return DATA.주간기록[weekIdx]; }
+
+function teamAgg(week){
+  const m={};
+  for(const [b,v] of Object.entries(week.브랜드)){
+    const t=TEAM[b]||"미지정";
+    if(!(t in m)) m[t]=0;
+    if(typeof v==="number") m[t]+=v;
+  }
+  return m;
+}
+
+function activeRows(){
+  if(tab==="brand"){
+    return Object.entries(curWeek().브랜드).map(([name,gb])=>({name,gb,team:TEAM[name]||"미지정"}));
+  } else {
+    return Object.entries(teamAgg(curWeek())).map(([name,gb])=>({name,gb,team:null}));
+  }
+}
 
 function renderTable(){
-  const wk = DATA.주간기록[weekIdx];
-  let rows = Object.entries(wk.브랜드).map(([brand,gb])=>({brand,gb}));
-  // 검색 필터
-  const term = q.trim().toLowerCase();
-  if(term) rows = rows.filter(r=>r.brand.toLowerCase().includes(term));
-  // 정렬
+  let rows = activeRows();
+  const term=q.trim().toLowerCase();
+  if(term) rows=rows.filter(r=>r.name.toLowerCase().includes(term) || (r.team||"").toLowerCase().includes(term));
   rows.sort((a,b)=>{
-    if(sortKey==="gb"){
-      const av=a.gb??-1, bv=b.gb??-1;
-      return sortDir==="asc"? av-bv : bv-av;
-    } else {
-      return sortDir==="asc"? a.brand.localeCompare(b.brand) : b.brand.localeCompare(a.brand);
-    }
+    if(sortKey==="gb"){ const av=a.gb??-1, bv=b.gb??-1; return sortDir==="asc"?av-bv:bv-av; }
+    return sortDir==="asc"? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
   });
-  const tb = document.querySelector("#brandTable tbody");
-  tb.innerHTML = rows.map(r=>
-    `<tr><td>${r.brand}</td><td class="num">${r.gb==null?'<span class="pill">수집실패</span>':fmt(r.gb)}</td></tr>`
-  ).join("");
-  $("rowCount").textContent = `${rows.length}개 브랜드`;
-  // 화살표
-  $("arBrand").textContent = sortKey==="brand" ? (sortDir==="asc"?"▲":"▼") : "";
-  $("arGB").textContent    = sortKey==="gb"    ? (sortDir==="asc"?"▲":"▼") : "";
-  // 선택 주 합계
-  const sum = Object.values(wk.브랜드).reduce((s,v)=>s+(typeof v==="number"?v:0),0);
+  const tb=document.querySelector("#mainTable tbody");
+  tb.innerHTML = rows.map(r=>{
+    const tag = tab==="brand" ? `<span class="teamtag">${r.team}</span>` : "";
+    const val = r.gb==null ? '<span class="pill">수집실패</span>' : fmt(r.gb);
+    return `<tr><td>${r.name}${tag}</td><td class="num">${val}</td></tr>`;
+  }).join("");
+  $("rowCount").textContent = `${rows.length}개 ${tab==="brand"?"브랜드":"팀"}`;
+  $("thName").firstChild.textContent = (tab==="brand"?"브랜드 ":"팀 ");
+  $("arName").textContent = sortKey==="name" ? (sortDir==="asc"?"▲":"▼") : "";
+  $("arGB").textContent   = sortKey==="gb"   ? (sortDir==="asc"?"▲":"▼") : "";
+  const sum = activeRows().reduce((s,r)=>s+(typeof r.gb==="number"?r.gb:0),0);
   $("weekSum").textContent = fmt(sum);
+  const wk=curWeek();
   $("weekRange").textContent = `${wk.주} (기록일 ${wk.기록일})`;
 }
 
-function setSort(key){
-  if(sortKey===key){ sortDir = sortDir==="asc"?"desc":"asc"; }
-  else { sortKey=key; sortDir = key==="gb"?"desc":"asc"; }
-  renderTable();
+function renderPie(){
+  let rows = activeRows().filter(r=>typeof r.gb==="number" && r.gb>0)
+                         .sort((a,b)=>b.gb-a.gb);
+  // 브랜드는 상위 12 + 기타
+  if(tab==="brand" && rows.length>12){
+    const top=rows.slice(0,12), rest=rows.slice(12).reduce((s,r)=>s+r.gb,0);
+    rows=top.concat([{name:"기타",gb:rest}]);
+  }
+  $("pieTitle").textContent = (tab==="brand"?"브랜드별":"팀별") + " 비중";
+  const labels=rows.map(r=>r.name), vals=rows.map(r=>r.gb);
+  if(pieChart) pieChart.destroy();
+  pieChart=new Chart($("pie"),{
+    type:"doughnut",
+    data:{ labels, datasets:[{ data:vals,
+      backgroundColor:labels.map((_,i)=>PALETTE[i%PALETTE.length]), borderWidth:0 }] },
+    options:{ responsive:true,
+      plugins:{ legend:{ position:"right", labels:{ color:"#9aa0aa", boxWidth:12, font:{size:11} } },
+        tooltip:{ callbacks:{ label:c=>{
+          const t=c.dataset.data.reduce((s,v)=>s+v,0);
+          return ` ${c.label}: ${fmt(c.parsed)} GB (${(c.parsed/t*100).toFixed(1)}%)`; } } } } }
+  });
 }
 
-fetch("data.json?v="+Date.now()).then(r=>r.json()).then(d=>{
-  DATA=d;
-  $("updated").textContent = "갱신 " + d.갱신시각;
-  $("capTB").textContent = fmt(d.연간한도_TB);
-  $("weekCount").textContent = (d.주간기록?.length||0) + "주";
-
-  const usedTB = (d.전체누적_GB||0)/1000;
-  $("usedTB").textContent = fmt(usedTB);
-  const pct = usedTB/d.연간한도_TB*100;
-  const bar = $("capBar");
-  bar.style.width = Math.min(pct,100)+"%";
-  bar.style.background = pct>=90?"var(--bad)":pct>=70?"var(--warn)":"var(--ok)";
-  $("capPct").textContent = "한도의 " + pct.toFixed(1) + "% 사용";
-
-  // 주차 선택
-  const sel=$("weekSel");
-  sel.innerHTML = d.주간기록.map((w,i)=>`<option value="${i}">${w.주}</option>`).join("");
-  sel.onchange = e=>{ weekIdx=+e.target.value; renderTable(); };
-  $("search").oninput = e=>{ q=e.target.value; renderTable(); };
-  $("thBrand").onclick = ()=>setSort("brand");
-  $("thGB").onclick = ()=>setSort("gb");
-  renderTable();
-
-  // 추이 차트(주차별 브랜드)
-  const weeks=d.주간기록;
-  const labels = weeks.map(w=>w.주.split(" ~ ")[0]).reverse();
-  const brands = [...new Set(weeks.flatMap(w=>Object.keys(w.브랜드)))];
-  const palette = ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#14b8a6","#ec4899","#84cc16","#06b6d4","#f97316"];
-  const datasets = brands.map((b,i)=>({
-    label:b, borderColor:palette[i%palette.length], backgroundColor:palette[i%palette.length],
-    tension:.3, spanGaps:true, data: weeks.map(w=>w.브랜드[b]).reverse()
+function renderTrend(){
+  const weeks=DATA.주간기록;
+  const labels=weeks.map(w=>w.주.split(" ~ ")[0]).reverse();
+  let keys, valOf;
+  if(tab==="brand"){
+    keys=[...new Set(weeks.flatMap(w=>Object.keys(w.브랜드)))];
+    valOf=(w,k)=>w.브랜드[k];
+  } else {
+    const aggs=weeks.map(teamAgg);
+    keys=[...new Set(aggs.flatMap(a=>Object.keys(a)))];
+    valOf=(w,k,i)=>aggs[i][k];
+  }
+  const datasets=keys.map((k,i)=>({
+    label:k, borderColor:PALETTE[i%PALETTE.length], backgroundColor:PALETTE[i%PALETTE.length],
+    tension:.3, spanGaps:true,
+    data: weeks.map((w,wi)=>valOf(w,k,wi)).reverse()
   }));
-  new Chart($("trend"),{ type:"line", data:{labels,datasets},
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart($("trend"),{ type:"line", data:{labels,datasets},
     options:{ responsive:true,
       plugins:{ legend:{ labels:{ color:"#9aa0aa", boxWidth:12, font:{size:11} } } },
       scales:{ x:{ ticks:{color:"#9aa0aa"}, grid:{color:"#2a2e38"} },
                y:{ ticks:{color:"#9aa0aa"}, grid:{color:"#2a2e38"} } } }
   });
+}
+
+function renderAll(){ renderTable(); renderPie(); renderTrend(); }
+
+function setTab(t){
+  tab=t;
+  $("tabBrand").classList.toggle("active", t==="brand");
+  $("tabTeam").classList.toggle("active", t==="team");
+  sortKey="gb"; sortDir="desc"; q=""; $("search").value="";
+  $("search").placeholder = t==="brand" ? "브랜드 검색…" : "팀 검색…";
+  renderAll();
+}
+function setSort(key){
+  if(sortKey===key) sortDir = sortDir==="asc"?"desc":"asc";
+  else { sortKey=key; sortDir = key==="gb"?"desc":"asc"; }
+  renderTable();
+}
+
+Promise.all([
+  fetch("data.json?v="+Date.now()).then(r=>r.json()),
+  fetch("team_map.json?v="+Date.now()).then(r=>r.json()).catch(()=>({}))
+]).then(([d,tm])=>{
+  DATA=d; TEAM=tm;
+  $("updated").textContent = "갱신 " + d.갱신시각;
+  $("capTB").textContent = fmt(d.연간한도_TB);
+  $("weekCount").textContent = (d.주간기록?.length||0) + "주";
+  const usedTB=(d.전체누적_GB||0)/1000, pct=usedTB/d.연간한도_TB*100;
+  $("usedTB").textContent = fmt(usedTB);
+  const bar=$("capBar"); bar.style.width=Math.min(pct,100)+"%";
+  bar.style.background = pct>=90?"var(--bad)":pct>=70?"var(--warn)":"var(--ok)";
+  $("capPct").textContent = "한도의 "+pct.toFixed(1)+"% 사용";
+
+  const sel=$("weekSel");
+  sel.innerHTML=d.주간기록.map((w,i)=>`<option value="${i}">${w.주}</option>`).join("");
+  sel.onchange=e=>{ weekIdx=+e.target.value; renderAll(); };
+  $("search").oninput=e=>{ q=e.target.value; renderTable(); };
+  $("thName").onclick=()=>setSort("name");
+  $("thGB").onclick=()=>setSort("gb");
+  $("tabBrand").onclick=()=>setTab("brand");
+  $("tabTeam").onclick=()=>setTab("team");
+  renderAll();
 }).catch(e=>{ $("updated").textContent="데이터를 불러오지 못했습니다: "+e; });
 </script>
 </body>
