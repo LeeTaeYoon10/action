@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vimeo 대역폭 사용 현황</title>
+<title>Vimeo Bandwidth Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{ --bg:#0f1115; --card:#1a1d24; --line:#2a2e38; --txt:#e8eaed; --sub:#9aa0aa;
@@ -23,18 +23,27 @@
   .bar > span{ display:block; height:100%; border-radius:6px; }
   table{ width:100%; border-collapse:collapse; }
   th,td{ text-align:left; padding:11px 12px; border-bottom:1px solid var(--line); font-size:14px; }
-  th{ color:var(--sub); font-weight:500; }
+  th{ color:var(--sub); font-weight:500; user-select:none; }
+  th.sortable{ cursor:pointer; }
+  th.sortable:hover{ color:var(--txt); }
+  th .arrow{ font-size:11px; opacity:.8; }
   td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
-  .pill{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#222733; color:var(--sub); }
+  .pill{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#3a2a2a; color:#f0a; }
   .sec{ margin-top:28px; }
   .sec h2{ font-size:15px; margin-bottom:12px; font-weight:600; }
   canvas{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
   a{ color:var(--accent); }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  input,select{ background:#11141a; border:1px solid var(--line); color:var(--txt);
+    border-radius:9px; padding:9px 12px; font-size:14px; outline:none; }
+  input:focus,select:focus{ border-color:var(--accent); }
+  #search{ flex:1; min-width:160px; }
+  .count{ font-size:12px; color:var(--sub); }
 </style>
 </head>
 <body>
   <header class="grid" style="gap:4px">
-    <h1>Vimeo 대역폭 사용 현황</h1>
+    <h1>Vimeo Bandwidth Dashboard</h1>
     <div class="muted" id="updated"></div>
   </header>
 
@@ -46,22 +55,30 @@
       <div class="muted" id="capPct" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h3>최근 주(전주) 합계</h3>
+      <h3>선택 주 합계</h3>
       <div><span class="big" id="weekSum">–</span> <span class="unit">GB</span></div>
       <div class="muted" id="weekRange" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h3>전체 측정 기간</h3>
-      <div class="big" style="font-size:18px" id="period">–</div>
+      <h3>기록 주차</h3>
+      <div class="big" id="weekCount" style="font-size:18px">–</div>
       <div class="muted" style="margin-top:8px">기준: Vimeo 애널리틱스 · 대역폭</div>
     </div>
   </div>
 
   <div class="sec">
-    <h2>브랜드별 — 최근 주</h2>
+    <h2>브랜드별 대역폭</h2>
     <div class="card">
+      <div class="toolbar">
+        <select id="weekSel" title="주차 선택"></select>
+        <input id="search" placeholder="브랜드 검색…" autocomplete="off">
+        <span class="count" id="rowCount"></span>
+      </div>
       <table id="brandTable">
-        <thead><tr><th>브랜드</th><th class="num">전주 대역폭 (GB)</th></tr></thead>
+        <thead><tr>
+          <th id="thBrand" class="sortable">브랜드 <span class="arrow" id="arBrand"></span></th>
+          <th id="thGB" class="sortable num">대역폭 (GB) <span class="arrow" id="arGB">▼</span></th>
+        </tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -79,55 +96,84 @@
 
 <script>
 const fmt = n => n==null ? "–" : n.toLocaleString("ko-KR",{maximumFractionDigits:1});
-fetch("data.json?v="+Date.now()).then(r=>r.json()).then(d=>{
-  document.getElementById("updated").textContent = "갱신 " + d.갱신시각;
-  document.getElementById("capTB").textContent = fmt(d.연간한도_TB);
-  document.getElementById("period").textContent = d.전체기간;
+let DATA=null, weekIdx=0, q="", sortKey="gb", sortDir="desc";
 
-  const usedTB = d.전체누적_GB/1000;
-  document.getElementById("usedTB").textContent = fmt(usedTB);
+const $ = id => document.getElementById(id);
+
+function renderTable(){
+  const wk = DATA.주간기록[weekIdx];
+  let rows = Object.entries(wk.브랜드).map(([brand,gb])=>({brand,gb}));
+  // 검색 필터
+  const term = q.trim().toLowerCase();
+  if(term) rows = rows.filter(r=>r.brand.toLowerCase().includes(term));
+  // 정렬
+  rows.sort((a,b)=>{
+    if(sortKey==="gb"){
+      const av=a.gb??-1, bv=b.gb??-1;
+      return sortDir==="asc"? av-bv : bv-av;
+    } else {
+      return sortDir==="asc"? a.brand.localeCompare(b.brand) : b.brand.localeCompare(a.brand);
+    }
+  });
+  const tb = document.querySelector("#brandTable tbody");
+  tb.innerHTML = rows.map(r=>
+    `<tr><td>${r.brand}</td><td class="num">${r.gb==null?'<span class="pill">수집실패</span>':fmt(r.gb)}</td></tr>`
+  ).join("");
+  $("rowCount").textContent = `${rows.length}개 브랜드`;
+  // 화살표
+  $("arBrand").textContent = sortKey==="brand" ? (sortDir==="asc"?"▲":"▼") : "";
+  $("arGB").textContent    = sortKey==="gb"    ? (sortDir==="asc"?"▲":"▼") : "";
+  // 선택 주 합계
+  const sum = Object.values(wk.브랜드).reduce((s,v)=>s+(typeof v==="number"?v:0),0);
+  $("weekSum").textContent = fmt(sum);
+  $("weekRange").textContent = `${wk.주} (기록일 ${wk.기록일})`;
+}
+
+function setSort(key){
+  if(sortKey===key){ sortDir = sortDir==="asc"?"desc":"asc"; }
+  else { sortKey=key; sortDir = key==="gb"?"desc":"asc"; }
+  renderTable();
+}
+
+fetch("data.json?v="+Date.now()).then(r=>r.json()).then(d=>{
+  DATA=d;
+  $("updated").textContent = "갱신 " + d.갱신시각;
+  $("capTB").textContent = fmt(d.연간한도_TB);
+  $("weekCount").textContent = (d.주간기록?.length||0) + "주";
+
+  const usedTB = (d.전체누적_GB||0)/1000;
+  $("usedTB").textContent = fmt(usedTB);
   const pct = usedTB/d.연간한도_TB*100;
-  const bar = document.getElementById("capBar");
+  const bar = $("capBar");
   bar.style.width = Math.min(pct,100)+"%";
   bar.style.background = pct>=90?"var(--bad)":pct>=70?"var(--warn)":"var(--ok)";
-  document.getElementById("capPct").textContent = "한도의 " + pct.toFixed(1) + "% 사용";
+  $("capPct").textContent = "한도의 " + pct.toFixed(1) + "% 사용";
 
-  const weeks = d.주간기록 || [];
-  const latest = weeks[0];
-  if(latest){
-    document.getElementById("weekRange").textContent = latest.주 + " (기록일 " + latest.기록일 + ")";
-    const tb = document.querySelector("#brandTable tbody");
-    let sum=0;
-    Object.entries(latest.브랜드)
-      .sort((a,b)=>((b[1]??-1)-(a[1]??-1)))   // 사용량 내림차순
-      .forEach(([b,v])=>{
-        if(typeof v==="number") sum+=v;
-        tb.insertAdjacentHTML("beforeend",
-          `<tr><td>${b}</td><td class="num">${v==null?'<span class="pill">수집실패</span>':fmt(v)}</td></tr>`);
-      });
-    document.getElementById("weekSum").textContent = fmt(sum);
-  }
+  // 주차 선택
+  const sel=$("weekSel");
+  sel.innerHTML = d.주간기록.map((w,i)=>`<option value="${i}">${w.주}</option>`).join("");
+  sel.onchange = e=>{ weekIdx=+e.target.value; renderTable(); };
+  $("search").oninput = e=>{ q=e.target.value; renderTable(); };
+  $("thBrand").onclick = ()=>setSort("brand");
+  $("thGB").onclick = ()=>setSort("gb");
+  renderTable();
 
-  // 추이 차트 (브랜드별 라인)
+  // 추이 차트(주차별 브랜드)
+  const weeks=d.주간기록;
   const labels = weeks.map(w=>w.주.split(" ~ ")[0]).reverse();
   const brands = [...new Set(weeks.flatMap(w=>Object.keys(w.브랜드)))];
-  const palette = ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#14b8a6"];
+  const palette = ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#14b8a6","#ec4899","#84cc16","#06b6d4","#f97316"];
   const datasets = brands.map((b,i)=>({
     label:b, borderColor:palette[i%palette.length], backgroundColor:palette[i%palette.length],
-    tension:.3, spanGaps:true,
-    data: weeks.map(w=>w.브랜드[b]).reverse()
+    tension:.3, spanGaps:true, data: weeks.map(w=>w.브랜드[b]).reverse()
   }));
-  new Chart(document.getElementById("trend"),{
-    type:"line",
-    data:{labels,datasets},
+  new Chart($("trend"),{ type:"line", data:{labels,datasets},
     options:{ responsive:true,
-      plugins:{ legend:{ labels:{ color:"#9aa0aa" } } },
+      plugins:{ legend:{ labels:{ color:"#9aa0aa", boxWidth:12, font:{size:11} } } },
       scales:{ x:{ ticks:{color:"#9aa0aa"}, grid:{color:"#2a2e38"} },
                y:{ ticks:{color:"#9aa0aa"}, grid:{color:"#2a2e38"} } } }
   });
-}).catch(e=>{
-  document.getElementById("updated").textContent = "데이터를 불러오지 못했습니다: "+e;
-});
+}).catch(e=>{ $("updated").textContent="데이터를 불러오지 못했습니다: "+e; });
 </script>
 </body>
 </html>
