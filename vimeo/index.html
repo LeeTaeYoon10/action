@@ -62,7 +62,7 @@
       <div class="muted" id="capPct" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h3>선택 주 합계</h3>
+      <h3>선택 기간 합계</h3>
       <div><span class="big" id="weekSum">–</span> <span class="unit">GB</span></div>
       <div class="muted" id="weekRange" style="margin-top:8px"></div>
     </div>
@@ -79,7 +79,9 @@
       <div class="tab" id="tabTeam">팀별</div>
     </div>
     <div class="toolbar">
-      <select id="weekSel" title="주차 선택"></select>
+      <select id="weekStart" title="시작 주"></select>
+      <span class="muted">~</span>
+      <select id="weekEnd" title="종료 주"></select>
       <input id="search" placeholder="검색…" autocomplete="off">
       <span class="count" id="rowCount"></span>
     </div>
@@ -115,14 +117,31 @@ const fmt = n => n==null ? "–" : n.toLocaleString("ko-KR",{maximumFractionDigi
 const PALETTE=["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#14b8a6","#ec4899","#84cc16",
                "#06b6d4","#f97316","#6366f1","#10b981","#eab308","#f43f5e","#8b5cf6","#0ea5e9"];
 const $ = id => document.getElementById(id);
-let DATA=null, TEAM={}, weekIdx=0, q="", sortKey="gb", sortDir="desc", tab="brand";
+let DATA=null, TEAM={}, weekStartIdx=0, weekEndIdx=0, q="", sortKey="gb", sortDir="desc", tab="brand";
 let pieChart=null, trendChart=null;
 
-function curWeek(){ return DATA.주간기록[weekIdx]; }
+// 선택된 주 범위(시작~종료, 순서 무관)의 주 객체 배열
+function selWeeks(){
+  const a=Math.min(weekStartIdx,weekEndIdx), b=Math.max(weekStartIdx,weekEndIdx);
+  return DATA.주간기록.slice(a,b+1);
+}
 
-function teamAgg(week){
+// 선택 범위의 브랜드별 대역폭 합산. 한 주도 숫자가 없으면 null(수집실패) 유지
+function aggBrands(){
+  const m={}, seen={};
+  for(const w of selWeeks()){
+    for(const [b,v] of Object.entries(w.브랜드)){
+      if(!(b in m)){ m[b]=0; seen[b]=false; }
+      if(typeof v==="number"){ m[b]+=v; seen[b]=true; }
+    }
+  }
+  for(const b in m){ if(!seen[b]) m[b]=null; }
+  return m;
+}
+
+function teamAgg(brands){
   const m={};
-  for(const [b,v] of Object.entries(week.브랜드)){
+  for(const [b,v] of Object.entries(brands)){
     const t=TEAM[b]||"미지정";
     if(!(t in m)) m[t]=0;
     if(typeof v==="number") m[t]+=v;
@@ -131,10 +150,11 @@ function teamAgg(week){
 }
 
 function activeRows(){
+  const brands=aggBrands();
   if(tab==="brand"){
-    return Object.entries(curWeek().브랜드).map(([name,gb])=>({name,gb,team:TEAM[name]||"미지정"}));
+    return Object.entries(brands).map(([name,gb])=>({name,gb,team:TEAM[name]||"미지정"}));
   } else {
-    return Object.entries(teamAgg(curWeek())).map(([name,gb])=>({name,gb,team:null}));
+    return Object.entries(teamAgg(brands)).map(([name,gb])=>({name,gb,team:null}));
   }
 }
 
@@ -158,8 +178,13 @@ function renderTable(){
   $("arGB").textContent   = sortKey==="gb"   ? (sortDir==="asc"?"▲":"▼") : "";
   const sum = activeRows().reduce((s,r)=>s+(typeof r.gb==="number"?r.gb:0),0);
   $("weekSum").textContent = fmt(sum);
-  const wk=curWeek();
-  $("weekRange").textContent = `${wk.주} (기록일 ${wk.기록일})`;
+  const ws=selWeeks();
+  if(ws.length===1){
+    $("weekRange").textContent = `${ws[0].주} (기록일 ${ws[0].기록일})`;
+  } else {
+    const from=ws[0].주.split(" ~ ")[0], to=ws[ws.length-1].주.split(" ~ ")[1];
+    $("weekRange").textContent = `${from} ~ ${to} (${ws.length}주 합산)`;
+  }
 }
 
 function renderPie(){
@@ -186,21 +211,21 @@ function renderPie(){
 }
 
 function renderTrend(){
-  const weeks=DATA.주간기록;
-  const labels=weeks.map(w=>w.주.split(" ~ ")[0]).reverse();
+  const weeks=DATA.주간기록;  // 오래된 주 → 최신 주 순(왼쪽=과거, 오른쪽=최신)
+  const labels=weeks.map(w=>w.주.split(" ~ ")[0]);
   let keys, valOf;
   if(tab==="brand"){
     keys=[...new Set(weeks.flatMap(w=>Object.keys(w.브랜드)))];
     valOf=(w,k)=>w.브랜드[k];
   } else {
-    const aggs=weeks.map(teamAgg);
+    const aggs=weeks.map(w=>teamAgg(w.브랜드));
     keys=[...new Set(aggs.flatMap(a=>Object.keys(a)))];
     valOf=(w,k,i)=>aggs[i][k];
   }
   const datasets=keys.map((k,i)=>({
     label:k, borderColor:PALETTE[i%PALETTE.length], backgroundColor:PALETTE[i%PALETTE.length],
     tension:.3, spanGaps:true,
-    data: weeks.map((w,wi)=>valOf(w,k,wi)).reverse()
+    data: weeks.map((w,wi)=>valOf(w,k,wi))
   }));
   if(trendChart) trendChart.destroy();
   trendChart=new Chart($("trend"),{ type:"line", data:{labels,datasets},
@@ -241,9 +266,14 @@ Promise.all([
   bar.style.background = pct>=90?"var(--bad)":pct>=70?"var(--warn)":"var(--ok)";
   $("capPct").textContent = "한도의 "+pct.toFixed(1)+"% 사용";
 
-  const sel=$("weekSel");
-  sel.innerHTML=d.주간기록.map((w,i)=>`<option value="${i}">${w.주}</option>`).join("");
-  sel.onchange=e=>{ weekIdx=+e.target.value; renderAll(); };
+  const last=d.주간기록.length-1;
+  weekStartIdx=last; weekEndIdx=last;  // 기본: 최신 주 단독
+  const opts=d.주간기록.map((w,i)=>`<option value="${i}">${w.주}</option>`).join("");
+  const s1=$("weekStart"), s2=$("weekEnd");
+  s1.innerHTML=opts; s2.innerHTML=opts;
+  s1.value=last; s2.value=last;
+  s1.onchange=e=>{ weekStartIdx=+e.target.value; renderAll(); };
+  s2.onchange=e=>{ weekEndIdx=+e.target.value; renderAll(); };
   $("search").oninput=e=>{ q=e.target.value; renderTable(); };
   $("thName").onclick=()=>setSort("name");
   $("thGB").onclick=()=>setSort("gb");
