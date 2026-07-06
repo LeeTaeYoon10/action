@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang=ko><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>틱톡·구글 소재 직접성과 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1115;color:#e6e8ee;font-family:'Malgun Gothic',system-ui,sans-serif;padding:20px;max-width:1100px;margin:0 auto;line-height:1.5}
+h1{font-size:22px;margin-bottom:4px}.sub{color:#8b90a0;font-size:13px;margin-bottom:18px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{padding:9px 20px;background:#1a1d26;border:1px solid #2a2e3a;border-radius:8px;cursor:pointer;font-weight:600}
+.tab.on{background:#3b5bdb;border-color:#3b5bdb}
+.card{background:#171a22;border:1px solid #262a36;border-radius:12px;padding:18px;margin-bottom:16px}
+.card h2{font-size:16px;margin-bottom:12px;color:#a9b4ff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 9px;text-align:right;border-bottom:1px solid #232733}
+th{color:#8b90a0;font-weight:600;text-align:right}td:first-child,th:first-child{text-align:left}
+.good{color:#51cf66;font-weight:700}.bad{color:#ff6b6b;font-weight:700}.mid{color:#ffd43b}
+.note{background:#1e2330;border-left:3px solid #3b5bdb;padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.chwrap{max-width:520px;margin:0 auto}
+.sml{font-size:11px;color:#8b90a0}
+.pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;background:#232a3d;margin-left:6px}
+</style></head><body>
+<h1>틱톡·구글 소재 직접성과 분석</h1>
+<div class=sub>성과기준 cafe24 직접ROAS/CPA (UTM 라스트클릭) · 6월 4주(6/2~29) · 2026-07-06</div>
+<div class=tabs><div class=tab data-b=grani>그래니 살라</div><div class=tab data-b=basetune>베이스튠</div></div>
+<div id=app></div>
+<div class=sub style="margin-top:20px">틱톡 CSV 합계행 제외 보정 완료 · 틱톡 소재조인 커버리지는 채널별 상이(총량은 조인 무관·정확) · 메타 어트리뷰션 대비 직접기준</div>
+<script>
+const DATA={"grani": {"totals": {"메타": [52517965, 58314100, 1.11, 560, 65471, 0.86, 93782, 104132], "틱톡": [12427023, 35304600, 2.84, 320, 546004, 0.06, 38834, 110327], "구글": [22574092, 23198600, 1.03, 221, 37482, 0.59, 102145, 104971]}, "cov": {"틱톡": "50", "구글": "92"}, "note": "틱톡이 압도적 최고효율(2.84)·최저CPA인데 투입은 메타의 1/4. 구글은 손익분기(1.03), 유머·인물 소구 죽음.", "ch": {"틱톡": {"n": 37, "matched": 26, "appeal": [["유머/패러디", 248543, 2.24, 2], ["카피후킹", 2047564, 1.78, 7], ["후기/인용", 152601, 1.69, 1], ["인물후기", 319947, 1.62, 2], ["제품데모", 5941561, 1.56, 12], ["기타", 627074, 1.55, 1], ["일상/실사", 2563249, 0.94, 1]], "fmt": [["T", 1888248, 1.79, 10], ["AI", 1052236, 1.71, 3], ["AN", 3774672, 1.62, 11], ["H", 2622134, 1.49, 1], ["AIP", 2563249, 0.94, 1]], "maker": [["ty", 2557584, 1.87, 9], ["(무)", 319947, 1.62, 2], ["ey", 5177499, 1.51, 9], ["hj", 3845509, 1.17, 6]], "top": [["001_260604_qt_옥살산프리_T(ty)", 6.28, 145690, 8], ["002_260521_pdz_It’s그래니_AN(ey)", 5.81, 105952, 5], ["001_260604_pdz_의사친구없다면_AN(ty)", 3.87, 104227, 4], ["001_260609_qt_옥살산_T(ey)", 3.48, 56206, 2], ["001_260617_pdz_생채소건강_T(ty)", 2.85, 98126, 2], ["001_260508_pa_이현정_T", 2.39, 158014, 3], ["001_260514_ypd_기도해드릴게요_AN(hj)", 2.13, 232661, 5], ["001_260629_qt_독채소온도_T(hj)", 1.91, 51423, 1]], "bot": [["001_260611_pdz_생채소피자_AN(ty)", 1.35, 867252, 10], ["001_260617_qt_속터져라_T(ey)", 1.24, 191335, 2], ["001_260611_pdz_채소삶아도_AN(ty)", 1.11, 1166739, 11], ["002_260514_pdz_투정심한아이_AN(hj)", 1.04, 361381, 3], ["001_260507_jy_홈쇼핑라이브_AIP(hj)", 0.94, 2563249, 21], ["001_260617_qt_대체뭐길래_T(ey)", 0.94, 999918, 9], ["001_260515_pdz_잡았다그래니_AN(ey)", 0.93, 149718, 1], ["001_260625_pa_박서희_T", 0.86, 161933, 1]]}, "구글": {"n": 64, "matched": 28, "appeal": [["(무)", 6409515, 1.58, 2], ["후기/인용", 175158, 1.15, 2], ["카피후킹", 3674396, 1.03, 6], ["제품데모", 6286922, 0.9, 10], ["인물후기", 684052, 0.85, 3], ["유머/패러디", 2018831, 0.48, 5]], "fmt": [["AI", 10511023, 1.36, 6], ["T", 6692609, 0.83, 15], ["AN", 1838298, 0.73, 6], ["(무)", 206944, 0.47, 1]], "maker": [["ey", 542122, 1.63, 3], ["hj", 8453684, 1.41, 5], ["(무)", 684052, 0.85, 3], ["ty", 9569016, 0.82, 17]], "top": [["001_260625_hy_하루종일꺽꺽_T(ey)", 2.36, 59247, 1], ["001_260610_qt_리뉴얼할인_T(ey)", 2.07, 67535, 1], ["001_260604_미국이숨긴_AI(hj)", 1.62, 5933658, 86], ["001_260604_pdz_고릴라썰_AI(ey)", 1.45, 415340, 5], ["001_260610_qt_채소마트_T(ty)", 1.21, 1166897, 13], ["001_260507_qt_염증삭제리타겟_T(hj)", 1.1, 1129030, 11], ["001_260616_pdz_노화종료_AI(ty)", 1.07, 1135976, 13], ["001_260521_pdz_장속음쓰2_AI(ty)", 1.04, 2526261, 26]], "bot": [["001_260616_ypd_아침푸석_T(ty)", 0.48, 493329, 2], ["001_260625_qt_그때생각_(ty)", 0.47, 206944, 1], ["001_260616_pdz_점심먹고커피_T(ty)", 0.47, 418639, 2], ["001_260616_pdz_이탈리아유학_AN(hj)", 0.39, 251250, 1], ["001_260612_ypd_샐러드서양인_T(ty)", 0.39, 253553, 1], ["001_260616_pdz_난병골_AN(ty)", 0.37, 264443, 1], ["001_260616_pdz_샐러드고기_AI(ty)", 0.33, 428265, 1], ["001_260601_ypd_질냄새_T(ty)", 0.21, 679544, 1]]}}}, "basetune": {"totals": {"메타": [153388810, 193589200, 1.26, 1954, 152265, 1.28, 78500, 99073], "틱톡": [24413649, 45591200, 1.87, 460, 204921, 0.22, 53073, 99111], "구글": [219917095, 206211800, 0.94, 2136, 289129, 0.74, 102957, 96541]}, "cov": {"틱톡": "95", "구글": "98"}, "note": "틱톡 최고효율(1.87)·최소투입. 구글 2.2억(최대물량)이 0.94로 손익분기 미달=최대 개선대상, 인물(pa) 소구 전멸.", "ch": {"틱톡": {"n": 49, "matched": 36, "appeal": [["일상/실사", 285847, 4.53, 3], ["유머/패러디", 3317116, 2.32, 5], ["제품데모", 1884575, 2.22, 7], ["카피후킹", 3014047, 2.19, 6], ["인물후기", 822049, 2.13, 3], ["후기/인용", 12937570, 1.67, 12]], "fmt": [["AI", 1140908, 2.93, 3], ["P", 767334, 2.02, 1], ["T", 19058685, 1.93, 27], ["AN", 743667, 1.13, 4], ["H", 550610, 1.06, 1]], "maker": [["ey", 3301689, 2.65, 5], ["(무)", 822049, 2.13, 3], ["ty", 16476128, 1.84, 20], ["hj", 1661338, 1.4, 8]], "top": [["001_260604_pdz_항공관제사_AI(ey)", 6.47, 297006, 20], ["001_260521_jy_30초실제촬영_T(ty)", 5.13, 139327, 6], ["001_260513_hy_업무용최강2_T(ty)", 5.03, 318718, 13], ["001_260429_jy_아주좋은_T(ty)", 4.32, 94678, 4], ["001_260520_jy_요즘귀막는실촬_T(ty)", 3.33, 51842, 2], ["001_260519_pa_조봉근_T", 3.17, 75127, 2], ["001_260610_ypd_이어폰귀아픔_T(ty)", 3.12, 110535, 4], ["001_260518_qt_작은 이어폰2_T(ty)", 2.66, 1429487, 35]], "bot": [["001_260519_hy_유럽상위1%_T(ty)", 1.35, 338116, 3], ["001_260421_hy_몰랐죠_T(ty)", 1.28, 387846, 5], ["001_260626_pdz_이어폰치매_AN(ty)", 1.08, 238281, 3], ["001_260611_qt_끝아님_H(hj)", 1.06, 550610, 6], ["001_260626_pdz_귀막는이어폰운동_AN(ty)", 1.01, 404663, 4], ["001_260624_hy_99%후회_T(ty)", 1.01, 1319519, 14], ["001_260528_ypd_안사고기다린2_T(ty)", 1.0, 172649, 2], ["001_260611_hy_잘리기전에_T(hj)", 0.48, 177821, 1]]}, "구글": {"n": 65, "matched": 45, "appeal": [["후기/인용", 79713274, 1.26, 7], ["유머/패러디", 67538395, 1.1, 11], ["일상/실사", 6649116, 1.07, 4], ["카피후킹", 12052768, 0.97, 11], ["제품데모", 1671434, 0.76, 4], ["인물후기", 10889861, 0.55, 6], ["(무)", 3850078, 0.54, 2]], "fmt": [["T", 178800251, 1.1, 38], ["AN", 181582, 0.95, 1], ["AI", 3360029, 0.91, 4]], "maker": [["ey", 89075724, 1.32, 10], ["ty", 71672395, 1.0, 20], ["hj", 6876868, 0.81, 7], ["(무)", 14739939, 0.55, 8]], "top": [["001_260615_hy_베테랑콜센터_T(ty)", 8.33, 88270, 7], ["001_260610_ypd_이어폰귀아픔_T(ty)", 2.65, 245044, 6], ["001_260520_ypd_씹어먹어_T(ey)", 1.9, 7420511, 147], ["001_260518_hy_안사고기다린_T(ey)", 1.69, 14339765, 244], ["001_260527_jy_30초실제촬영_T(ty)", 1.26, 1471663, 16], ["001_260527_hy_쓰지마세여_T(ey)", 1.22, 56200743, 722], ["001_260521_ypd_만든사람당황_T(ty)", 1.13, 11867613, 137], ["001_260626_ypd_여름귀막는이어폰_T(ty)", 1.13, 1968614, 22]], "bot": [["001_260608_qt_국민템_T(ey)", 0.44, 391557, 2], ["001_260610_ypd_질문법썰_T(hj)", 0.41, 209778, 1], ["001_260611_ypd_드라마진물_T(ty)", 0.38, 1084773, 4], ["001_260508_qt_화물트럭기사_T(ey)", 0.37, 235095, 1], ["001_260623_pa_김민준_T", 0.34, 1006746, 4], ["001_260623_pa_박태훈_T", 0.32, 1015778, 3], ["001_260625_pa_김종원_T", 0.23, 377637, 1], ["001_260623_광고인줄_T", 0.08, 1042108, 1]]}}}};
+const fmtN=n=>n.toLocaleString('ko-KR');
+const cls=r=>r>=1.5?'good':r>=1.0?'mid':'bad';
+let chart;
+function chSection(chName,ch,cov){
+  const rowT=a=>`<tr><td>${a[0]}</td><td>${fmtN(a[1])}</td><td class=${cls(a[2])}>${a[2].toFixed(2)}</td><td class=sml>${a[3]}</td></tr>`;
+  const rowR=a=>`<tr><td class=sml>${a[0]}</td><td class=${cls(a[1])}>${a[1].toFixed(2)}</td><td>${fmtN(a[2])}</td><td class=sml>${a[3]}</td></tr>`;
+  return `<div class=card><h2>${chName} 소재 분석 <span class=pill>집행 ${ch.n} · 매칭 ${ch.matched} · 커버 ${cov}%</span></h2>
+   <div class=grid2>
+    <div><b class=sml>소구별 직접ROAS</b><table><tr><th>소구</th><th>광고비</th><th>ROAS</th><th>수</th></tr>${ch.appeal.map(rowT).join('')}</table></div>
+    <div><b class=sml>포맷별 직접ROAS</b><table><tr><th>포맷</th><th>광고비</th><th>ROAS</th><th>수</th></tr>${ch.fmt.map(rowT).join('')}</table>
+     <b class=sml>제작자별</b><table><tr><th>제작자</th><th>광고비</th><th>ROAS</th><th>수</th></tr>${ch.maker.map(rowT).join('')}</table></div>
+   </div>
+   <div class=grid2 style=margin-top:14px>
+    <div><b class=sml style=color:#51cf66>승자 TOP8</b><table><tr><th>소재</th><th>ROAS</th><th>광고비</th><th>주문</th></tr>${ch.top.map(rowR).join('')}</table></div>
+    <div><b class=sml style=color:#ff6b6b>패자 BOTTOM8</b><table><tr><th>소재</th><th>ROAS</th><th>광고비</th><th>주문</th></tr>${ch.bot.map(rowR).join('')}</table></div>
+   </div></div>`;
+}
+function render(b){
+  const d=DATA[b];
+  const T=d.totals;
+  const order=['틱톡','메타','구글'];
+  const trow=k=>{const t=T[k];return `<tr><td>${k}</td><td>${fmtN(t[0])}</td><td>${fmtN(t[1])}</td><td class=${cls(t[2])} style=font-size:15px>${t[2].toFixed(2)}</td><td>${fmtN(t[3])}</td><td>${fmtN(t[4])}</td><td>${t[5]}</td><td>${fmtN(t[6])}</td><td>${fmtN(t[7])}</td></tr>`};
+  let h=`<div class=note>${d.note}</div>
+   <div class=card><h2>채널별 총량 (직접ROAS)</h2>
+    <table><tr><th>채널</th><th>광고비</th><th>직접매출</th><th>직접ROAS</th><th>주문</th><th>유입</th><th>전환%</th><th>CPA</th><th>객단가</th></tr>
+    ${order.map(trow).join('')}</table>
+    <div class=chwrap style=margin-top:16px><canvas id=cv height=150></canvas></div></div>`;
+  h+=chSection('틱톡',d.ch['틱톡'],d.cov['틱톡']);
+  h+=chSection('구글',d.ch['구글'],d.cov['구글']);
+  document.getElementById('app').innerHTML=h;
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('cv'),{type:'bar',
+   data:{labels:order,datasets:[
+    {label:'직접ROAS',data:order.map(k=>T[k][2]),backgroundColor:'#3b5bdb',yAxisID:'y'},
+    {label:'CPA(원)',data:order.map(k=>T[k][6]),backgroundColor:'#f59f00',yAxisID:'y1'}]},
+   options:{plugins:{legend:{labels:{color:'#c8ccda'}}},scales:{
+    x:{ticks:{color:'#c8ccda'},grid:{color:'#222'}},
+    y:{position:'left',ticks:{color:'#3b5bdb'},grid:{color:'#222'},title:{display:true,text:'직접ROAS',color:'#3b5bdb'}},
+    y1:{position:'right',ticks:{color:'#f59f00'},grid:{drawOnChartArea:false},title:{display:true,text:'CPA',color:'#f59f00'}}}}});
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');render(t.dataset.b);});
+document.querySelector('.tab').classList.add('on');render('grani');
+</script></body></html>
