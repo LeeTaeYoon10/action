@@ -1297,7 +1297,7 @@ function parseTikTokXLSX(file){
           const campBudget=parseNum(r['캠페인 예산']||r['캠페인 예산 (KRW)']||r['Campaign Budget']);
           const grpBudgetRaw=String(r['Ad Group Budget']||r['광고 그룹 예산']||'').trim();
           const grpBudget=/^\d/.test(grpBudgetRaw)?parseNum(grpBudgetRaw):0;
-          const cost=parseNum(r['비용']||r['지출 금액']||r['소비 금액']||r['Cost']);
+          const cost=parseNum(r['비용']||r['지출 금액']||r['소비 금액']||r['Cost']||r['Spend']);
           const cpa=parseNum(r['전환당 비용']||r['결과당 비용']||r['전환 시간별 전환당 비용']||r['구매당 비용(웹사이트)']||r['Cost per conversion by conversion time']);
           const conv=parseNum(r['구매 수(웹사이트)']||r['전환수']||r['결과']||r['Purchases (website)']);
           const rev=parseNum(r['구매 금액(웹사이트)']||r['전환 가치']||r['매출']||r['Purchase value (website)']);
