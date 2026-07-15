@@ -1310,7 +1310,7 @@ function parseTikTokXLSX(file){
           const roas=roasRaw>0?(roasRaw<50?roasRaw*100:roasRaw):(cost>0&&rev>0?rev/cost*100:0);
           const ctr=parseFloat(String(r['CTR(목적지)']||r['CTR']||r['CTR (destination)']||'').replace('%',''))||0;
           const cpc=parseNum(r['CPC(목적지)']||r['CPC']||r['CPC (destination)']);
-          const atc=parseNum(r['장바구니 담기(웹사이트)']||r['장바구니 담기 (웹사이트)']||r['웹사이트 장바구니에 담기']||r['장바구니에 담기']||r['Add to cart (website)']||r['Website add to cart']||r['Adds to cart']);
+          const atc=parseNum(r['Adds to cart (website)']||r['장바구니 담기(웹사이트)']||r['장바구니 담기 (웹사이트)']||r['웹사이트 장바구니에 담기']||r['장바구니에 담기']||r['웹사이트 장바구니 담기']||r['Add to cart (website)']||r['Website add to cart']||r['Adds to cart']);
           const clicks=parseNum(r['클릭수(목적지)']||r['클릭수']||r['Clicks (destination)']);
           const impressions=parseNum(r['노출수']||r['Impressions']);
           const direct=getDirectData(ad,'tk');
