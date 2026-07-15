@@ -1089,6 +1089,7 @@ function parseMetaXLSX(file){
           const rev=parseNum(r['구매 전환값']||r['Purchase conversion value']||r['결과 값']||r['전환 값']);
           const ctr=parseNum(r['CTR(링크 클릭률)']||r['CTR (link click-through rate)']||r['CTR(전체)']||r['CTR']);
           const cpc=parseNum(r['CPC(링크 클릭당 비용)']||r['CPC (cost per link click)']||r['CPC']);
+          const atc=parseNum(r['장바구니 담기']||r['웹사이트 장바구니에 담기']||r['장바구니에 담기']||r['Adds to cart']||r['Website adds to cart']);
 
           const campBudgetFromAd=parseNum(r['캠페인 예산']||r['Campaign budget']||0);
           const grpBudgetFromAd=parseNum(r['광고 세트 예산']||r['Ad set budget']||0);
@@ -1103,7 +1104,7 @@ function parseMetaXLSX(file){
 
           const direct=getDirectData(ad,'fb');
           campaigns[camp].groups[grp].ads.push({
-            name:ad,cost,roas,cpa,conv,rev,ctr,cpc,
+            name:ad,cost,roas,cpa,conv,rev,ctr,cpc,atc,
             directAmount:direct?direct.order_amount:null,
             directCount:direct?direct.order_count:null,
             directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,
@@ -1155,6 +1156,7 @@ function parseGoogleCSV(file){
               const iCpa     = col('전환당비용');
               const iCtr     = col('클릭률(CTR)');
               const iCpc     = col('평균 CPC');
+              const iAtc     = ['장바구니에 담기','장바구니 담기','Add to cart','Adds to cart'].map(col).find(x=>x>=0) ?? -1;
 
               // 1차: 활성 캠페인 등록 (광고 상태 무관 - 모든 캠페인이 보이도록)
               const campaigns={};
@@ -1188,12 +1190,13 @@ function parseGoogleCSV(file){
                 const cpa     = parseNum(row[iCpa]);
                 const ctr     = parseFloat(String(row[iCtr]||'').replace('%',''))||0;
                 const cpc     = parseNum(row[iCpc]);
+                const atc     = iAtc>=0?parseNum(row[iAtc]):0;
                 const roas    = cost>0?(convVal/cost*100):0;
                 const conv    = (cost>0&&cpa>0)?Math.round(cost/cpa):0;
 
                 const direct=getDirectGoogle(ad, iUrl>=0?String(row[iUrl]||''):'');
                 campaigns[camp].ads.push({
-                  name:ad,cost,roas,cpa,conv,rev:convVal,ctr,cpc,
+                  name:ad,cost,roas,cpa,conv,rev:convVal,ctr,cpc,atc,
                   directAmount:direct?direct.order_amount:null,
                   directCount:direct?direct.order_count:null,
                   directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,
@@ -1233,6 +1236,7 @@ function parsePmaxCSV(file){
               const headers=r.data[headerIdx].map(h=>String(h).trim());
               const col=n=>headers.indexOf(n);
               const iCamp=col('캠페인'),iBudget=col('예산'),iStatus=col('캠페인 상태'),iCost=col('비용'),iCpa=col('전환당비용'),iCpc=col('평균 CPC'),iCtr=col('클릭률(CTR)'),iRevenue=col('전환 가치');
+              const iAtc=['장바구니에 담기','장바구니 담기','Add to cart','Adds to cart'].map(col).find(x=>x>=0) ?? -1;
               const campaigns={};
               for(let i=headerIdx+1;i<r.data.length;i++){
                 const row=r.data[i];
@@ -1251,10 +1255,11 @@ function parsePmaxCSV(file){
                 const conv=(cpa>0&&cost>0)?Math.round(cost/cpa):0;
                 const clicks=cpc>0?Math.round(cost/cpc):0;
                 const impressions=(ctr>0&&clicks>0)?Math.round(clicks/(ctr/100)):0;
+                const atc=iAtc>=0?parseNum(row[iAtc]):0;
                 const pmaxNum=camp.match(/pmax[_\s]*(\d+)/i);
                 const pmaxKey='__pmax__'+(pmaxNum?pmaxNum[1]:adSuffix(camp));
                 const direct=parsed.direct?(parsed.direct[pmaxKey]||null):null;
-                campaigns[camp]={name:camp,budget,isPmax:true,ads:[{name:camp,cost,cpa,conv,rev,roas,ctr,cpc,clicks,impressions,directAmount:direct?direct.order_amount:null,directCount:direct?direct.order_count:null,directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,directCpa:(direct&&direct.order_count>0)?cost/direct.order_count:null}]};
+                campaigns[camp]={name:camp,budget,isPmax:true,ads:[{name:camp,cost,cpa,conv,rev,roas,ctr,cpc,atc,clicks,impressions,directAmount:direct?direct.order_amount:null,directCount:direct?direct.order_count:null,directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,directCpa:(direct&&direct.order_count>0)?cost/direct.order_count:null}]};
               }
               const sorted={};
               Object.keys(campaigns).sort().forEach(k=>{sorted[k]=campaigns[k];});
@@ -1305,6 +1310,7 @@ function parseTikTokXLSX(file){
           const roas=roasRaw>0?(roasRaw<50?roasRaw*100:roasRaw):(cost>0&&rev>0?rev/cost*100:0);
           const ctr=parseFloat(String(r['CTR(목적지)']||r['CTR']||r['CTR (destination)']||'').replace('%',''))||0;
           const cpc=parseNum(r['CPC(목적지)']||r['CPC']||r['CPC (destination)']);
+          const atc=parseNum(r['장바구니 담기(웹사이트)']||r['장바구니 담기 (웹사이트)']||r['웹사이트 장바구니에 담기']||r['장바구니에 담기']||r['Add to cart (website)']||r['Website add to cart']||r['Adds to cart']);
           const clicks=parseNum(r['클릭수(목적지)']||r['클릭수']||r['Clicks (destination)']);
           const impressions=parseNum(r['노출수']||r['Impressions']);
           const direct=getDirectData(ad,'tk');
@@ -1313,7 +1319,7 @@ function parseTikTokXLSX(file){
           const grpKey=grp||'(그룹 없음)';
           if(!campaigns[camp].groups[grpKey]) campaigns[camp].groups[grpKey]={name:grpKey,budget:grpBudget,ads:[]};
           campaigns[camp].groups[grpKey].ads.push({
-            name:ad,cost,cpa,conv,rev,roas,ctr,cpc,clicks,impressions,
+            name:ad,cost,cpa,conv,rev,roas,ctr,cpc,atc,clicks,impressions,
             directAmount:direct?direct.order_amount:null,
             directCount:direct?direct.order_count:null,
             directRoas:(direct&&cost>0)?direct.order_amount/cost*100:null,
@@ -1441,6 +1447,7 @@ function getSortVal(ad, col) {
   if (col === '매출')   return ad.rev  || 0;
   if (col === 'ROAS')   return ad.roas || 0;
   if (col === 'CPA')    return ad.cpa  || 0;
+  if (col === 'ATCCOST') return atcCostOf(ad);
   if (col === 'CTR')    return ad.ctr  || 0;
   if (col === '전환')   return ad.conv || 0;
   if (col === '이름')   return (ad.name || '').toLowerCase();
@@ -1601,12 +1608,17 @@ function toggleGrp(gId){
 }
 
 // ── Table headers ─────────────────────────────────────────────────────────────
-function buildTableHeader() {
+function buildTableHeader(media) {
+  // 메타·틱톡: 담기당 비용 / 구글·PMAX: CTR (구글은 장바구니 담기 항목 자체가 없음)
+  const useAtc = media==='meta'||media==='tiktok';
+  const midTh = useAtc
+    ? `<th onclick="sortColumn('ATCCOST')" title="장바구니 담기당 비용 (비용 ÷ 장바구니 담기 수)">담기당<br>비용${getSortIndicator('ATCCOST')}</th>`
+    : `<th onclick="sortColumn('CTR')">CTR${getSortIndicator('CTR')}</th>`;
   return `<tr>
     <th style="min-width:240px" onclick="sortColumn('이름')">이름${getSortIndicator('이름')}</th>
     <th onclick="sortColumn('CPA')">CPA${getSortIndicator('CPA')}</th>
     <th onclick="sortColumn('ROAS')">ROAS${getSortIndicator('ROAS')}</th>
-    <th onclick="sortColumn('CTR')">CTR${getSortIndicator('CTR')}</th>
+    ${midTh}
     <th onclick="sortColumn('전환')">전환${getSortIndicator('전환')}</th>
     <th onclick="sortColumn('비용')">비용${getSortIndicator('비용')}</th>
     <th onclick="sortColumn('매출')">매출${getSortIndicator('매출')}</th>
@@ -1655,14 +1667,14 @@ function dcell(v3, v7, kind){
     `<div class="dl dl3"><span class="dbadge db3">3일</span>${dval(v3,kind)}</div>`+
     `<div class="dl dl7"><span class="dbadge db7">7일</span>${dval(v7,kind)}</div></td>`;
 }
-// 캠페인/광고세트 요약 행의 지표 td들(이름칸 제외). dualMode면 CPA/ROAS/비용/매출/직접CPA/직접ROAS를 3·7일 2줄로.
-// ctrTd/budgetTd/actionTd/memoTd는 행 종류별로 다르므로 완성된 <td>…</td> 문자열로 받음.
-function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
+// 캠페인/광고세트 요약 행의 지표 td들(이름칸 제외). dualMode면 CPA/ROAS/담기당비용/비용/매출/직접CPA/직접ROAS를 3·7일 2줄로.
+// budgetTd/actionTd/memoTd는 행 종류별로 다르므로 완성된 <td>…</td> 문자열로 받음. (담기당 비용은 a3/a7에서 직접 계산)
+function summaryCells(a3, a7, midTd, budgetTd, actionTd, memoTd){
   if(dualMode){
     const h7 = a7!=null;
     return dcell(a3.cpa,  h7?a7.cpa:null,  'cpa')
       + dcell(a3.roas, h7?a7.roas:null, 'roas')
-      + ctrTd
+      + midTd
       + `<td>${a3.conv}개</td>`
       + dcell(a3.cost, h7?a7.cost:null, 'won')
       + dcell(a3.rev,  h7?a7.rev:null,  'won')
@@ -1674,7 +1686,7 @@ function summaryCells(a3, a7, ctrTd, budgetTd, actionTd, memoTd){
       + memoTd;
   }
   return `<td>${cpaBadge(a3.cpa)}</td><td>${roasBadge(a3.roas)}</td>`
-    + ctrTd
+    + midTd
     + `<td>${a3.conv}개</td>`
     + `<td>${fmtW(a3.cost)}</td><td>${fmtW(a3.rev)}</td>`
     + budgetTd + actionTd
@@ -1719,6 +1731,10 @@ function adSuggestChip(ad, ad7, aKey){
   }catch(e){ return ''; }
 }
 function adRowCells(ad, ad7, aKey, nameStyle){
+  // 메타·틱톡: 담기당 비용 / 구글: CTR
+  const midCell = (aKey.indexOf('meta__')===0||aKey.indexOf('tk__')===0)
+    ? `<td>${fmtW(atcCostOf(ad))}</td>`
+    : `<td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td>`;
   const _sug = adSuggestChip(ad, ad7, aKey);   // 제안을 소재명 위에 표시(3·7일 함께 판단)
   const nameTd = `<td class="name-cell"${nameStyle?' '+nameStyle:''}>${_sug?_sug+'<br>':''}<span title="${ad.name}">${shorten(ad.name,34)}</span>${copyBtn(ad.name,'ad')}</td>`;
   if(dualMode){
@@ -1736,7 +1752,7 @@ function adRowCells(ad, ad7, aKey, nameStyle){
     return nameTd
       + dcell(ad.cpa,  h7?ad7.cpa:null,  'cpa')
       + dcell(ad.roas, h7?ad7.roas:null, 'roas')
-      + `<td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td>`
+      + midCell
       + `<td>${ad.conv||0}개</td>`
       + dcell(ad.cost, h7?ad7.cost:null, 'won')
       + dcell(ad.rev,  h7?ad7.rev:null,  'won')
@@ -1749,7 +1765,7 @@ function adRowCells(ad, ad7, aKey, nameStyle){
       + `<td>${memoEl(aKey)}</td>`;
   }
   return nameTd
-    + `<td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td><td>${ad.ctr?ad.ctr.toFixed(2)+'%':'–'}</td><td>${ad.conv||0}개</td>`
+    + `<td>${cpaBadge(ad.cpa)}</td><td>${roasBadge(ad.roas)}</td>${midCell}<td>${ad.conv||0}개</td>`
     + `<td>${fmtW(ad.cost)}</td><td>${fmtW(ad.rev)}</td><td></td><td>${actSel(aKey,false)}</td>`
     + directEl(ad,aKey)
     + `<td>${memoEl(aKey)}</td>`;
@@ -1772,7 +1788,7 @@ function buildMetaTable(){
     const mBudgetTd=mIsABO?`<td>${aboBudgetEl(cKey,camp,'meta__grp__')}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
     const mActTd=mIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
     rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${copyBtn(camp.name)}${campObjectiveBadge(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
-      + summaryCells(ca, agg7('meta',camp.name,null), '<td><span class="m-na">–</span></td>', mBudgetTd, mActTd, `<td>${memoEl(cKey)}</td>`)
+      + summaryCells(ca, agg7('meta',camp.name,null), `<td>${fmtW(ca.atcCost)}</td>`, mBudgetTd, mActTd, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid(camp.name,grp.name); const isG=collapsed.grps.has(gId);
@@ -1783,7 +1799,7 @@ function buildMetaTable(){
       if (!shouldShowRow(camp.name, grp.name)) return;
 
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span>${copyBtn(grp.name)}<span class="ad-count">${grp.ads.length}</span></td>`
-        + summaryCells(ga, agg7('meta',camp.name,grp.name), '<td><span class="m-na">–</span></td>', `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
+        + summaryCells(ga, agg7('meta',camp.name,grp.name), `<td>${fmtW(ga.atcCost)}</td>`, `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
         + `</tr>`;
       applySortToAds(grp.ads).forEach(ad=>{
         const adHide=(isC||isG)?'style="display:none"':'';
@@ -1796,7 +1812,7 @@ function buildMetaTable(){
       });
     });
   });
-  return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="table-wrap"><table><thead>${buildTableHeader('meta')}</thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // ── Table: Google ─────────────────────────────────────────────────────────────
@@ -1848,7 +1864,7 @@ function buildTikTokTable(){
     const tBudgetTd=tIsABO?`<td>${aboBudgetEl(cKey,camp,'tk__grp__')}</td>`:`<td>${budgetEl(cKey,camp.budget)}</td>`;
     const tActTd=tIsABO?`<td><span class="m-na">–</span></td>`:`<td>${actSel(cKey,camp.budget>0)}</td>`;
     rows+=`<tr class="row-camp"><td class="name-cell"><button class="toggle-btn" id="arr-${cId}" onclick="toggleCamp('${cId}')">${isC?'▶':'▼'}</button><span title="${camp.name}">${shorten(camp.name)}</span>${copyBtn(camp.name)}<span class="ad-count">${cAdCnt}</span></td>`
-      + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${ca.ctr?ca.ctr.toFixed(2)+'%':'–'}</td>`, tBudgetTd, tActTd, `<td>${memoEl(cKey)}</td>`)
+      + summaryCells(ca, agg7('tiktok',camp.name,null), `<td>${fmtW(ca.atcCost)}</td>`, tBudgetTd, tActTd, `<td>${memoEl(cKey)}</td>`)
       + `</tr>`;
     Object.values(camp.groups).forEach(grp=>{
       const gId=gid('tk_'+camp.name,grp.name); const isG=collapsed.grps.has(gId);
@@ -1859,7 +1875,7 @@ function buildTikTokTable(){
       if (!shouldShowRow(camp.name, grp.name)) return;
 
       rows+=`<tr class="row-grp" data-camp="${cId}" data-grp="${gId}" ${grpHide}><td class="name-cell"><button class="toggle-btn" id="arr-${gId}" onclick="toggleGrp('${gId}')">${isG?'▶':'▼'}</button><span title="${grp.name}">${shorten(grp.name,32)}</span>${copyBtn(grp.name)}<span class="ad-count">${grp.ads.length}</span></td>`
-        + summaryCells(ga, agg7('tiktok',camp.name,grp.name), `<td>${ga.ctr?ga.ctr.toFixed(2)+'%':'–'}</td>`, `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
+        + summaryCells(ga, agg7('tiktok',camp.name,grp.name), `<td>${fmtW(ga.atcCost)}</td>`, `<td>${budgetEl(gKey,grp.budget)}</td>`, `<td>${actSel(gKey,grp.budget>0)}</td>`, `<td>${memoEl(gKey)}</td>`)
         + `</tr>`;
       applySortToAds(grp.ads).forEach(ad=>{
         if(!ad.cost) return; // 비용 0 소재 숨김
@@ -1873,7 +1889,7 @@ function buildTikTokTable(){
       });
     });
   });
-  return `<div class="table-wrap"><table><thead>${buildTableHeader()}</thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="table-wrap"><table><thead>${buildTableHeader('tiktok')}</thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // ── Manual Direct Entry ───────────────────────────────────────────────────────
@@ -2517,10 +2533,12 @@ function fmtShortKo(d){if(!d)return '';const[,m,dd]=d.split('-');return `${parse
 // ── Utility ───────────────────────────────────────────────────────────────────
 function parseNum(v){if(v===null||v===undefined||v===''||v==='-') return 0;return parseFloat(String(v).replace(/,/g,''))||0;}
 function aggAds(ads){
-  let cost=0,rev=0,conv=0,dAmount=0,dCount=0,clicks=0,impressions=0;
-  ads.forEach(a=>{cost+=a.cost||0;rev+=a.rev||0;conv+=a.conv||0;dAmount+=a.directAmount||0;dCount+=a.directCount||0;clicks+=a.clicks||0;impressions+=a.impressions||0;});
-  return{cost,rev,conv,roas:cost>0?rev/cost*100:0,cpa:conv>0?cost/conv:0,dAmount,dCount,dRoas:cost>0?dAmount/cost*100:0,dCpa:dCount>0?cost/dCount:0,clicks,impressions,ctr:impressions>0?clicks/impressions*100:0};
+  let cost=0,rev=0,conv=0,dAmount=0,dCount=0,clicks=0,impressions=0,atc=0;
+  ads.forEach(a=>{cost+=a.cost||0;rev+=a.rev||0;conv+=a.conv||0;dAmount+=a.directAmount||0;dCount+=a.directCount||0;clicks+=a.clicks||0;impressions+=a.impressions||0;atc+=a.atc||0;});
+  return{cost,rev,conv,roas:cost>0?rev/cost*100:0,cpa:conv>0?cost/conv:0,dAmount,dCount,dRoas:cost>0?dAmount/cost*100:0,dCpa:dCount>0?cost/dCount:0,clicks,impressions,ctr:impressions>0?clicks/impressions*100:0,atc,atcCost:atc>0?cost/atc:0};
 }
+// 장바구니 담기당 비용(=비용/장바구니 담기 수). 데이터 없으면 0.
+function atcCostOf(a){return (a&&a.atc>0)?a.cost/a.atc:0;}
 // 수동 입력값을 ad 객체에 반영 (aggAds 집계 전에 사용)
 function resolveAd(ad,key,period){
   if(ad.directAmount!=null) return ad;
