@@ -205,12 +205,26 @@
   window.idToEmail = function(id){ id=(id||'').trim(); return id.indexOf('@')>=0?id:id+'@dailyaction.local'; };
   window.appLogin = function(id,pw){ return window._auth.signInWithEmailAndPassword(window.idToEmail(id),pw); };
   window.appLogout = function(){ if(window._auth) window._auth.signOut(); };
-  // 보호 대시보드 데이터 로드 (dailyData/auto-basetune, json 문자열 필드)
+  // 보호 대시보드 데이터 로드 (dailyData/auto-basetune + auto-granysalad, json 문자열 필드)
   window.remoteLoadDashboard = async function(){
     if(!window._db) return null;
-    try{ const d=await window._db.collection('dailyData').doc('auto-basetune').get();
-         return d.exists ? JSON.parse(d.data().json||'null') : null; }
-    catch(e){ console.warn('대시보드 데이터 로드 실패', e); return null; }
+    const docs = ['auto-basetune', 'auto-granysalad'];
+    const merged = { updatedAt: null, files: [] };
+    let any = false;
+    for(const id of docs){
+      try{
+        const d = await window._db.collection('dailyData').doc(id).get();
+        if(d.exists){
+          const j = JSON.parse(d.data().json || 'null');
+          if(j && Array.isArray(j.files)){
+            merged.files.push(...j.files);
+            if(j.updatedAt && (!merged.updatedAt || j.updatedAt > merged.updatedAt)) merged.updatedAt = j.updatedAt;
+            any = true;
+          }
+        }
+      }catch(e){ console.warn('대시보드 데이터 로드 실패', id, e); }
+    }
+    return any ? merged : null;
   };
   </script>
 </head>
