@@ -1348,15 +1348,15 @@ function calculateBudgetSummary() {
   if (parsed.meta) {
     Object.values(parsed.meta).forEach(camp => {
       const ck = 'meta__camp__' + camp.name;
-      if (camp.budget > 0 || actions[ck]?.budgetFrom) {
-        const from = actions[ck]?.budgetFrom ? parseNum(actions[ck].budgetFrom) * 10000 : camp.budget;
+      if (camp.budget > 0 || actions[ck]?.budgetFrom || actions[ck]?.budgetCur) {
+        const from = curBudget(ck, camp.budget);
         const to   = actions[ck]?.budgetTo   ? parseNum(actions[ck].budgetTo)   * 10000 : from;
         r.meta.change += to - from; r.meta.total += to; r.meta.hasData = true;
       }
       Object.values(camp.groups).forEach(grp => {
         const gk = 'meta__grp__' + camp.name + '__' + grp.name;
-        if (grp.budget > 0 || actions[gk]?.budgetFrom) {
-          const from = actions[gk]?.budgetFrom ? parseNum(actions[gk].budgetFrom) * 10000 : grp.budget;
+        if (grp.budget > 0 || actions[gk]?.budgetFrom || actions[gk]?.budgetCur) {
+          const from = curBudget(gk, grp.budget);
           const to   = actions[gk]?.budgetTo   ? parseNum(actions[gk].budgetTo)   * 10000 : from;
           r.meta.change += to - from; r.meta.total += to; r.meta.hasData = true;
         }
@@ -1367,8 +1367,8 @@ function calculateBudgetSummary() {
   if (parsed.google) {
     Object.values(parsed.google).forEach(camp => {
       const ck = 'gg__camp__' + camp.name;
-      if (camp.budget > 0 || actions[ck]?.budgetFrom) {
-        const from = actions[ck]?.budgetFrom ? parseNum(actions[ck].budgetFrom) * 10000 : camp.budget;
+      if (camp.budget > 0 || actions[ck]?.budgetFrom || actions[ck]?.budgetCur) {
+        const from = curBudget(ck, camp.budget);
         const to   = actions[ck]?.budgetTo   ? parseNum(actions[ck].budgetTo)   * 10000 : from;
         r.google.change += to - from; r.google.total += to; r.google.hasData = true;
       }
@@ -1378,15 +1378,15 @@ function calculateBudgetSummary() {
   if (parsed.tiktok) {
     Object.values(parsed.tiktok).forEach(camp => {
       const ck = 'tk__camp__' + camp.name;
-      if (camp.budget > 0 || actions[ck]?.budgetFrom) {
-        const from = actions[ck]?.budgetFrom ? parseNum(actions[ck].budgetFrom) * 10000 : camp.budget;
+      if (camp.budget > 0 || actions[ck]?.budgetFrom || actions[ck]?.budgetCur) {
+        const from = curBudget(ck, camp.budget);
         const to   = actions[ck]?.budgetTo   ? parseNum(actions[ck].budgetTo)   * 10000 : from;
         r.tiktok.change += to - from; r.tiktok.total += to; r.tiktok.hasData = true;
       }
       Object.values(camp.groups).forEach(grp => {
         const gk = 'tk__grp__' + camp.name + '__' + grp.name;
-        if (grp.budget > 0 || actions[gk]?.budgetFrom) {
-          const from = actions[gk]?.budgetFrom ? parseNum(actions[gk].budgetFrom) * 10000 : grp.budget;
+        if (grp.budget > 0 || actions[gk]?.budgetFrom || actions[gk]?.budgetCur) {
+          const from = curBudget(gk, grp.budget);
           const to   = actions[gk]?.budgetTo   ? parseNum(actions[gk].budgetTo)   * 10000 : from;
           r.tiktok.change += to - from; r.tiktok.total += to; r.tiktok.hasData = true;
         }
@@ -1982,18 +1982,47 @@ function actSel(key, hasBudget=true){
     <option ${v==='지켜보기'?'selected':''}>지켜보기</option>
   </select>`;
 }
+// 현재예산(원): 사용자가 직접 수정한 값(budgetCur, 만원)이 있으면 그것, 없으면 수집 데이터값.
+// (수집이 실패해 옛/틀린 값이 와도 사용자가 직접 교정 가능. 비우면 수집값으로 복원.)
+function curBudget(key,dataBudget){
+  const a=actions[key];
+  if(a&&a.budgetCur!=null&&String(a.budgetCur).trim()!=='') return parseNum(a.budgetCur)*10000;
+  if(dataBudget&&dataBudget>0) return dataBudget;
+  if(a&&a.budgetFrom!=null&&String(a.budgetFrom).trim()!=='') return parseNum(a.budgetFrom)*10000;
+  return dataBudget||0;
+}
+function curBudgetMan(key,dataBudget){return fmtMan(curBudget(key,dataBudget),true);}
 function budgetEl(key,current){
-  const cur=fmtMan(current,true);
+  const cur=curBudgetMan(key,current);   // 표시=수동수정값(있으면) 아니면 수집값
   if(!actions[key]) actions[key]={action:'유지',budgetFrom:cur,budgetTo:cur,memo:''};
   else if(!actions[key].budgetFrom) actions[key].budgetFrom=cur;
+  const edited=actions[key].budgetCur!=null&&String(actions[key].budgetCur).trim()!=='';
   const isOff=actions[key].action==='끄기';
   const toVal=isOff?'0':(actions[key].budgetTo||cur);
   const toStyle=isOff?'color:var(--red);opacity:0.7':'';
+  const fromStyle=edited?'color:var(--accent);font-weight:700':'color:var(--muted)';
+  const fromTitle=edited?'현재예산(만원) — 직접 수정됨. 비우면 수집값 복원':'현재예산(만원) — 클릭해 직접 입력하면 수정, 비우면 수집값';
   return `<div class="budget-wrap">
-    <input class="budget-in" value="${cur}" readonly title="현재예산(만원)" style="color:var(--muted)">
+    <input class="budget-in" id="bfrom-${CSS.escape(key)}" value="${cur}" title="${fromTitle}" style="${fromStyle}" onchange="setBudgetCur('${key}',${current},this.value)">
     <span class="budget-arrow">→</span>
     <input class="budget-in" id="bto-${CSS.escape(key)}" value="${toVal}" ${isOff?'readonly':''} style="${toStyle}" onchange="setBudget('${key}',${current},this.value)" placeholder="변경">
   </div>`;
+}
+// 현재예산 직접 수정 저장. 빈 값이면 수집값으로 복원(오버라이드 제거).
+function setBudgetCur(key,dataCurrent,val){
+  if(!actions[key]) actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
+  const prevMan=curBudgetMan(key,dataCurrent);
+  const nv=String(val).trim();
+  if(nv==='') delete actions[key].budgetCur;
+  else actions[key].budgetCur=String(parseNum(nv));
+  const newMan=curBudgetMan(key,dataCurrent);
+  // 변경목표(budgetTo)를 따로 안 정했으면(비었거나 이전 현재값과 동일) 새 현재값으로 동기화
+  const bt=actions[key].budgetTo;
+  if((bt==null||String(bt).trim()===''||String(bt)===String(prevMan))&&actions[key].action!=='끄기'){
+    actions[key].budgetTo=newMan;
+  }
+  actions[key].budgetFrom=newMan;
+  renderAll(); triggerAutoSave();
 }
 // ABO 캠페인(캠페인 예산=0, 광고세트에 예산)의 캠페인 행: 광고세트 예산 합계를 "현재→변경"으로 표시.
 // 실제 증감은 광고세트 행에서 입력 → 변경합계는 세트들의 budgetTo 합으로 실시간 갱신(updateAboRollups).
@@ -2004,12 +2033,12 @@ function aboToSum(camp, gkPrefix){
     const gk=gkPrefix+camp.name+'__'+grp.name;
     const a=actions[gk];
     if(a&&a.action==='끄기') return; // 끄기 세트는 0
-    s+=(a&&a.budgetTo!==''&&a.budgetTo!=null)?parseNum(a.budgetTo)*10000:(grp.budget||0);
+    s+=(a&&a.budgetTo!==''&&a.budgetTo!=null)?parseNum(a.budgetTo)*10000:curBudget(gk,grp.budget);
   });
   return s;
 }
 function aboBudgetEl(cKey, camp, gkPrefix){
-  const curSum=Object.values(camp.groups).reduce((s,g)=>s+(g.budget||0),0);
+  const curSum=Object.values(camp.groups).reduce((s,g)=>s+curBudget(gkPrefix+camp.name+'__'+g.name,g.budget),0);
   const toSum=aboToSum(camp, gkPrefix);
   const col=toSum>curSum?'color:var(--green)':toSum<curSum?'color:var(--red)':'color:var(--muted)';
   return `<div class="budget-wrap" title="ABO 캠페인 — 광고세트 예산 합계(증감은 광고세트 행에서 입력)">
@@ -2024,7 +2053,7 @@ function updateAboRollups(){
   [['meta','meta__camp__','meta__grp__'],['tiktok','tk__camp__','tk__grp__']].forEach(([media,ckPre,gkPre])=>{
     const p=parsed[media]; if(!p) return;
     Object.values(p).forEach(camp=>{
-      const curSum=Object.values(camp.groups||{}).reduce((s,g)=>s+(g.budget||0),0);
+      const curSum=Object.values(camp.groups||{}).reduce((s,g)=>s+curBudget(gkPre+camp.name+'__'+g.name,g.budget),0);
       if((camp.budget||0)!==0||curSum<=0) return; // ABO만
       const el=document.getElementById('abosum-'+CSS.escape(ckPre+camp.name));
       if(!el) return;
@@ -2067,7 +2096,7 @@ function setAction(key,val){
 }
 function setBudget(key,cur,val){
   if(!actions[key])actions[key]={action:'유지',budgetFrom:'',budgetTo:'',memo:''};
-  const from=fmtMan(cur,true);
+  const from=curBudgetMan(key,cur);   // 수동 수정한 현재값 우선
   actions[key].budgetFrom=from;
   actions[key].budgetTo=val;
   // 숫자 비교로 액션 자동 변경 (끄기·지켜보기는 유지)
