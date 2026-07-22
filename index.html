@@ -1082,11 +1082,12 @@ function parseMetaXLSX(file){
           if(hasAdsetRows&&grp&&!activeAdsets.has(camp+'|||'+grp)) return;
 
           const cost=parseNum(r['지출 금액 (KRW)']||r['Amount spent (KRW)']||r['지출금액(KRW)']);
-          const roasRaw=parseNum(r['구매 ROAS(광고 지출 대비 수익률)']||r['Purchase ROAS']||r['결과 ROAS']||r['ROAS']);
-          const roas=roasRaw>0?(roasRaw<50?roasRaw*100:roasRaw):0;
           const cpa=parseNum(r['결과당 비용']||r['Cost per result']||r['전환당 비용']);
           const conv=parseNum(r['결과']||r['Results']||r['전환수']||r['구매 수']);
           const rev=parseNum(r['구매 전환값']||r['Purchase conversion value']||r['결과 값']||r['전환 값']);
+          // ROAS는 매출/비용으로 직접 산출(포맷 무관). 메타 CSV의 '구매 ROAS' 컬럼은 퍼센트/배율이
+          // 혼재해 <50 판정으로 100배 뻥튀기되는 버그가 있어(예: 13.67%→1366.81%) rev/cost로 통일.
+          const roas=cost>0?rev/cost*100:0;
           const ctr=parseNum(r['CTR(링크 클릭률)']||r['CTR (link click-through rate)']||r['CTR(전체)']||r['CTR']);
           const cpc=parseNum(r['CPC(링크 클릭당 비용)']||r['CPC (cost per link click)']||r['CPC']);
           const atc=parseNum(r['장바구니 담기']||r['웹사이트 장바구니에 담기']||r['장바구니에 담기']||r['Adds to cart']||r['Website adds to cart']);
