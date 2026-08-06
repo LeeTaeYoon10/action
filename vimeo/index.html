@@ -72,6 +72,8 @@
     <div class="muted" id="updated"></div>
   </header>
 
+  <div id="alertBanner" role="alert" style="display:none;margin:10px 0;padding:11px 15px;border-radius:8px;font-weight:600;line-height:1.4"></div>
+
   <div class="theme-bar">
     <button class="theme-toggle" id="themeToggle">테마 꾸미기</button>
   </div>
@@ -335,6 +337,20 @@ Promise.all([
 ]).then(([d,tm])=>{
   DATA=d; TEAM=tm;
   $("updated").textContent = "갱신 " + d.갱신시각;
+
+  // 수집 실패 경보 배너
+  (function(){
+    const ab=$("alertBanner"), al=d.경보;
+    if(al && al.수준){
+      const err = al.수준==="error";
+      ab.style.display="block";
+      ab.style.background = err ? "#c0392b" : "#f39c12";
+      ab.style.color = err ? "#fff" : "#1a1a1a";
+      ab.textContent = (err ? "[수집 오류] " : "[일부 수집 실패] ") + al.메시지 + (al.시각 ? "  (" + al.시각 + ")" : "");
+    } else {
+      ab.style.display="none";
+    }
+  })();
   $("capTB").textContent = fmt(d.연간한도_TB);
   $("weekCount").textContent = (d.주간기록?.length||0) + "주";
   const usedTB=(d.전체누적_GB||0)/1000, pct=usedTB/d.연간한도_TB*100;
