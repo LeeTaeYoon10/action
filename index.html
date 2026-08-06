@@ -50,6 +50,13 @@ window.remoteLoadData = async function(brand,period){
        return d.exists ? JSON.parse(d.data().json||'null') : null; }
   catch(e){ console.warn('데이터 로드 실패', e); return null; }
 };
+// 오늘 수집 상태(자동검증 결과) 로딩 → 상단 상태패널 표시용. verify_data.py가 dailyData/_health에 올림.
+window.remoteLoadHealth = async function(){
+  if(!window._db) return null;
+  try{ const d=await window._db.collection('dailyData').doc('_health').get();
+       return d.exists ? JSON.parse(d.data().json||'null') : null; }
+  catch(e){ console.warn('health 로드 실패', e); return null; }
+};
 // 일자별 전체기록(dailyHistory) 로딩 → {date: rec}. 브라우저 localStorage 기록의 손상/유실을 클라우드로 복원.
 window.remoteLoadHistory = async function(brand){
   if(!window._db||!brand) return null;
@@ -468,6 +475,7 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
 
 <!-- ── Main ───────────────────────────────────────── -->
 <div class="main">
+  <div id="health-panel" style="display:none;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;line-height:1.5"></div>
   <div id="server-bar" style="display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap">
     <span style="font-size:12px;font-weight:700;color:var(--accent)">📊 오늘 데이터</span>
     <button class="btn btn-ghost" id="srv-cmp" style="font-size:12px" onclick="loadServerCombined(currentBrand)">3·7일 비교</button>
@@ -2345,9 +2353,31 @@ async function syncHistoryFromCloud(brand){
   }catch(e){ console.warn('history sync 실패', e); }
 }
 
+// ── 오늘 수집 상태패널 (자동검증 결과를 한눈에) ─────────────────────────────
+function _hesc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+function renderHealthPanel(h){
+  const el = document.getElementById('health-panel');
+  if(!el) return;
+  if(!h){ el.style.display='none'; return; }
+  const when = h.checkedAt ? (' · '+_hesc(h.checkedAt)) : '';
+  if(h.ok){
+    el.style.background='rgba(46,160,67,.12)'; el.style.border='1px solid rgba(46,160,67,.55)'; el.style.color='inherit';
+    el.innerHTML = '<span style="font-weight:700;color:var(--green)">✅ 오늘 데이터 점검 정상</span>'
+      + '<span style="color:var(--muted);font-size:11px">'+when+'</span>';
+  } else {
+    el.style.background='rgba(224,85,85,.12)'; el.style.border='1px solid rgba(224,85,85,.6)'; el.style.color='inherit';
+    const items = (h.issues||[]).map(function(s){ return '<li style="margin:2px 0">'+_hesc(s)+'</li>'; }).join('');
+    el.innerHTML = '<div style="font-weight:700;color:#e05555;margin-bottom:4px">⚠️ 오늘 데이터 점검 — '+(h.count||0)+'건 이상'
+      + '<span style="color:var(--muted);font-weight:400;font-size:11px">'+when+'</span></div>'
+      + '<ul style="margin:0;padding-left:18px">'+items+'</ul>';
+  }
+  el.style.display='block';
+}
+
 // ── Server data (Firestore 보호 데이터 자동 로드) ─────────────────────────────
 let serverManifest = null;
 async function initServerData(brand){
+  try{ renderHealthPanel(await remoteLoadHealth()); }catch(e){ console.warn('health 렌더 실패', e); }
   const bar = document.getElementById('server-bar');
   if(!bar) return;
   try{
