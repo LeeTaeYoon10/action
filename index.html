@@ -57,6 +57,13 @@ window.remoteLoadHealth = async function(){
        return d.exists ? JSON.parse(d.data().json||'null') : null; }
   catch(e){ console.warn('health 로드 실패', e); return null; }
 };
+// 지난밤 액션 자동적용 결과 로딩 → 상단 패널. apply_actions.py가 dailyData/_applyLog에 올림.
+window.remoteLoadApplyLog = async function(){
+  if(!window._db) return null;
+  try{ const d=await window._db.collection('dailyData').doc('_applyLog').get();
+       return d.exists ? JSON.parse(d.data().json||'null') : null; }
+  catch(e){ console.warn('applyLog 로드 실패', e); return null; }
+};
 // 일자별 전체기록(dailyHistory) 로딩 → {date: rec}. 브라우저 localStorage 기록의 손상/유실을 클라우드로 복원.
 window.remoteLoadHistory = async function(brand){
   if(!window._db||!brand) return null;
@@ -476,6 +483,7 @@ tr.row-ad:hover td.dual-cell .dl7 { background:rgba(245,158,11,0.18); }
 <!-- ── Main ───────────────────────────────────────── -->
 <div class="main">
   <div id="health-panel" style="display:none;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;line-height:1.5"></div>
+  <div id="apply-panel" style="display:none;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;line-height:1.5"></div>
   <div id="server-bar" style="display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap">
     <span style="font-size:12px;font-weight:700;color:var(--accent)">📊 오늘 데이터</span>
     <button class="btn btn-ghost" id="srv-cmp" style="font-size:12px" onclick="loadServerCombined(currentBrand)">3·7일 비교</button>
@@ -2373,11 +2381,43 @@ function renderHealthPanel(h){
   }
   el.style.display='block';
 }
+// 지난밤 액션 자동적용(메타·구글) 결과 패널
+function renderApplyPanel(a){
+  const el = document.getElementById('apply-panel');
+  if(!el) return;
+  if(!a || !a.counts){ el.style.display='none'; return; }
+  const c = a.counts||{};
+  const when = a.ranAt ? _hesc(a.ranAt) : '';
+  const opKo = function(o){ return o==='pause'?'끄기':(o==='budget'?'예산':o); };
+  // 실제로 반영/차단/오류난 항목만 표시(무변경·대상없음·계획만은 생략)
+  const show = (a.items||[]).filter(function(it){
+    const r=String(it.result||'');
+    return /^(paused|set\(|already_paused|blocked|ERROR)/.test(r);
+  });
+  const lines = show.map(function(it){
+    const r=String(it.result||'');
+    const col = /^ERROR|^blocked/.test(r) ? '#e05555' : 'var(--green)';
+    const nm = _hesc(it.name||it.key||'');
+    return '<li style="margin:2px 0"><span style="color:var(--muted)">['+_hesc(it.brand||'')+'/'+_hesc(it.media||'')+']</span> '
+      + _hesc(opKo(it.op))+' <b>'+nm+'</b> → <span style="color:'+col+'">'+_hesc(r)+'</span></li>';
+  }).join('');
+  const err = (c.errors||0)>0;
+  el.style.background = err ? 'rgba(224,85,85,.10)' : 'rgba(79,127,255,.10)';
+  el.style.border = '1px solid '+(err ? 'rgba(224,85,85,.5)' : 'rgba(79,127,255,.5)');
+  el.style.color='inherit';
+  el.innerHTML = '<div style="font-weight:700;margin-bottom:4px">🤖 지난밤 액션 자동적용'
+    + '<span style="color:var(--muted);font-weight:400;font-size:11px"> · '+when+' · '+_hesc(a.mode||'')
+    + ' · 적용 '+(c.applied||0)+' 스킵 '+(c.skipped||0)+' 오류 '+(c.errors||0)+'</span></div>'
+    + (lines ? '<ul style="margin:0;padding-left:18px">'+lines+'</ul>'
+             : '<div style="color:var(--muted)">반영된 변경 없음</div>');
+  el.style.display='block';
+}
 
 // ── Server data (Firestore 보호 데이터 자동 로드) ─────────────────────────────
 let serverManifest = null;
 async function initServerData(brand){
   try{ renderHealthPanel(await remoteLoadHealth()); }catch(e){ console.warn('health 렌더 실패', e); }
+  try{ renderApplyPanel(await remoteLoadApplyLog()); }catch(e){ console.warn('applyLog 렌더 실패', e); }
   const bar = document.getElementById('server-bar');
   if(!bar) return;
   try{
